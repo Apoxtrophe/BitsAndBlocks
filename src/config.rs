@@ -8,3 +8,4 @@ pub const WORLD_TRANSFORM: Transform = Transform::from_xyz(0.0, 0.5, 0.0);
 // RAY CASTING
 pub const RAY_MAX_DIST: f32 = 100.0;
 pub const RAY_SPHERE_RADIUS: f32 = 0.5;
+pub const RAY_DEBUG: bool = false; 
