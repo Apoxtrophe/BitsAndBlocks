@@ -7,7 +7,7 @@ use bevy_rapier3d::{parry::math::Point, prelude::*, rapier::prelude::Ray};
 
 use bevy_fps_controller::controller::*;
 
-use crate::config::{RAY_DEBUG, RAY_MAX_DIST, RAY_SPHERE_RADIUS};
+use crate::{config::{RAY_DEBUG, RAY_MAX_DIST, RAY_SPHERE_RADIUS}, voxel::{add_voxel_system, remove_voxel, Voxel, VoxelMap, VoxelType}};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -19,6 +19,8 @@ pub struct PlayerData {
     pub camera_pos: Vec3,
     pub camera_dir: Vec3,
     pub ray_hit_pos: Vec3,
+    pub selected: Vec3,
+    pub selected_adjacent: Vec3,
 }
 
 impl Default for PlayerData {
@@ -27,6 +29,8 @@ impl Default for PlayerData {
             camera_pos: Vec3::ZERO,
             camera_dir: Vec3::ZERO,
             ray_hit_pos: Vec3::ZERO,
+            selected: Vec3::ZERO,
+            selected_adjacent: Vec3::ZERO,
         }
     }
 }
@@ -139,39 +143,19 @@ pub fn manage_cursor(
     }
 }
 
-pub fn raycast(
-    query: Query<&GlobalTransform,
-    With<PlayerCamera>>,
-    mut ray_cast: MeshRayCast,
-    mut gizmos: Gizmos,
-    mut player_data: ResMut<PlayerData>,
-    ) {
-    if let Ok(camera_transform) = query.get_single() {
-        // Get the camera's world position
-        let camera_position = camera_transform.translation();
-        
-        // Calculate the forward direction.
-        // In Bevy, the camera faces -Z by default.
-        let camera_forward = camera_transform.rotation() * Vec3::new(0.0, 0.0, -1.0);
-
-        // You can now use these values for raycasting or other purposes.
-        
-        let dir: Dir3 = Dir3::new(camera_forward).expect("Cannot even");
-        
-        let ray = Ray3d::new(camera_position, dir);
-        
-        let max_distance = RAY_MAX_DIST;
-        
-        if RAY_DEBUG {
-            gizmos.line(camera_position, camera_position + camera_forward * max_distance, Color::BLACK);
-        }
-        
-        if let Some((_entity, hit)) = ray_cast.cast_ray(ray, &RayCastSettings::default()).first() {
-            
-            gizmos.sphere(hit.point, RAY_SPHERE_RADIUS, Color::BLACK);            player_data.ray_hit_pos = hit.point;
-        }
-        
-        player_data.camera_pos = camera_position;
-        player_data.camera_dir = camera_forward;
+pub fn voxel_interaction(
+    mouse: Res<ButtonInput<MouseButton>>,
+    player: Res<PlayerData>,
+    commands: Commands,
+    meshes: ResMut<Assets<Mesh>>,
+    materials: ResMut<Assets<StandardMaterial>>,
+    query: Query<(Entity, &Voxel)>,
+    voxel_map: ResMut<VoxelMap>,
+) {
+    if mouse.just_released(MouseButton::Left) {
+        add_voxel_system(commands, voxel_map, meshes, materials, player.selected_adjacent.as_ivec3());
+    }
+    else if mouse.just_released(MouseButton::Right) {
+        remove_voxel(commands, voxel_map, player.selected.as_ivec3());
     }
 }
