@@ -21,6 +21,7 @@ pub struct PlayerData {
     pub ray_hit_pos: Vec3,
     pub selected: Vec3,
     pub selected_adjacent: Vec3,
+    pub player_direction: usize, 
 }
 
 impl Default for PlayerData {
@@ -31,6 +32,7 @@ impl Default for PlayerData {
             ray_hit_pos: Vec3::ZERO,
             selected: Vec3::ZERO,
             selected_adjacent: Vec3::ZERO,
+            player_direction: 0,
         }
     }
 }
@@ -151,9 +153,12 @@ pub fn voxel_interaction(
     materials: ResMut<Assets<StandardMaterial>>,
     query: Query<(Entity, &Voxel)>,
     voxel_map: ResMut<VoxelMap>,
+    asset_server: Res<AssetServer>,
 ) {
     if mouse.just_released(MouseButton::Left) {
-        add_voxel_system(commands, voxel_map, meshes, materials, player.selected_adjacent.as_ivec3());
+        let direction = player.camera_dir;
+        
+        add_voxel_system(commands, voxel_map, meshes, materials, asset_server, player.selected_adjacent.as_ivec3(), direction);
     }
     else if mouse.just_released(MouseButton::Right) {
         remove_voxel(commands, voxel_map, player.selected.as_ivec3());
