@@ -11,4 +11,9 @@ pub const RAY_SPHERE_RADIUS: f32 = 0.5;
 pub const RAY_DEBUG: bool = false; 
 
 // TEXTURES
-pub const TEXTURE_ATLAS_ROWS: usize = 1;
+pub const NUM_TEXTURES: usize = 9;
+pub const TEXTURE_MAP: [(usize,usize); 9]  = 
+    [
+        (0,0),      
+        (1,0), (1,1), (1,2), (1,3), (1,4), (1,5), (1,6), (1,7)
+    ];

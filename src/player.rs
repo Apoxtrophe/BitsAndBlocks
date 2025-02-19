@@ -7,7 +7,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{raycast::cardinalize, voxel::{add_voxel, remove_voxel, Voxel, VoxelAssets, VoxelType}, VoxelReasources};
+use crate::{raycast::cardinalize, voxel::{add_voxel, remove_voxel, Voxel, VoxelAssets}, VoxelReasources};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -21,6 +21,7 @@ pub struct PlayerData {
     pub ray_hit_pos: Vec3,
     pub selected: Vec3,
     pub selected_adjacent: Vec3,
+    pub voxel_id: usize,
 }
 
 impl Default for PlayerData {
@@ -31,6 +32,7 @@ impl Default for PlayerData {
             ray_hit_pos: Vec3::ZERO,
             selected: Vec3::ZERO,
             selected_adjacent: Vec3::ZERO,
+            voxel_id: 1,
         }
     }
 }
@@ -147,8 +149,6 @@ pub fn player_action_system(
     mouse: Res<ButtonInput<MouseButton>>,
     player: Res<PlayerData>,
     commands: Commands,
-    meshes: ResMut<Assets<Mesh>>,
-    materials: ResMut<Assets<StandardMaterial>>,
     voxel_map: ResMut<VoxelReasources>,
     voxel_assets: Res<VoxelAssets>,
 ) {
@@ -157,7 +157,7 @@ pub fn player_action_system(
     if mouse.just_released(MouseButton::Left) {
         let voxel = Voxel {
             position: player.selected_adjacent.as_ivec3(),
-            voxel_type: VoxelType::Stone,
+            voxel_id: (1,1),
             state: false,
             direction: dir,
         };

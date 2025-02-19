@@ -1,19 +1,15 @@
-use std::f32::consts::{FRAC_PI_2, FRAC_PI_4, PI};
+use std::{collections::HashMap, f32::consts::{FRAC_PI_2, FRAC_PI_4, PI}};
 
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::Collider;
 
-use crate::{graphics::create_voxel_mesh, VoxelReasources};
+use crate::{config::{NUM_TEXTURES, TEXTURE_MAP}, graphics::create_voxel_mesh, VoxelReasources};
 
-#[derive(Debug, Copy, Clone)]
-pub enum VoxelType {
-    Stone,
-}
 
 /// Voxel Logic Component
 #[derive(Component, Debug, Copy, Clone)]
 pub struct Voxel {
-    pub voxel_type: VoxelType,
+    pub voxel_id: (usize, usize),
     pub position: IVec3,
     pub direction: usize,
     pub state: bool,
@@ -36,8 +32,7 @@ pub struct VoxelAsset {
 #[derive(Resource)]
 pub struct VoxelAssets {
     pub texture_atlas: Handle<Image>,
-    pub stone_assets: VoxelAsset,
-
+    pub voxel_assets: HashMap<(usize, usize), VoxelAsset>,
 }
 
 pub fn setup_voxel_assets(
@@ -46,15 +41,22 @@ pub fn setup_voxel_assets(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    let texture_atlas: Handle<Image> = asset_server.load("textures/texturepack.png");
-    let stone_assets = VoxelAsset {
-        mesh_handle: meshes.add(create_voxel_mesh(0)),
-        material_handle: materials.add(create_voxel_material(texture_atlas.clone())),
-    };
+    let texture_atlas: Handle<Image> = asset_server.load("textures/TexturePack6.png");
+    
+    let mut voxel_assets_map = HashMap::new();
+    
+    for i in 0..TEXTURE_MAP.len() {
+        let (x, y) = TEXTURE_MAP[i];
+        let voxel_asset = VoxelAsset {
+            mesh_handle: meshes.add(create_voxel_mesh(i)),
+            material_handle: materials.add(create_voxel_material(texture_atlas.clone())),
+        };
+        voxel_assets_map.insert((x, y), voxel_asset);
+    }
     
     commands.insert_resource(VoxelAssets {
         texture_atlas,
-        stone_assets,
+        voxel_assets: voxel_assets_map,
     });
 }
 
@@ -70,16 +72,16 @@ pub fn add_voxel(
         return;
     }
 
-    let (mesh_handle, material_handle) = match voxel.voxel_type {
-        VoxelType::Stone => (
-            voxel_assets.stone_assets.mesh_handle.clone(),
-            voxel_assets.stone_assets.material_handle.clone(),
-        ),
-    };
+    let mesh_handle = voxel_assets.voxel_assets[&voxel.voxel_id].mesh_handle.clone();
+    let material_handle = voxel_assets.voxel_assets[&voxel.voxel_id].material_handle.clone();
     
+    let mut rotating = 1.0; // For some block no rotation is applied
+    if voxel.voxel_id.0 <=2 {
+        rotating = 0.0;
+    }
     let transform = Transform {
         translation: voxel.position.as_vec3(),
-        rotation: Quat::from_rotation_y(FRAC_PI_2 * voxel.direction as f32 + PI),
+        rotation: Quat::from_rotation_y(rotating * FRAC_PI_2 * voxel.direction as f32 + PI),
         scale: Vec3::ONE,
     };
     
