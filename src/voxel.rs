@@ -3,7 +3,7 @@ use std::{collections::HashMap, f32::consts::{FRAC_PI_2, FRAC_PI_4, PI}};
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::Collider;
 
-use crate::{config::{NUM_TEXTURES, TEXTURE_MAP}, graphics::create_voxel_mesh, VoxelReasources};
+use crate::{config::{NUM_TEXTURES, ROTATION_LOCKED_SUBSETS, TEXTURE_MAP}, graphics::create_voxel_mesh, VoxelReasources};
 
 
 /// Voxel Logic Component
@@ -76,7 +76,7 @@ pub fn add_voxel(
     let material_handle = voxel_assets.voxel_assets[&voxel.voxel_id].material_handle.clone();
     
     let mut rotating = 1.0; // For some block no rotation is applied
-    if voxel.voxel_id.0 <=2 {
+    if voxel.voxel_id.0 <=ROTATION_LOCKED_SUBSETS {
         rotating = 0.0;
     }
     let transform = Transform {

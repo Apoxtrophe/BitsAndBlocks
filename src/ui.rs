@@ -16,6 +16,8 @@ pub fn debug_text(
         Ray Hit: {:.1}
         Selected Block: {:.1}
         Selected Adj.: {:.1}
+        Voxel ID: {:?}
+        Hotbar: {:?}
         Entity Count: {}
         ", 
         player.camera_pos, 
@@ -23,6 +25,8 @@ pub fn debug_text(
         player.ray_hit_pos, 
         player.selected, 
         player.selected_adjacent,
+        player.selector,
+        player.hotbar_ids,
         entitiy_count,
     );
     

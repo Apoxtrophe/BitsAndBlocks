@@ -1,13 +1,13 @@
-use std::f32::consts::TAU;
+use std::{cmp::Ordering, f32::consts::TAU};
 
 use bevy::{
-    prelude::*, render::camera::Exposure, window::CursorGrabMode
+    input::mouse::{MouseScrollUnit, MouseWheel}, prelude::*, render::camera::Exposure, window::CursorGrabMode
 };
 use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{raycast::cardinalize, voxel::{add_voxel, remove_voxel, Voxel, VoxelAssets}, VoxelReasources};
+use crate::{config::SUBSET_SIZES, raycast::cardinalize, voxel::{add_voxel, remove_voxel, Voxel, VoxelAssets}, VoxelReasources};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -21,18 +21,24 @@ pub struct PlayerData {
     pub ray_hit_pos: Vec3,
     pub selected: Vec3,
     pub selected_adjacent: Vec3,
-    pub voxel_id: usize,
+    pub selector: usize,
+    pub hotbar_ids: Vec<(usize, usize)>,
 }
 
 impl Default for PlayerData {
     fn default() -> Self {
+        let mut hotbar_ids = Vec::new();
+        for i in 0..9 {
+            hotbar_ids.push((i, 0));
+        }
         Self {
             camera_pos: Vec3::ZERO,
             camera_dir: Vec3::ZERO,
             ray_hit_pos: Vec3::ZERO,
             selected: Vec3::ZERO,
             selected_adjacent: Vec3::ZERO,
-            voxel_id: 1,
+            selector: 0,
+            hotbar_ids: hotbar_ids,
         }
     }
 }
@@ -147,7 +153,9 @@ pub fn cursor_system(
 
 pub fn player_action_system(
     mouse: Res<ButtonInput<MouseButton>>,
-    player: Res<PlayerData>,
+    mut evr_scroll: EventReader<MouseWheel>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut player: ResMut<PlayerData>,
     commands: Commands,
     voxel_map: ResMut<VoxelReasources>,
     voxel_assets: Res<VoxelAssets>,
@@ -157,7 +165,7 @@ pub fn player_action_system(
     if mouse.just_released(MouseButton::Left) {
         let voxel = Voxel {
             position: player.selected_adjacent.as_ivec3(),
-            voxel_id: (1,1),
+            voxel_id: player.hotbar_ids[player.selector],
             state: false,
             direction: dir,
         };
@@ -165,6 +173,28 @@ pub fn player_action_system(
     }
     else if mouse.just_released(MouseButton::Right) {
         remove_voxel(commands, voxel_map, player.selected.as_ivec3());
+    }
+    
+    let selector = player.selector.clone();
+    
+    if keyboard.pressed(KeyCode::AltLeft) {
+        for event in evr_scroll.read() {
+            match event.y.partial_cmp(&0.0) {
+                Some(Ordering::Less) => player.hotbar_ids[selector].1 -= 1,
+                Some(Ordering::Greater) => player.hotbar_ids[selector].1 += 1,
+                _ => (),
+            }
+            player.hotbar_ids[selector].1 = player.hotbar_ids[selector].1.clamp(0, SUBSET_SIZES[selector] - 1);
+        }
+    } else {
+        for event in evr_scroll.read() {
+            match event.y.partial_cmp(&0.0) {
+                Some(Ordering::Less) => player.selector -= 1,
+                Some(Ordering::Greater) => player.selector += 1,
+                _ => (),
+            }
+            player.selector = player.selector.clamp(0, 8);
+        }
     }
     
 }

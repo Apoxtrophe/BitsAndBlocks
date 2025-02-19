@@ -12,8 +12,10 @@ pub const RAY_DEBUG: bool = false;
 
 // TEXTURES
 pub const NUM_TEXTURES: usize = 9;
+pub const ROTATION_LOCKED_SUBSETS: usize = 2;
 pub const TEXTURE_MAP: [(usize,usize); 9]  = 
     [
         (0,0),      
         (1,0), (1,1), (1,2), (1,3), (1,4), (1,5), (1,6), (1,7)
     ];
+pub const SUBSET_SIZES: [usize; 2] = [1, 8];
