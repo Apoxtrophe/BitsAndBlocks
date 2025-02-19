@@ -1,13 +1,13 @@
 use std::f32::consts::TAU;
 
 use bevy::{
-    color::palettes::css::*, prelude::*, render::camera::Exposure, window::CursorGrabMode
+    prelude::*, render::camera::Exposure, window::CursorGrabMode
 };
-use bevy_rapier3d::{parry::math::Point, prelude::*, rapier::prelude::Ray};
+use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{config::{RAY_DEBUG, RAY_MAX_DIST, RAY_SPHERE_RADIUS}, voxel::{add_voxel_system, remove_voxel, Voxel, VoxelMap, VoxelType}};
+use crate::{voxel::{add_voxel, remove_voxel, VoxelType}, VoxelReasources};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -110,7 +110,7 @@ pub fn setup_player(mut commands: Commands) {
     ));
 }
 
-pub fn respawn(mut query: Query<(&mut Transform, &mut Velocity)>) {
+pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
     for (mut transform, mut velocity) in &mut query {
         if transform.translation.y > -50.0 {
             continue;
@@ -121,7 +121,7 @@ pub fn respawn(mut query: Query<(&mut Transform, &mut Velocity)>) {
     }
 }
 
-pub fn manage_cursor(
+pub fn cursor_system(
     btn: Res<ButtonInput<MouseButton>>,
     key: Res<ButtonInput<KeyCode>>,
     mut window_query: Query<&mut Window>,
@@ -145,20 +145,18 @@ pub fn manage_cursor(
     }
 }
 
-pub fn voxel_interaction(
+pub fn player_action_system(
     mouse: Res<ButtonInput<MouseButton>>,
     player: Res<PlayerData>,
     commands: Commands,
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<StandardMaterial>>,
-    query: Query<(Entity, &Voxel)>,
-    voxel_map: ResMut<VoxelMap>,
-    asset_server: Res<AssetServer>,
+    voxel_map: ResMut<VoxelReasources>,
 ) {
     if mouse.just_released(MouseButton::Left) {
-        let direction = player.camera_dir;
+        let voxel_type = VoxelType::Stone;
         
-        add_voxel_system(commands, voxel_map, meshes, materials, asset_server, player.selected_adjacent.as_ivec3(), direction);
+        add_voxel(commands, voxel_map, meshes, materials, player.selected_adjacent.as_ivec3(), voxel_type, 0);
     }
     else if mouse.just_released(MouseButton::Right) {
         remove_voxel(commands, voxel_map, player.selected.as_ivec3());

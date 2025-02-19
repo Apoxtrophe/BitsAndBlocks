@@ -1,29 +1,16 @@
-use bevy::{asset::RenderAssetUsages, ecs::observer::TriggerTargets, prelude::*, render::mesh::{Indices, PrimitiveTopology}};
+use std::f32::consts::PI;
+
+use bevy::prelude::*;
 use bevy_rapier3d::prelude::Collider;
-use std::collections::HashMap;
 
-use crate::{graphics::create_voxel_mesh, player::PlayerData};
+use crate::{graphics::{create_voxel_mesh}, VoxelReasources};
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum VoxelType {
     Stone,
     Dirt,
 }
 
-pub struct VoxelAsset {
-    mesh_handle: Handle<Mesh>,
-    material_handle: Handle<StandardMaterial>,
-}
-
-impl VoxelAsset {
-    pub fn new(
-        voxel_type: VoxelType,
-        meshes: &mut ResMut<Assets<Mesh>>,
-    ) {
-        let mesh = Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0)));
-    }
-}
-
+/// Voxel Logic Component
 #[derive(Component)]
 pub struct Voxel {
     pub voxel_type: VoxelType,
@@ -31,61 +18,64 @@ pub struct Voxel {
     pub state: bool,
 }
 
+#[derive(Bundle)]
+pub struct VoxelBundle {
+    pub voxel: Voxel,
+    pub mesh: Mesh3d,
+    pub material: MeshMaterial3d<StandardMaterial>,
+    pub transform: Transform,
+    pub collider: Collider,
+}
+
 /// A resource to track voxel entities by their position.
-#[derive(Resource)]
-pub struct VoxelMap {
-    pub voxels: HashMap<IVec3, Entity>,
-}
 
-impl Default for VoxelMap {
-    fn default() -> Self {
-        Self {
-            voxels: HashMap::new(),
-        }
-    }
-}
-
-pub fn add_voxel_system(
+pub fn add_voxel(
     mut commands: Commands,
-    mut voxel_map: ResMut<VoxelMap>,
+    mut voxel_resources: ResMut<VoxelReasources>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
     position: IVec3,
-    direction: Vec3,
+    voxel_type: VoxelType,
+    tile_row: usize,
 ) {
+    if voxel_resources.voxel_map.contains_key(&position) {
+        return;
+    }
 
-    let voxel = Voxel {
-        voxel_type: VoxelType::Stone,
+    let mesh_handle = create_voxel_mesh(tile_row);
+    let material_handle = create_voxel_material(voxel_resources.texture_atlas.clone());
+
+    let new_voxel = Voxel {
+        voxel_type,
         position,
         state: false,
     };
-    
-    let atlas_handle: Handle<Image> = asset_server.load("textures/test.png");
-    
-    let mesh_handle: Handle<Mesh> = meshes.add(create_voxel_mesh(0,1, direction));
-    
-    if !voxel_map.voxels.contains_key(&position) {
-       let entity = commands.spawn((
-           Mesh3d(mesh_handle),
-           MeshMaterial3d(materials.add(StandardMaterial {
-               base_color_texture: Some(atlas_handle),
-               ..default()
-           })),
-           Transform::from_translation(position.as_vec3()),
-       )).insert(Collider::cuboid(0.5, 0.5, 0.5)).insert(voxel).id();
 
-        voxel_map.voxels.insert(position, entity);
-    }
+    let entity = commands.spawn(VoxelBundle {
+        voxel: new_voxel,
+        mesh: Mesh3d(meshes.add(mesh_handle)),
+        material: MeshMaterial3d(materials.add(material_handle)),
+        transform: Transform::from_translation(position.as_vec3()),
+        collider: Collider::cuboid(0.5, 0.5, 0.5),
+    })
+    .id();
+
+    voxel_resources.voxel_map.insert(position, entity);
 }
 
 pub fn remove_voxel(
     mut commands: Commands,
-    mut voxel_map: ResMut<VoxelMap>,
+    mut voxel_map: ResMut<VoxelReasources>,
     position: IVec3,
 ) {
-    if let Some(entity) = voxel_map.voxels.remove(&position) {
+    if let Some(entity) = voxel_map.voxel_map.remove(&position) {
         commands.entity(entity).despawn();
     }
 }
-
+/// Create a material using the shared texture atlas.
+pub fn create_voxel_material(atlas_handle: Handle<Image>) -> StandardMaterial {
+    StandardMaterial {
+        base_color_texture: Some(atlas_handle),
+        ..Default::default()
+    }
+}

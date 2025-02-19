@@ -1,10 +1,9 @@
-use std::f32::consts::PI;
-
-use bevy::{picking::backend::ray::RayMap, prelude::*};
+use bevy::prelude::*;
 
 use crate::{config::*, player::{PlayerCamera, PlayerData}};
 
-pub fn raycast(
+// Cast a ray from the camera and update player data
+pub fn raycast_system(
     query: Query<&GlobalTransform, With<PlayerCamera>>,
     mut ray_cast: MeshRayCast,
     mut gizmos: Gizmos,
@@ -33,9 +32,7 @@ pub fn raycast(
         );
     }
 
-    if let Some((_, intersection)) =
-        ray_cast.cast_ray(ray, &RayCastSettings::default()).first()
-    {
+    if let Some((_, intersection)) = ray_cast.cast_ray(ray, &RayCastSettings::default()).first() {
         let distance = intersection.distance;
         let normal = intersection.normal.round();
         // We assume the triangle is present.
@@ -46,7 +43,6 @@ pub fn raycast(
         let hit_point = intersection.point;
 
         gizmos.sphere(hit_point, RAY_SPHERE_RADIUS, Color::BLACK);
-
         player_data.ray_hit_pos = hit_point;
         player_data.selected = position;
         player_data.selected_adjacent =
@@ -55,9 +51,4 @@ pub fn raycast(
 
     player_data.camera_pos = camera_position;
     player_data.camera_dir = camera_forward;
-}
-
-fn calculate_voxel_position(triangle: [Vec3; 3], normal: Vec3) -> Vec3 {
-    let avg = (triangle[0] + triangle[1] + triangle[2]) / 3.0;
-    (avg - normal * 0.5).round()
 }

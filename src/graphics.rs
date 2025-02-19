@@ -4,15 +4,14 @@ use bevy::{
     render::mesh::{Indices, PrimitiveTopology},
 };
 
-/// Create a voxel mesh where:
-/// - The textures come from a given row in a texture atlas (with 6 columns).
-/// - The cube’s side faces have upright textures.
-/// - The cube is rotated to face one of the 4 cardinal directions based on the camera's direction.
-pub fn create_voxel_mesh(tile_row: usize, num_rows: usize, camera_direction: Vec3) -> Mesh {
+use crate::config::TEXTURE_ATLAS_ROWS;
+
+
+pub fn create_voxel_mesh(tile_row: usize) -> Mesh {
     // === Texture Atlas Setup ===
     // The atlas is arranged in 6 columns and `num_rows` rows.
     let num_tiles_x = 6.0;
-    let num_rows_f = num_rows as f32;
+    let num_rows_f = TEXTURE_ATLAS_ROWS as f32;
     let v_top = tile_row as f32 / num_rows_f;
     let v_bottom = (tile_row as f32 + 1.0) / num_rows_f;
 
@@ -67,24 +66,6 @@ pub fn create_voxel_mesh(tile_row: usize, num_rows: usize, camera_direction: Vec
         }
     }
 
-    // === Orientation Based on Camera Direction (Snapping to 4 Cardinal Directions) ===
-    // First, "flatten" the camera direction on the XZ plane.
-    let flat_dir = Vec3::new(camera_direction.x, 0.0, camera_direction.z);
-    println!("{}", flat_dir);
-    let rotation = if flat_dir.length() < 0.0001 {
-        // If the camera's horizontal direction is nearly zero, do not rotate.
-        Quat::IDENTITY
-    } else {
-        let flat_dir = flat_dir.normalize();
-        // Compute the yaw (rotation about Y) so that the default forward (-Z) aligns with the camera's flat direction.
-        // Using atan2: when camera faces -Z, we expect yaw=0.
-        let yaw = flat_dir.x.atan2(-flat_dir.z);
-        // Round the yaw to the nearest multiple of 90° (π/2 radians).
-        let quarter_turn = std::f32::consts::FRAC_PI_2;
-        let rounded_yaw = (yaw / quarter_turn).round() * quarter_turn;
-        Quat::from_rotation_y(-rounded_yaw + quarter_turn)
-    };
-
     // === Define Cube Geometry ===
     let positions = vec![
         // Top face (+y)
@@ -124,8 +105,7 @@ pub fn create_voxel_mesh(tile_row: usize, num_rows: usize, camera_direction: Vec
         .into_iter()
         .map(|p| {
             let pos = Vec3::from(p);
-            let rotated = rotation * pos;
-            [rotated.x, rotated.y, rotated.z]
+            [pos.x, pos.y, pos.z]
         })
         .collect();
 
@@ -168,8 +148,7 @@ pub fn create_voxel_mesh(tile_row: usize, num_rows: usize, camera_direction: Vec
         .into_iter()
         .map(|n| {
             let norm = Vec3::from(n);
-            let rotated = rotation * norm;
-            [rotated.x, rotated.y, rotated.z]
+            [norm.x, norm.y, norm.z]
         })
         .collect();
 

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{player::PlayerData, world::DebugText};
+use crate::{player::PlayerData, DebugText};
 
 pub fn debug_text(
     mut query: Query<&mut Text, With<DebugText>>,
