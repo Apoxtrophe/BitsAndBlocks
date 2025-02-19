@@ -7,7 +7,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{voxel::{add_voxel, remove_voxel, VoxelType}, VoxelReasources};
+use crate::{raycast::cardinalize, voxel::{add_voxel, remove_voxel, Voxel, VoxelAssets, VoxelType}, VoxelReasources};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -21,7 +21,6 @@ pub struct PlayerData {
     pub ray_hit_pos: Vec3,
     pub selected: Vec3,
     pub selected_adjacent: Vec3,
-    pub player_direction: usize, 
 }
 
 impl Default for PlayerData {
@@ -32,7 +31,6 @@ impl Default for PlayerData {
             ray_hit_pos: Vec3::ZERO,
             selected: Vec3::ZERO,
             selected_adjacent: Vec3::ZERO,
-            player_direction: 0,
         }
     }
 }
@@ -152,13 +150,21 @@ pub fn player_action_system(
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<StandardMaterial>>,
     voxel_map: ResMut<VoxelReasources>,
+    voxel_assets: Res<VoxelAssets>,
 ) {
+    let dir = cardinalize(player.camera_dir);    
+    
     if mouse.just_released(MouseButton::Left) {
-        let voxel_type = VoxelType::Stone;
-        
-        add_voxel(commands, voxel_map, meshes, materials, player.selected_adjacent.as_ivec3(), voxel_type, 0);
+        let voxel = Voxel {
+            position: player.selected_adjacent.as_ivec3(),
+            voxel_type: VoxelType::Stone,
+            state: false,
+            direction: dir,
+        };
+        add_voxel(commands, voxel_map, voxel_assets, voxel);
     }
     else if mouse.just_released(MouseButton::Right) {
         remove_voxel(commands, voxel_map, player.selected.as_ivec3());
     }
+    
 }

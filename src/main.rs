@@ -49,7 +49,7 @@ fn main() {
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         //.add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(FpsControllerPlugin)
-        .add_systems(Startup, (setup_player, setup)
+        .add_systems(Startup, (setup_player, setup, setup_voxel_assets)
         )
         .add_systems(
             Update,
