@@ -4,14 +4,14 @@ use bevy::{
     render::mesh::{Indices, PrimitiveTopology},
 };
 
-use crate::config::NUM_TEXTURES;
+use crate::config::NUM_VOXELS;
 
 
 pub fn create_voxel_mesh(tile_row: usize) -> Mesh {
     // === Texture Atlas Setup ===
     // The atlas is arranged in 6 columns and `num_rows` rows.
     let num_tiles_x = 6.0;
-    let num_rows_f = NUM_TEXTURES as f32;
+    let num_rows_f = NUM_VOXELS as f32;
     let v_top = tile_row as f32 / num_rows_f;
     let v_bottom = (tile_row as f32 + 1.0) / num_rows_f;
 

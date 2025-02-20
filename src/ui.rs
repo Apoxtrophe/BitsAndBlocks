@@ -1,6 +1,6 @@
 use bevy::{color::palettes::css::{DEEP_SKY_BLUE, LIGHT_SKY_BLUE}, prelude::*, render::render_resource::encase::private::RuntimeSizedArray};
 
-use crate::{config::HOTBAR_BORDER_COLOR, player::PlayerData, DebugText};
+use crate::{config::{HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::PlayerData, voxel::VoxelAssets, DebugText};
 
 #[derive(Component)]
 pub struct HotbarSlot {
@@ -9,6 +9,8 @@ pub struct HotbarSlot {
 
 pub fn setup_ui(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     // Spawn debug text
     commands.spawn((
@@ -24,7 +26,7 @@ pub fn setup_ui(
         // Set the style of the Node itself.
         Node {
             position_type: PositionType::Absolute,
-            bottom: Val::Percent(5.0),
+            bottom: Val::Percent(60.0),
             right: Val::Percent(5.0),
             ..default()
         },
@@ -45,6 +47,10 @@ pub fn setup_ui(
         BackgroundColor(Color::BLACK),
     ));
 
+    let texture_handle: Handle<Image> = asset_server.load(TEXTURE_PATH);
+    let texture_atlas = TextureAtlasLayout::from_grid(UVec2::splat(16), 1, NUM_VOXELS as u32, None, None);
+    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    
     let mut main_node = commands.spawn(Node {
         width: Val::Percent(100.0),
         height: Val::Percent(100.0),
@@ -59,7 +65,7 @@ pub fn setup_ui(
         Vec2::splat(70.),
         Vec2::ZERO,
         4.,
-        10.,
+        20.,
         BorderRadius::all(Val::Percent(0.1)),
         ),
     ];
@@ -75,25 +81,50 @@ pub fn setup_ui(
                     spread,
                     blur,
                     border_radius,
-                )).insert(HotbarSlot{index: i});
+                )).insert(HotbarSlot{index: i}).with_children(|child| {
+                    child.spawn(Node {
+                        width: Val::Percent(95.0),
+                        height: Val::Percent(95.0),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },).insert(HotbarSlot{index: i}).insert(ImageNode::from_atlas_image(texture_handle.clone(), TextureAtlas::from(texture_atlas_handle.clone())));
+                });
             }
         }  
     });
 }
 
 pub fn update_hotbar (
-    mut hotbar: ResMut<PlayerData>,
-    mut query: Query<(&HotbarSlot, &mut BorderColor)>,
+    player: ResMut<PlayerData>,
+    mut query: Query<(&HotbarSlot, &mut ImageNode)>,
+    mut query2: Query<(&HotbarSlot, &mut BorderColor)>,
+    
 ) { 
-    for (slot, mut color) in query.iter_mut() {
-        if slot.index == hotbar.selector {
+    let mut count = 0; 
+    let mut offsets = Vec::new();
+    
+    for i in 0..SUBSET_SIZES.len() {
+        offsets.push(count);
+        count += SUBSET_SIZES[i];
+    }
+    
+    for (slot, mut color) in query2.iter_mut() {
+        if slot.index == player.selector {
             // Highlight the selected slot (e.g., brighter color)
             *color = Color::WHITE.into();
         } else {
             *color = Color::BLACK.into();
         }
     }
-    
+    for (slot, mut image) in query.iter_mut() {
+
+        let index = player.hotbar_ids[slot.index];
+        
+        if let Some(atlas) = &mut image.texture_atlas {
+            atlas.index = offsets[slot.index] + index.1;
+        }
+    }
 }
 
 fn box_shadow_node_bundle(
@@ -108,7 +139,7 @@ fn box_shadow_node_bundle(
             top: Val::Percent(90.0),
             width: Val::Px(size.x),
             height: Val::Px(size.y),
-            border: UiRect::all(Val::Px(4.)),
+            border: UiRect::all(Val::Px(6.)),
             ..default()
         },
         BorderColor(HOTBAR_BORDER_COLOR.into()),

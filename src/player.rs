@@ -162,21 +162,32 @@ pub fn player_action_system(
     
     if keyboard.pressed(KeyCode::AltLeft) {
         for event in evr_scroll.read() {
+            let n = SUBSET_SIZES[selector]; // total number of items in this hotbar subset
             match event.y.partial_cmp(&0.0) {
-                Some(Ordering::Less) => player.hotbar_ids[selector].1 -= 1,
-                Some(Ordering::Greater) => player.hotbar_ids[selector].1 += 1,
+                Some(Ordering::Less) => {
+                    // Subtract one, wrapping around by adding n-1 before taking modulo n
+                    player.hotbar_ids[selector].1 = (player.hotbar_ids[selector].1 + n - 1) % n;
+                },
+                Some(Ordering::Greater) => {
+                    // Add one and wrap automatically
+                    player.hotbar_ids[selector].1 = (player.hotbar_ids[selector].1 + 1) % n;
+                },
                 _ => (),
             }
-            player.hotbar_ids[selector].1 = player.hotbar_ids[selector].1.clamp(0, SUBSET_SIZES[selector] - 1);
         }
     } else {
         for event in evr_scroll.read() {
             match event.y.partial_cmp(&0.0) {
-                Some(Ordering::Less) => player.selector -= 1,
-                Some(Ordering::Greater) => player.selector += 1,
+                Some(Ordering::Less) => {
+                    // When subtracting 1, add 8 instead (because (x - 1) mod 9 == (x + 8) mod 9)
+                    player.selector = (player.selector + 8) % 9;
+                },
+                Some(Ordering::Greater) => {
+                    // Increment and wrap-around automatically
+                    player.selector = (player.selector + 1) % 9;
+                },
                 _ => (),
             }
-            player.selector = player.selector.clamp(0, 8);
         }
     }
     

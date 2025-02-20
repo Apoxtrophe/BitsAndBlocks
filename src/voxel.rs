@@ -25,8 +25,8 @@ pub struct VoxelBundle {
 }
 
 pub struct VoxelAsset {
-    mesh_handle: Handle<Mesh>,
-    material_handle: Handle<StandardMaterial>,
+    pub mesh_handle: Handle<Mesh>,
+    pub material_handle: Handle<StandardMaterial>,
 }
 
 #[derive(Resource)]

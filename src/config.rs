@@ -14,15 +14,22 @@ pub const RAY_SPHERE_RADIUS: f32 = 0.5;
 pub const RAY_DEBUG: bool = false; 
 
 // TEXTURES
-pub const TEXTURE_PATH: &str = "textures/TexturePack6.png";
-pub const NUM_TEXTURES: usize = 9;
-pub const ROTATION_LOCKED_SUBSETS: usize = 2;
-pub const TEXTURE_MAP: [(usize,usize); 9]  = 
-    [
-        (0,0),      
-        (1,0), (1,1), (1,2), (1,3), (1,4), (1,5), (1,6), (1,7)
+pub const TEXTURE_PATH: &str = "textures/TexturePack8.png";
+pub const NUM_VOXELS: usize = 16;
+pub const ROTATION_LOCKED_SUBSETS: usize = 1;
+pub const TEXTURE_MAP: [(usize,usize); 16]  = 
+    [     
+        (0,0), (0,1), (0,2), (0,3), (0,4), (0,5), (0,6), (0,7),
+        (1,0),
+        (2,0),
+        (3,0),
+        (4,0),
+        (5,0),
+        (6,0),
+        (7,0),
+        (8,0),
     ];
-pub const SUBSET_SIZES: [usize; 2] = [1, 8];
+pub const SUBSET_SIZES: [usize; 9] = [8, 1, 1, 1, 1, 1, 1, 1, 1];
 
 // UI 
 pub const HOTBAR_BORDER_COLOR: Srgba = Srgba::GREEN;
