@@ -3,7 +3,7 @@ use std::{collections::HashMap, f32::consts::{FRAC_PI_2, FRAC_PI_4, PI}};
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::Collider;
 
-use crate::{config::{NUM_TEXTURES, ROTATION_LOCKED_SUBSETS, TEXTURE_MAP}, graphics::create_voxel_mesh, VoxelReasources};
+use crate::{config::{ROTATION_LOCKED_SUBSETS, TEXTURE_MAP, TEXTURE_PATH}, graphics::create_voxel_mesh, VoxelMap};
 
 
 /// Voxel Logic Component
@@ -35,13 +35,14 @@ pub struct VoxelAssets {
     pub voxel_assets: HashMap<(usize, usize), VoxelAsset>,
 }
 
+
 pub fn setup_voxel_assets(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    let texture_atlas: Handle<Image> = asset_server.load("textures/TexturePack6.png");
+    let texture_atlas: Handle<Image> = asset_server.load(TEXTURE_PATH);
     
     let mut voxel_assets_map = HashMap::new();
     
@@ -64,7 +65,7 @@ pub fn setup_voxel_assets(
 
 pub fn add_voxel(
     mut commands: Commands,
-    mut voxel_resources: ResMut<VoxelReasources>,
+    mut voxel_resources: ResMut<VoxelMap>,
     voxel_assets: Res<VoxelAssets>,
     voxel: Voxel,
 ) {
@@ -99,7 +100,7 @@ pub fn add_voxel(
 
 pub fn remove_voxel(
     mut commands: Commands,
-    mut voxel_map: ResMut<VoxelReasources>,
+    mut voxel_map: ResMut<VoxelMap>,
     position: IVec3,
 ) {
     if let Some(entity) = voxel_map.voxel_map.remove(&position) {

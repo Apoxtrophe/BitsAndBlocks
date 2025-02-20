@@ -29,7 +29,7 @@ fn main() {
     App::new()
         .insert_resource(AmbientLight {
             color: Color::WHITE,
-            brightness: 10000.0,
+            brightness: AMBIENT_LIGHT,
         })
         .insert_resource(PlayerData::default())
         .insert_resource(ClearColor(Color::linear_rgb(0.83, 0.96, 0.96)))
@@ -49,11 +49,22 @@ fn main() {
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         //.add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(FpsControllerPlugin)
-        .add_systems(Startup, (setup_player, setup, setup_voxel_assets)
-        )
+        .add_systems(Startup, (
+            setup_player, 
+            setup, 
+            setup_voxel_assets, 
+            setup_ui
+        ))
         .add_systems(
             Update,
-            (cursor_system, respawn_system, raycast_system, debug_text, player_action_system),
+            (
+                cursor_system, 
+                respawn_system, 
+                raycast_system, 
+                update_text, 
+                player_action_system,
+                update_hotbar,
+            ),
         )
         .run();
 }
@@ -62,9 +73,8 @@ fn main() {
 pub struct DebugText; 
 
 #[derive(Resource)]
-pub struct VoxelReasources {
+pub struct VoxelMap {
     pub voxel_map: HashMap<IVec3, Entity>,
-    texture_atlas: Handle<Image>,
 }
 
 
@@ -78,9 +88,8 @@ pub fn setup(
     let mut window = window.single_mut();
     window.title = String::from("Bits&Blocks");
     
-    let game_resources = VoxelReasources {
+    let game_resources = VoxelMap {
         voxel_map: HashMap::new(),
-        texture_atlas: assets.load("textures/TexturePack6.png"),
     };
     
     commands.insert_resource(game_resources);
@@ -118,25 +127,7 @@ pub fn setup(
     )).insert(Collider::cuboid(WORLD_WIDTH * 0.5, 1.0 *  0.5, WORLD_WIDTH * 0.5));
     
     
-    commands.spawn((
-        // Accepts a `String` or any type that converts into a `String`, such as `&str`
-        Text::new("hello\nbevy!"),
-        TextFont {
-            font_size: 16.0,
-            ..default()
-        },
-        TextColor(Color::BLACK),
-        // Set the justification of the Text
-        TextLayout::new_with_justify(JustifyText::Left),
-        // Set the style of the Node itself.
-        Node {
-            position_type: PositionType::Absolute,
-            bottom: Val::Percent(5.0),
-            right: Val::Percent(5.0),
-            ..default()
-        },
-        DebugText,
-    ));
+    
 }
 
 fn tile_mesh_uvs(mesh: &mut Mesh, tiling_factor: f32) {

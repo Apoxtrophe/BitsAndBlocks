@@ -7,7 +7,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{config::SUBSET_SIZES, raycast::cardinalize, voxel::{add_voxel, remove_voxel, Voxel, VoxelAssets}, VoxelReasources};
+use crate::{config::SUBSET_SIZES, raycast::cardinalize, voxel::{add_voxel, remove_voxel, Voxel, VoxelAssets}, VoxelMap};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -97,23 +97,6 @@ pub fn setup_player(mut commands: Commands) {
     ));
     // Insert player camera component
     player_camera.insert(PlayerCamera);
-    
-    
-    
-    
-    // Spawn cursor
-    commands.spawn((
-        Node {
-            width: Val::Percent(1.0),
-            height: Val::Percent(1.0),
-            left: Val::Percent(49.5),
-            top: Val::Percent(49.5),
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            ..default()
-        },
-        BackgroundColor(Color::BLACK),
-    ));
 }
 
 pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
@@ -157,7 +140,7 @@ pub fn player_action_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut player: ResMut<PlayerData>,
     commands: Commands,
-    voxel_map: ResMut<VoxelReasources>,
+    voxel_map: ResMut<VoxelMap>,
     voxel_assets: Res<VoxelAssets>,
 ) {
     let dir = cardinalize(player.camera_dir);    
