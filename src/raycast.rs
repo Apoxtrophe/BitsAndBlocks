@@ -8,24 +8,24 @@ pub fn raycast_system(
     mut gizmos: Gizmos,
     mut player_data: ResMut<PlayerData>,
 ) {
-    // Attempt to retrieve the camera's transform; exit early if not found.
-    let camera_transform = match query.get_single() {
-        Ok(transform) => transform,
-        Err(_) => return,
+    // Retrieve the camera's transform; exit early if not found.
+    let camera_transform = if let Ok(transform) = query.get_single() {
+        transform
+    } else {
+        return;
     };
 
-    // Determine the camera's position and its forward direction.
+    // Extract camera position and compute its forward vector (default facing -Z).
     let camera_position = camera_transform.translation();
-    // In Bevy, the camera faces the negative Z-axis by default.
     let camera_forward = camera_transform.rotation() * Vec3::new(0.0, 0.0, -1.0);
 
-    // Build a ray starting at the camera's position pointing in its forward direction.
+    // Construct a ray from the camera's position in its forward direction.
     let ray = Ray3d::new(
         camera_position,
         Dir3::new(camera_forward).expect("Invalid camera forward direction"),
     );
 
-    // Draw a debug line for the ray if debugging is enabled.
+    // Draw the debug ray if enabled.
     if RAY_DEBUG {
         gizmos.line(
             camera_position,
@@ -34,36 +34,32 @@ pub fn raycast_system(
         );
     }
 
-    // Cast the ray and process the first intersection, if any.
+    // Cast the ray using default settings and process the first intersection, if any.
     if let Some((_, intersection)) = ray_cast.cast_ray(ray, &RayCastSettings::default()).first() {
         let distance = intersection.distance;
-        // Round the normal for easier voxel alignment.
+        // Round the normal to simplify voxel alignment.
         let normal = intersection.normal.round();
 
-        // Retrieve and compute the average position of the hit triangle's vertices.
-        // This assumes that the triangle data is always available.
+        // Compute the average position of the hit triangle's vertices.
         let triangle = intersection.triangle.expect("Missing triangle data");
         let avg = (triangle[0] + triangle[1] + triangle[2]) / 3.0;
 
-        // Calculate the voxel position that was hit by offsetting the average by half a unit along the normal.
+        // Determine the voxel that was hit and its adjacent neighbor.
         let selected_voxel = (avg - normal * 0.5).round();
-        // Determine the adjacent voxel position in the direction of the normal.
         let mut adjacent_voxel = selected_voxel + normal;
 
-        // Record the exact hit point.
         let hit_point = intersection.point;
-
-        if intersection.point.y < 0.6 {
-            adjacent_voxel = (hit_point + (Vec3::Y * 0.5)).round()
+        // Adjust the adjacent voxel if the hit point is low.
+        if hit_point.y < 0.6 {
+            adjacent_voxel = (hit_point + Vec3::Y * 0.5).round();
         }
-        
-        // Draw a debug sphere at the hit point.
-        gizmos.sphere(hit_point, RAY_SPHERE_RADIUS, Color::BLACK);
 
-        // Update player data with the hit information.
+        // Draw a debug sphere at the adjusted adjacent voxel location.
+        gizmos.sphere(adjacent_voxel - normal * 0.5, RAY_SPHERE_RADIUS, Color::BLACK);
+
+        // Update the player's data with ray hit information.
         player_data.ray_hit_pos = hit_point;
         player_data.selected = selected_voxel;
-        // Only set the adjacent selection if within the maximum distance.
         player_data.selected_adjacent = if distance < RAY_MAX_DIST {
             adjacent_voxel
         } else {
@@ -71,27 +67,29 @@ pub fn raycast_system(
         };
     }
 
-    // Always update the camera's position and direction in the player data.
+    // Always update the player's camera position and forward direction.
     player_data.camera_pos = camera_position;
     player_data.camera_dir = camera_forward;
 }
 
+/// Converts a 3D direction into one of four cardinal directions as an index (1 through 4).
 pub fn cardinalize(dir: Vec3) -> usize {
+    // Project the direction onto the XZ plane.
     let horizontal = Vec2::new(dir.x, dir.z);
-    
+
+    // If the horizontal component is negligible, default to 1.
     if horizontal.length_squared() < 1e-6 {
         return 1;
     }
-    
-    let angle = horizontal.x.atan2(horizontal.y);
-    
-    let angle = if angle < 0.0 {
-        angle + 2.0 * std::f32::consts::PI
-    } else {
-        angle
-    };
-    
+
+    // Calculate the angle (in radians) from the positive Y-axis.
+    let mut angle = horizontal.x.atan2(horizontal.y);
+    // Normalize the angle to be within [0, 2π).
+    angle = angle.rem_euclid(2.0 * std::f32::consts::PI);
+
+    // Divide the circle into four sectors (each π/2 radians) and round to the nearest sector.
     let sector = (angle / (std::f32::consts::PI / 2.0)).round() as i32 % 4;
-    
+
+    // Return a 1-indexed cardinal direction.
     (sector + 1) as usize
 }

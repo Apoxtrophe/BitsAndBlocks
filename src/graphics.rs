@@ -6,7 +6,6 @@ use bevy::{
 
 use crate::config::NUM_VOXELS;
 
-
 pub fn create_voxel_mesh(tile_row: usize) -> Mesh {
     // === Texture Atlas Setup ===
     // The atlas is arranged in 6 columns and `num_rows` rows.

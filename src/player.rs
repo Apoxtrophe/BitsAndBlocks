@@ -1,7 +1,7 @@
 use std::{cmp::Ordering, f32::consts::TAU};
 
 use bevy::{
-    input::mouse::{MouseScrollUnit, MouseWheel}, prelude::*, render::camera::Exposure, window::CursorGrabMode
+    input::mouse::MouseWheel, prelude::*, render::camera::Exposure, window::CursorGrabMode
 };
 use bevy_rapier3d::prelude::*;
 
@@ -92,48 +92,56 @@ pub fn setup_player(mut commands: Commands) {
             fov: TAU / 5.0,
             ..default()
         }),
-        Exposure::SUNLIGHT,
+        Exposure{
+            ev100: 14.0,
+            ..default()
+        },
         RenderPlayer { logical_entity },
     ));
     // Insert player camera component
     player_camera.insert(PlayerCamera);
 }
 
+/// Respawn entities whose vertical position falls below the threshold.
 pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
-    for (mut transform, mut velocity) in &mut query {
+    for (mut transform, mut velocity) in query.iter_mut() {
+        // Only respawn if the entity is below -50.0
         if transform.translation.y > -50.0 {
             continue;
         }
-
         velocity.linvel = Vec3::ZERO;
         transform.translation = SPAWN_POINT;
     }
 }
 
+/// Adjusts the window cursor and FPS controller input based on mouse and keyboard events.
 pub fn cursor_system(
-    btn: Res<ButtonInput<MouseButton>>,
-    key: Res<ButtonInput<KeyCode>>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     mut window_query: Query<&mut Window>,
     mut controller_query: Query<&mut FpsController>,
 ) {
-    for mut window in &mut window_query {
-        if btn.just_pressed(MouseButton::Left) {
+    for mut window in window_query.iter_mut() {
+        // Lock cursor and enable input when left mouse button is pressed.
+        if mouse_input.just_pressed(MouseButton::Left) {
             window.cursor_options.grab_mode = CursorGrabMode::Locked;
             window.cursor_options.visible = false;
-            for mut controller in &mut controller_query {
+            for mut controller in controller_query.iter_mut() {
                 controller.enable_input = true;
             }
         }
-        if key.just_pressed(KeyCode::Escape) {
+        // Unlock cursor and disable input when Escape key is pressed.
+        if keyboard_input.just_pressed(KeyCode::Escape) {
             window.cursor_options.grab_mode = CursorGrabMode::None;
             window.cursor_options.visible = true;
-            for mut controller in &mut controller_query {
+            for mut controller in controller_query.iter_mut() {
                 controller.enable_input = false;
             }
         }
     }
 }
 
+/// Processes player actions based on mouse clicks and scroll events.
 pub fn player_action_system(
     mouse: Res<ButtonInput<MouseButton>>,
     mut evr_scroll: EventReader<MouseWheel>,
@@ -143,18 +151,17 @@ pub fn player_action_system(
     voxel_map: ResMut<VoxelMap>,
     voxel_assets: Res<VoxelAssets>,
 ) {
-    let dir = cardinalize(player.camera_dir);    
+    let direction = cardinalize(player.camera_dir);    
     
-    if mouse.just_released(MouseButton::Left) {
+    if mouse.just_pressed(MouseButton::Left) {
         let voxel = Voxel {
             position: player.selected_adjacent.as_ivec3(),
             voxel_id: player.hotbar_ids[player.selector],
             state: false,
-            direction: dir,
+            direction,
         };
         add_voxel(commands, voxel_map, voxel_assets, voxel);
-    }
-    else if mouse.just_released(MouseButton::Right) {
+    } else if mouse.just_pressed(MouseButton::Right) {
         remove_voxel(commands, voxel_map, player.selected.as_ivec3());
     }
     
@@ -164,11 +171,11 @@ pub fn player_action_system(
         for event in evr_scroll.read() {
             let n = SUBSET_SIZES[selector]; // total number of items in this hotbar subset
             match event.y.partial_cmp(&0.0) {
-                Some(Ordering::Less) => {
+                Some(Ordering::Greater) => {
                     // Subtract one, wrapping around by adding n-1 before taking modulo n
                     player.hotbar_ids[selector].1 = (player.hotbar_ids[selector].1 + n - 1) % n;
                 },
-                Some(Ordering::Greater) => {
+                Some(Ordering::Less) => {
                     // Add one and wrap automatically
                     player.hotbar_ids[selector].1 = (player.hotbar_ids[selector].1 + 1) % n;
                 },
@@ -178,11 +185,11 @@ pub fn player_action_system(
     } else {
         for event in evr_scroll.read() {
             match event.y.partial_cmp(&0.0) {
-                Some(Ordering::Less) => {
+                Some(Ordering::Greater) => {
                     // When subtracting 1, add 8 instead (because (x - 1) mod 9 == (x + 8) mod 9)
                     player.selector = (player.selector + 8) % 9;
                 },
-                Some(Ordering::Greater) => {
+                Some(Ordering::Less) => {
                     // Increment and wrap-around automatically
                     player.selector = (player.selector + 1) % 9;
                 },
@@ -190,5 +197,4 @@ pub fn player_action_system(
             }
         }
     }
-    
 }

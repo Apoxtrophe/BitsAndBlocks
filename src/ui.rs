@@ -1,6 +1,6 @@
-use bevy::{color::palettes::css::{DEEP_SKY_BLUE, LIGHT_SKY_BLUE}, prelude::*, render::render_resource::encase::private::RuntimeSizedArray};
+use bevy::prelude::*;
 
-use crate::{config::{HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::PlayerData, voxel::VoxelAssets, DebugText};
+use crate::{config::{HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::PlayerData, DebugText};
 
 #[derive(Component)]
 pub struct HotbarSlot {
@@ -12,18 +12,18 @@ pub fn setup_ui(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    // Spawn debug text
+    // Spawn debug text.
     commands.spawn((
-        // Accepts a `String` or any type that converts into a `String`, such as `&str`
+        // Accepts any type convertible into a `String`.
         Text::new("hello\nbevy!"),
         TextFont {
             font_size: 16.0,
             ..default()
         },
         TextColor(Color::BLACK),
-        // Set the justification of the Text
+        // Set text justification.
         TextLayout::new_with_justify(JustifyText::Left),
-        // Set the style of the Node itself.
+        // Style the text node.
         Node {
             position_type: PositionType::Absolute,
             bottom: Val::Percent(60.0),
@@ -32,8 +32,8 @@ pub fn setup_ui(
         },
         DebugText,
     ));
-    
-    // Spawn cursor
+
+    // Spawn cursor node at the center.
     commands.spawn((
         Node {
             width: Val::Percent(0.5),
@@ -47,82 +47,91 @@ pub fn setup_ui(
         BackgroundColor(Color::BLACK),
     ));
 
+    // Load texture and create a texture atlas layout.
     let texture_handle: Handle<Image> = asset_server.load(TEXTURE_PATH);
     let texture_atlas = TextureAtlasLayout::from_grid(UVec2::splat(16), 1, NUM_VOXELS as u32, None, None);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
-    
+
+    // Spawn the main UI node.
     let mut main_node = commands.spawn(Node {
         width: Val::Percent(100.0),
         height: Val::Percent(100.0),
-        padding: UiRect::all(Val::Px(30.)),
-        column_gap: Val::Px(30.),
+        padding: UiRect::all(Val::Px(30.0)),
+        column_gap: Val::Px(30.0),
         flex_wrap: FlexWrap::Wrap,
         justify_content: JustifyContent::Center,
         ..default()
     });
-    
-    let hot_box = [(
-        Vec2::splat(70.),
-        Vec2::ZERO,
-        4.,
-        20.,
+
+    // Define hotbar slot styling.
+    let hotbar_slot_style = (
+        Vec2::splat(70.0),           // size
+        Vec2::ZERO,                  // offset
+        4.0,                         // spread
+        20.0,                        // blur
         BorderRadius::all(Val::Percent(0.1)),
-        ),
-    ];
-    
-    let mut hotbar = [hot_box;9];
-    
-    main_node.with_children(|commands| {
-        for i in 0..9{
-            for (size, offset, spread, blur, border_radius) in hotbar[i] {
-                commands.spawn(box_shadow_node_bundle(
-                    size,
-                    offset,
-                    spread,
-                    blur,
-                    border_radius,
-                )).insert(HotbarSlot{index: i}).with_children(|child| {
-                    child.spawn(Node {
-                        width: Val::Percent(95.0),
-                        height: Val::Percent(95.0),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        ..default()
-                    },).insert(HotbarSlot{index: i}).insert(ImageNode::from_atlas_image(texture_handle.clone(), TextureAtlas::from(texture_atlas_handle.clone())));
+    );
+
+    // Create 9 hotbar slots as children of the main node.
+    main_node.with_children(|parent| {
+        for i in 0..9 {
+            parent
+                .spawn(box_shadow_node_bundle(
+                    hotbar_slot_style.0,
+                    hotbar_slot_style.1,
+                    hotbar_slot_style.2,
+                    hotbar_slot_style.3,
+                    hotbar_slot_style.4,
+                ))
+                .insert(HotbarSlot { index: i })
+                .with_children(|child| {
+                    child
+                        .spawn(Node {
+                            width: Val::Percent(100.0),
+                            height: Val::Percent(100.0),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        })
+                        .insert(HotbarSlot { index: i })
+                        .insert(ImageNode::from_atlas_image(
+                            texture_handle.clone(),
+                            TextureAtlas::from(texture_atlas_handle.clone()),
+                        ));
                 });
-            }
-        }  
+        }
     });
 }
 
-pub fn update_hotbar (
+pub fn update_hotbar(
     player: ResMut<PlayerData>,
-    mut query: Query<(&HotbarSlot, &mut ImageNode)>,
-    mut query2: Query<(&HotbarSlot, &mut BorderColor)>,
-    
-) { 
-    let mut count = 0; 
-    let mut offsets = Vec::new();
-    
-    for i in 0..SUBSET_SIZES.len() {
-        offsets.push(count);
-        count += SUBSET_SIZES[i];
-    }
-    
-    for (slot, mut color) in query2.iter_mut() {
-        if slot.index == player.selector {
-            // Highlight the selected slot (e.g., brighter color)
-            *color = Color::WHITE.into();
-        } else {
-            *color = Color::BLACK.into();
-        }
-    }
-    for (slot, mut image) in query.iter_mut() {
+    mut image_query: Query<(&HotbarSlot, &mut ImageNode)>,
+    mut border_query: Query<(&HotbarSlot, &mut BorderColor)>,
+) {
+    // Compute cumulative offsets for each hotbar subset.
+    let offsets: Vec<_> = SUBSET_SIZES
+        .iter()
+        .scan(0, |state, &size| {
+            let offset = *state;
+            *state += size;
+            Some(offset)
+        })
+        .collect();
 
-        let index = player.hotbar_ids[slot.index];
-        
-        if let Some(atlas) = &mut image.texture_atlas {
-            atlas.index = offsets[slot.index] + index.1;
+    // Update border colors based on the player's selected slot.
+    for (slot, mut border_color) in border_query.iter_mut() {
+        *border_color = if slot.index == player.selector {
+            Color::WHITE.into() // Highlighted
+        } else {
+            Color::BLACK.into()
+        };
+    }
+
+    // Update image atlas indices based on the hotbar selections.
+    for (slot, mut image_node) in image_query.iter_mut() {
+        let (_, sub_index) = player.hotbar_ids[slot.index];
+        if let Some(atlas) = &mut image_node.texture_atlas {
+            atlas.index = offsets[slot.index] + sub_index;
         }
     }
 }
@@ -139,7 +148,7 @@ fn box_shadow_node_bundle(
             top: Val::Percent(90.0),
             width: Val::Px(size.x),
             height: Val::Px(size.y),
-            border: UiRect::all(Val::Px(6.)),
+            border: UiRect::all(Val::Px(6.0)),
             ..default()
         },
         BorderColor(HOTBAR_BORDER_COLOR.into()),
@@ -156,34 +165,35 @@ fn box_shadow_node_bundle(
 }
 
 pub fn update_text(
-    mut query: Query<&mut Text, With<DebugText>>,
+    mut text_query: Query<&mut Text, With<DebugText>>,
     entity_query: Query<Entity>,
     player: Res<PlayerData>,
 ) {
-    let entitiy_count = entity_query.iter().count();
-    
+    let entity_count = entity_query.iter().count();
+
+    // Create the debug text string.
     let debug_text = format!(
-        "
-        Camera Pos: {:.1}
-        Camera Direction: {:.1}
-        Ray Hit: {:.1}
-        Selected Block: {:.1}
-        Selected Adj.: {:.1}
-        Voxel ID: {:?}
-        Hotbar: {:?}
-        Entity Count: {}
-        ", 
-        player.camera_pos, 
-        player.camera_dir, 
-        player.ray_hit_pos, 
-        player.selected, 
+        "\
+Camera Pos: {:.1}
+Camera Direction: {:.1}
+Ray Hit: {:.1}
+Selected Block: {:.1}
+Selected Adj.: {:.1}
+Voxel ID: {:?}
+Hotbar: {:?}
+Entity Count: {}",
+        player.camera_pos,
+        player.camera_dir,
+        player.ray_hit_pos,
+        player.selected,
         player.selected_adjacent,
         player.selector,
         player.hotbar_ids,
-        entitiy_count,
+        entity_count,
     );
-    
-    for mut text in &mut query {
+
+    // Update all debug text entities.
+    for mut text in text_query.iter_mut() {
         text.0 = debug_text.clone();
     }
 }

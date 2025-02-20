@@ -1,8 +1,5 @@
 use bevy::prelude::*;
 
-use bevy::color::palettes::css::*;
-
-
 // WORLD
 pub const WORLD_WIDTH: f32 = 100.0;
 pub const WORLD_TRANSFORM: Transform = Transform::from_xyz(0.0, 0.0, 0.0);

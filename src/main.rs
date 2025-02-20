@@ -2,7 +2,6 @@ mod player;
 use player::*;
 
 mod graphics;
-use graphics::*;
 
 mod voxel;
 use voxel::*;
@@ -107,11 +106,11 @@ pub fn setup(
     
     let mut mesh: Mesh = (Cuboid::new(WORLD_WIDTH, 1.0, WORLD_WIDTH)).into();
     
-    let tiling_factor = 10.0;
+    let tiling_factor = 100.0;
     tile_mesh_uvs(&mut mesh, tiling_factor);
     
     let mesh_handle = meshes.add(mesh);
-    let image_handle = assets.load("textures/ground.png");
+    let image_handle = assets.load("textures/ground3.png");
     let material = materials.add(StandardMaterial {
         base_color_texture: Some(image_handle),
         perceptual_roughness: 1.0,
