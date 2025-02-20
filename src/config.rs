@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 
 // WORLD
-pub const WORLD_HEIGHT: f32 = 1.0;
-pub const WORLD_WIDTH: f32 = 50.0;
+pub const WORLD_WIDTH: f32 = 100.0;
 pub const WORLD_TRANSFORM: Transform = Transform::from_xyz(0.0, 0.0, 0.0);
 
 // RAY CASTING

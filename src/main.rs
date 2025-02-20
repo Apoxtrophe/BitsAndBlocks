@@ -20,7 +20,7 @@ use config::*;
 //use ui::*;
 
 
-use bevy::{image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor}, prelude::*, utils::HashMap};
+use bevy::{image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor}, prelude::*, render::mesh::VertexAttributeValues, utils::HashMap};
 use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
@@ -80,7 +80,7 @@ pub fn setup(
     
     let game_resources = VoxelReasources {
         voxel_map: HashMap::new(),
-        texture_atlas: assets.load("textures/test.png"),
+        texture_atlas: assets.load("textures/TexturePack6.png"),
     };
     
     commands.insert_resource(game_resources);
@@ -95,19 +95,27 @@ pub fn setup(
         Transform::from_xyz(4.0, 7.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
     
+    
+    let mut mesh: Mesh = (Cuboid::new(WORLD_WIDTH, 1.0, WORLD_WIDTH)).into();
+    
+    let tiling_factor = 10.0;
+    tile_mesh_uvs(&mut mesh, tiling_factor);
+    
+    let mesh_handle = meshes.add(mesh);
+    let image_handle = assets.load("textures/ground.png");
+    let material = materials.add(StandardMaterial {
+        base_color_texture: Some(image_handle),
+        perceptual_roughness: 1.0,
+        metallic: 0.0,
+        ..default()
+    });
+    
     // Spawn World
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::new(WORLD_WIDTH, WORLD_HEIGHT, WORLD_WIDTH))),
-        MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
+        Mesh3d(mesh_handle),
+        MeshMaterial3d(material),
         WORLD_TRANSFORM,
-    )).insert(Collider::cuboid(WORLD_WIDTH * 0.5, WORLD_HEIGHT *  0.5, WORLD_WIDTH * 0.5));
-    
-    // Spawn Test Cube
-    commands.spawn((
-        Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
-        MeshMaterial3d(materials.add(Color::srgb_u8(255, 0, 0))),
-        Transform::from_xyz(0.0, 1.0, 0.0),
-    )).insert(Collider::cuboid(0.5, 0.5, 0.5));
+    )).insert(Collider::cuboid(WORLD_WIDTH * 0.5, 1.0 *  0.5, WORLD_WIDTH * 0.5));
     
     
     commands.spawn((
@@ -129,4 +137,13 @@ pub fn setup(
         },
         DebugText,
     ));
+}
+
+fn tile_mesh_uvs(mesh: &mut Mesh, tiling_factor: f32) {
+    if let Some(VertexAttributeValues::Float32x2(uvs)) = mesh.attribute_mut(Mesh::ATTRIBUTE_UV_0) {
+        for uv in uvs.iter_mut() {
+            uv[0] *= tiling_factor;
+            uv[1] *= tiling_factor;
+        }
+    }
 }

@@ -48,10 +48,15 @@ pub fn raycast_system(
         // Calculate the voxel position that was hit by offsetting the average by half a unit along the normal.
         let selected_voxel = (avg - normal * 0.5).round();
         // Determine the adjacent voxel position in the direction of the normal.
-        let adjacent_voxel = selected_voxel + normal;
+        let mut adjacent_voxel = selected_voxel + normal;
+
         // Record the exact hit point.
         let hit_point = intersection.point;
 
+        if intersection.point.y < 0.6 {
+            adjacent_voxel = (hit_point + (Vec3::Y * 0.5)).round()
+        }
+        
         // Draw a debug sphere at the hit point.
         gizmos.sphere(hit_point, RAY_SPHERE_RADIUS, Color::BLACK);
 
