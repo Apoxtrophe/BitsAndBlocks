@@ -7,13 +7,12 @@ pub const AMBIENT_LIGHT: f32 = 10000.0;
 
 // RAY CASTING
 pub const RAY_MAX_DIST: f32 = 10.0;
-pub const RAY_SPHERE_RADIUS: f32 = 0.5;
-pub const RAY_DEBUG: bool = false; 
+pub const RAY_SPHERE_RADIUS: f32 = 0.25;
 
 // TEXTURES
 pub const TEXTURE_PATH: &str = "textures/TexturePack8.png";
 pub const NUM_VOXELS: usize = 16;
-pub const ROTATION_LOCKED_SUBSETS: usize = 1;
+pub const ROTATION_LOCKED_SUBSETS: usize = 0;
 pub const TEXTURE_MAP: [(usize,usize); 16]  = 
     [     
         (0,0), (0,1), (0,2), (0,3), (0,4), (0,5), (0,6), (0,7),

@@ -138,6 +138,22 @@ pub fn cursor_system(
                 controller.enable_input = false;
             }
         }
+        
+        // Allow the player to use the inventory system
+        if keyboard_input.pressed(KeyCode::Tab) {
+            window.cursor_options.grab_mode = CursorGrabMode::Locked;
+            window.cursor_options.visible = true;
+            for mut controller in controller_query.iter_mut() {
+                controller.enable_input = false;
+            }
+        } 
+        if keyboard_input.just_released(KeyCode::Tab) {
+            window.cursor_options.grab_mode = CursorGrabMode::Locked;
+            window.cursor_options.visible = false;
+            for mut controller in controller_query.iter_mut() {
+                controller.enable_input = true;
+            }
+        }
     }
 }
 
@@ -153,7 +169,7 @@ pub fn player_action_system(
 ) {
     let direction = cardinalize(player.camera_dir);    
     
-    if mouse.just_pressed(MouseButton::Left) {
+    if mouse.just_pressed(MouseButton::Left) && !keyboard.pressed(KeyCode::Tab) {
         let voxel = Voxel {
             position: player.selected_adjacent.as_ivec3(),
             voxel_id: player.hotbar_ids[player.selector],

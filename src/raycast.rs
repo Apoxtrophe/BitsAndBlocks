@@ -25,15 +25,6 @@ pub fn raycast_system(
         Dir3::new(camera_forward).expect("Invalid camera forward direction"),
     );
 
-    // Draw the debug ray if enabled.
-    if RAY_DEBUG {
-        gizmos.line(
-            camera_position,
-            camera_position + camera_forward * RAY_MAX_DIST,
-            Color::BLACK,
-        );
-    }
-
     // Cast the ray using default settings and process the first intersection, if any.
     if let Some((_, intersection)) = ray_cast.cast_ray(ray, &RayCastSettings::default()).first() {
         let distance = intersection.distance;
@@ -50,12 +41,13 @@ pub fn raycast_system(
 
         let hit_point = intersection.point;
         // Adjust the adjacent voxel if the hit point is low.
-        if hit_point.y < 0.6 {
+        if hit_point.y < 0.55 {
             adjacent_voxel = (hit_point + Vec3::Y * 0.5).round();
         }
 
         // Draw a debug sphere at the adjusted adjacent voxel location.
-        gizmos.sphere(adjacent_voxel - normal * 0.5, RAY_SPHERE_RADIUS, Color::BLACK);
+        //gizmos.sphere(adjacent_voxel - normal * 0.5, RAY_SPHERE_RADIUS, Color::BLACK);
+        gizmos.cuboid(Transform::from_translation(adjacent_voxel - normal), Color::BLACK);
 
         // Update the player's data with ray hit information.
         player_data.ray_hit_pos = hit_point;

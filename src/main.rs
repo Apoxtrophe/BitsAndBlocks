@@ -63,6 +63,7 @@ fn main() {
                 update_text, 
                 player_action_system,
                 update_hotbar,
+                update_inventory_ui,
             ),
         )
         .run();
