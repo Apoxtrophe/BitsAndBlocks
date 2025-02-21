@@ -1,8 +1,9 @@
-
-
 use bevy::{input::gamepad::ButtonSettings, prelude::*};
-
 use crate::{config::{HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::PlayerData, DebugText};
+
+#[derive(Component)]
+pub struct GridMenu;
+
 
 #[derive(Component)]
 pub struct HotbarSlot {
@@ -12,6 +13,15 @@ pub struct HotbarSlot {
 #[derive(Component)]
 pub struct InventorySlot {
     pub index: usize,
+}
+
+/// Defines the style for hotbar slots.
+struct HotbarSlotStyle {
+    size: Vec2,
+    offset: Vec2,
+    spread: f32,
+    blur: f32,
+    border_radius: BorderRadius,
 }
 
 pub fn setup_ui(
@@ -34,8 +44,18 @@ pub fn setup_ui(
     );
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
+    let main_node = Node {
+        width: Val::Percent(100.0),
+        height: Val::Percent(100.0),
+        padding: UiRect::all(Val::Px(30.0)),
+        column_gap: Val::Px(30.0),
+        flex_wrap: FlexWrap::Wrap,
+        justify_content: JustifyContent::Center,
+        ..default()
+    };
+    
     // Spawn the main UI node.
-    let main_node = commands.spawn(main_ui_node()).id();
+    let main_node = commands.spawn(main_node).id();
 
     // Define a common style for hotbar slots.
     let hotbar_style = HotbarSlotStyle {
@@ -59,22 +79,18 @@ pub fn setup_ui(
         }
     });
     
+    // Spawn inventory grid
     commands.entity(main_node).with_children(|parent| {
         spawn_grid_menu(parent, &texture_handle, &texture_atlas_handle);
     });
 }
 
-#[derive(Component)]
-pub struct GridMenu;
-
-
 pub fn spawn_grid_menu(
     parent: &mut ChildBuilder,
     texture_handle: &Handle<Image>,
     texture_atlas_handle: &Handle<TextureAtlasLayout>,
-) {
-    parent.spawn((
-    Node {
+) {  
+    let grid_node = (Node {
         width: Val::Px(320.0),
         height: Val::Px(320.0),
         margin: UiRect::all(Val::Auto),
@@ -85,91 +101,84 @@ pub fn spawn_grid_menu(
         ..Default::default()
     },
     Visibility::Visible,
-    )).insert(GridMenu)
+    GridMenu,
+    );
+    
+    let button_node = (Node {
+        width: Val::Percent(25.0),
+        height: Val::Percent(25.0),
+        margin: UiRect::all(Val::Auto),
+        ..Default::default()
+    }, 
+    Visibility::Inherited,
+    BackgroundColor(Color::WHITE),
+    );
+
+    let image_node = (Node {
+        left: Val::Percent(5.0),
+        top: Val::Percent(5.0),
+        width: Val::Percent(90.0),
+        height: Val::Percent(90.0),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        position_type: PositionType::Absolute,
+        ..Default::default()
+    },
+    ImageNode::from_atlas_image(texture_handle.clone(), TextureAtlas::from(texture_atlas_handle.clone())),
+    );
+    
+    parent.spawn(grid_node)
     .with_children(|grid_parent| {
         for i in 0..16 {
-            grid_parent.spawn((Button, Node {
-                width: Val::Percent(25.0),
-                height: Val::Percent(25.0),
-                margin: UiRect::all(Val::Auto),
-                ..Default::default()
-            },
-            Visibility::Inherited,
-            BackgroundColor(Color::WHITE))).insert(InventorySlot { index: i }).with_children(|child| {
-                    child.spawn(Node {
-                        left: Val::Percent(5.0),
-                        top: Val::Percent(5.0),
-                        width: Val::Percent(90.0),
-                        height: Val::Percent(90.0),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        position_type: PositionType::Absolute,
-                        ..Default::default()
-                    }).insert(ImageNode::from_atlas_image(texture_handle.clone(), TextureAtlas::from(texture_atlas_handle.clone())))
+            grid_parent.spawn((Button, button_node.clone()))
+                .insert(InventorySlot { index: i })
+            .with_children(|child| {
+                child.spawn(image_node.clone())
                     .insert(InventorySlot { index: i });
-                });
-                
+            });
         }
     });
 }
 
-//
 /// Spawns the debug text node.
 fn spawn_debug_text(commands: &mut Commands) {
+    let text_node = (Node {
+        position_type: PositionType::Absolute,
+        bottom: Val::Percent(60.0),
+        right: Val::Percent(5.0),
+        ..default()
+    },
+    DebugText);
+    
+    let text_settings = TextFont {
+        font_size: 16.0,
+        ..default()
+    };
+    
     commands.spawn((
         Text::new("hello\nbevy!"),
-        TextFont {
-            font_size: 16.0,
-            ..default()
-        },
+        text_settings,
         TextColor(Color::BLACK),
         TextLayout::new_with_justify(JustifyText::Left),
-        Node {
-            position_type: PositionType::Absolute,
-            bottom: Val::Percent(60.0),
-            right: Val::Percent(5.0),
-            ..default()
-        },
-        DebugText,
+        text_node,
     ));
 }
 
 /// Spawns the cursor node at the center.
 fn spawn_cursor_node(commands: &mut Commands) {
-    commands.spawn((
-        Node {
-            width: Val::Percent(0.5),
-            height: Val::Percent(1.0),
-            left: Val::Percent(49.75),
-            top: Val::Percent(49.5),
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            ..default()
-        },
-        BackgroundColor(Color::BLACK),
-    ));
-}
-
-/// Returns the configuration for the main UI node.
-fn main_ui_node() -> Node {
-    Node {
-        width: Val::Percent(100.0),
-        height: Val::Percent(100.0),
-        padding: UiRect::all(Val::Px(30.0)),
-        column_gap: Val::Px(30.0),
-        flex_wrap: FlexWrap::Wrap,
+    let cursor_node = (Node {
+        width: Val::Percent(0.5),
+        height: Val::Percent(1.0),
+        left: Val::Percent(49.75),
+        top: Val::Percent(49.5),
         justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
         ..default()
-    }
-}
+    },
+    BackgroundColor(Color::BLACK),
+    );
 
-/// Defines the style for hotbar slots.
-struct HotbarSlotStyle {
-    size: Vec2,
-    offset: Vec2,
-    spread: f32,
-    blur: f32,
-    border_radius: BorderRadius,
+    commands.spawn(cursor_node);
 }
 
 /// Spawns an individual hotbar slot and its child image node.
@@ -180,33 +189,33 @@ fn spawn_hotbar_slot(
     texture_handle: &Handle<Image>,
     texture_atlas_handle: &Handle<TextureAtlasLayout>,
 ) {
+    let shadow_box = box_shadow_node_bundle(
+        style.size, 
+        style.offset, 
+        style.spread, 
+        style.blur, 
+        style.border_radius
+    );
+    
+    let image_node = (Node {
+        width: Val::Percent(100.0),
+        height: Val::Percent(100.0),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        ..default()
+    },
+    HotbarSlot { index },
+    ImageNode::from_atlas_image(
+        texture_handle.clone(),
+        TextureAtlas::from(texture_atlas_handle.clone()),
+    ),
+    );
+    
     parent
-        .spawn(
-            box_shadow_node_bundle(
-                style.size,
-                style.offset,
-                style.spread,
-                style.blur,
-                style.border_radius,
-            ),
-        )
+        .spawn(shadow_box)
         .insert(HotbarSlot { index })
         .with_children(|child| {
-            child.spawn((
-                Node {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    ..default()
-                },
-                // Duplicate HotbarSlot for the child if needed.
-                HotbarSlot { index },
-                ImageNode::from_atlas_image(
-                    texture_handle.clone(),
-                    TextureAtlas::from(texture_atlas_handle.clone()),
-                ),
-            ));
+            child.spawn(image_node);
         });
 }
 
@@ -257,7 +266,6 @@ pub fn update_inventory_ui(
     >,
     mut query: Query<&mut Visibility, With<GridMenu>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mouse: Res<ButtonInput<MouseButton>>,
     mut image_query: Query<(&InventorySlot, &mut ImageNode)>,
     mut player: ResMut<PlayerData>,
 ) {
@@ -272,7 +280,6 @@ pub fn update_inventory_ui(
                 border_color.0 = PRESSED_BUTTON.into();
                 let selector = player.selector.clone();
                 let index = (inventory_slot.index).clamp(0, SUBSET_SIZES[selector] - 1);
-                println!("{} :: {}", selector, index);
                 player.hotbar_ids[selector].1 = index;
             }
             Interaction::Hovered => {
@@ -326,7 +333,7 @@ fn box_shadow_node_bundle(
     blur: f32,
     border_radius: BorderRadius,
 ) -> impl Bundle {
-    (
+    (   
         Node {
             top: Val::Percent(90.0),
             width: Val::Px(size.x),
