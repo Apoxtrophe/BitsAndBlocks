@@ -153,9 +153,8 @@ pub fn cursor_system(
 /// Processes player actions based on mouse clicks and scroll events.
 pub fn player_action_system(
     mouse: Res<ButtonInput<MouseButton>>,
-    mut evr_scroll: EventReader<MouseWheel>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut player: ResMut<PlayerData>,
+    player: Res<PlayerData>,
     voxel_assets: Res<VoxelAssets>,
     mut event_writer: EventWriter<GameEvent>,
 ) {
@@ -175,38 +174,5 @@ pub fn player_action_system(
         //add_voxel(commands, voxel_map, voxel_asset, voxel);
     } else if mouse.just_pressed(MouseButton::Right) {
         event_writer.send(GameEvent::RemoveBlock { position: player.selected.as_ivec3() });
-    }
-    
-    let selector = player.selector.clone();
-    
-    if keyboard.pressed(KeyCode::AltLeft) {
-        for event in evr_scroll.read() {
-            let n = SUBSET_SIZES[selector]; // total number of items in this hotbar subset
-            match event.y.partial_cmp(&0.0) {
-                Some(Ordering::Greater) => {
-                    // Subtract one, wrapping around by adding n-1 before taking modulo n
-                    player.hotbar_ids[selector].1 = (player.hotbar_ids[selector].1 + n - 1) % n;
-                },
-                Some(Ordering::Less) => {
-                    // Add one and wrap automatically
-                    player.hotbar_ids[selector].1 = (player.hotbar_ids[selector].1 + 1) % n;
-                },
-                _ => (),
-            }
-        }
-    } else {
-        for event in evr_scroll.read() {
-            match event.y.partial_cmp(&0.0) {
-                Some(Ordering::Greater) => {
-                    // When subtracting 1, add 8 instead (because (x - 1) mod 9 == (x + 8) mod 9)
-                    player.selector = (player.selector + 8) % 9;
-                },
-                Some(Ordering::Less) => {
-                    // Increment and wrap-around automatically
-                    player.selector = (player.selector + 1) % 9;
-                },
-                _ => (),
-            }
-        }
     }
 }
