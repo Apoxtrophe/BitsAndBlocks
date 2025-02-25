@@ -1,6 +1,9 @@
 mod player;
 use player::*;
 
+mod events;
+use events::*;
+
 mod graphics;
 
 mod voxel;
@@ -30,6 +33,7 @@ fn main() {
             color: Color::WHITE,
             brightness: AMBIENT_LIGHT,
         })
+        .add_event::<GameEvent>()
         .insert_resource(PlayerData::default())
         .insert_resource(ClearColor(Color::linear_rgb(0.83, 0.96, 0.96)))
         .add_plugins(DefaultPlugins.set(ImagePlugin {
@@ -64,6 +68,7 @@ fn main() {
                 player_action_system,
                 update_hotbar,
                 update_inventory_ui,
+                event_handler,
             ),
         )
         .run();
@@ -72,11 +77,10 @@ fn main() {
 #[derive(Component)]
 pub struct DebugText; 
 
-#[derive(Resource)]
+#[derive(Resource, Clone)]
 pub struct VoxelMap {
     pub voxel_map: HashMap<IVec3, Entity>,
 }
-
 
 pub fn setup(
     mut commands: Commands, 
@@ -91,7 +95,7 @@ pub fn setup(
     let game_resources = VoxelMap {
         voxel_map: HashMap::new(),
     };
-    
+
     commands.insert_resource(game_resources);
     
     // Spawn Sun 
@@ -124,10 +128,7 @@ pub fn setup(
         Mesh3d(mesh_handle),
         MeshMaterial3d(material),
         WORLD_TRANSFORM,
-    )).insert(Collider::cuboid(WORLD_WIDTH * 0.5, 1.0 *  0.5, WORLD_WIDTH * 0.5));
-    
-    
-    
+    )).insert(Collider::cuboid(WORLD_WIDTH * 0.5, 1.0 *  0.5, WORLD_WIDTH * 0.5));   
 }
 
 fn tile_mesh_uvs(mesh: &mut Mesh, tiling_factor: f32) {

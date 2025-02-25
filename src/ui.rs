@@ -325,7 +325,6 @@ pub fn update_inventory_ui(
     }
 }
 
-
 fn box_shadow_node_bundle(
     size: Vec2,
     offset: Vec2,

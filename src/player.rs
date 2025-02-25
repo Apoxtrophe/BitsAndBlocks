@@ -7,7 +7,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{config::SUBSET_SIZES, raycast::cardinalize, voxel::{add_voxel, remove_voxel, Voxel, VoxelAssets}, VoxelMap};
+use crate::{config::SUBSET_SIZES, events::GameEvent, graphics::create_cable_mesh, raycast::cardinalize, voxel::{add_voxel, count_neighbors, remove_voxel, Voxel, VoxelAssets}, VoxelMap};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -114,6 +114,20 @@ pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
     }
 }
 
+fn update_cursor_and_input(
+    window: &mut Window,
+    controller_query: &mut Query<&mut FpsController>,
+    grab_mode: CursorGrabMode,
+    cursor_visible: bool,
+    input_enabled: bool,
+) {
+    window.cursor_options.grab_mode = grab_mode;
+    window.cursor_options.visible = cursor_visible;
+    for mut controller in controller_query.iter_mut() {
+        controller.enable_input = input_enabled;
+    }
+}
+
 /// Adjusts the window cursor and FPS controller input based on mouse and keyboard events.
 pub fn cursor_system(
     mouse_input: Res<ButtonInput<MouseButton>>,
@@ -121,51 +135,29 @@ pub fn cursor_system(
     mut window_query: Query<&mut Window>,
     mut controller_query: Query<&mut FpsController>,
 ) {
-    for mut window in window_query.iter_mut() {
-        // Lock cursor and enable input when left mouse button is pressed.
+    // For a single-window game, you might want to only update the primary window.
+    if let Ok(mut window) = window_query.get_single_mut() {
         if mouse_input.just_pressed(MouseButton::Left) {
-            window.cursor_options.grab_mode = CursorGrabMode::Locked;
-            window.cursor_options.visible = false;
-            for mut controller in controller_query.iter_mut() {
-                controller.enable_input = true;
-            }
-        }
-        // Unlock cursor and disable input when Escape key is pressed.
-        if keyboard_input.just_pressed(KeyCode::Escape) {
-            window.cursor_options.grab_mode = CursorGrabMode::None;
-            window.cursor_options.visible = true;
-            for mut controller in controller_query.iter_mut() {
-                controller.enable_input = false;
-            }
-        }
-        
-        // Allow the player to use the inventory system
-        if keyboard_input.pressed(KeyCode::Tab) {
-            window.cursor_options.grab_mode = CursorGrabMode::Locked;
-            window.cursor_options.visible = true;
-            for mut controller in controller_query.iter_mut() {
-                controller.enable_input = false;
-            }
-        } 
-        if keyboard_input.just_released(KeyCode::Tab) {
-            window.cursor_options.grab_mode = CursorGrabMode::Locked;
-            window.cursor_options.visible = false;
-            for mut controller in controller_query.iter_mut() {
-                controller.enable_input = true;
-            }
+            update_cursor_and_input(&mut window, &mut controller_query, CursorGrabMode::Locked, false, true);
+        } else if keyboard_input.just_pressed(KeyCode::Escape) {
+            update_cursor_and_input(&mut window, &mut controller_query, CursorGrabMode::None, true, false);
+        } else if keyboard_input.pressed(KeyCode::Tab) {
+            // When inventory is open, we might want the cursor visible even if locked.
+            update_cursor_and_input(&mut window, &mut controller_query, CursorGrabMode::Locked, true, false);
+        } else if keyboard_input.just_released(KeyCode::Tab) {
+            // When the inventory is closed, revert to game mode.
+            update_cursor_and_input(&mut window, &mut controller_query, CursorGrabMode::Locked, false, true);
         }
     }
 }
-
 /// Processes player actions based on mouse clicks and scroll events.
 pub fn player_action_system(
     mouse: Res<ButtonInput<MouseButton>>,
     mut evr_scroll: EventReader<MouseWheel>,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut player: ResMut<PlayerData>,
-    commands: Commands,
-    voxel_map: ResMut<VoxelMap>,
     voxel_assets: Res<VoxelAssets>,
+    mut event_writer: EventWriter<GameEvent>,
 ) {
     let direction = cardinalize(player.camera_dir);    
     
@@ -176,9 +168,13 @@ pub fn player_action_system(
             state: false,
             direction,
         };
-        add_voxel(commands, voxel_map, voxel_assets, voxel);
+        let voxel_asset = voxel_assets.voxel_assets[&voxel.voxel_id].clone();
+        
+        event_writer.send(GameEvent::PlaceBlock {voxel, voxel_asset});
+        
+        //add_voxel(commands, voxel_map, voxel_asset, voxel);
     } else if mouse.just_pressed(MouseButton::Right) {
-        remove_voxel(commands, voxel_map, player.selected.as_ivec3());
+        event_writer.send(GameEvent::RemoveBlock { position: player.selected.as_ivec3() });
     }
     
     let selector = player.selector.clone();
