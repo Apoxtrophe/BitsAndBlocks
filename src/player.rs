@@ -1,13 +1,13 @@
-use std::{cmp::Ordering, f32::consts::TAU};
+use std::f32::consts::TAU;
 
 use bevy::{
-    input::mouse::MouseWheel, prelude::*, render::camera::Exposure, window::CursorGrabMode
+    prelude::*, render::camera::Exposure, window::CursorGrabMode
 };
 use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{config::SUBSET_SIZES, events::GameEvent, graphics::create_cable_mesh, raycast::cardinalize, voxel::{add_voxel, count_neighbors, remove_voxel, Voxel, VoxelAssets}, VoxelMap};
+use crate::{events::GameEvent, graphics::create_cable_mesh, raycast::cardinalize, voxel::{count_neighbors, get_neighbors, Voxel, VoxelAssets}, VoxelMap};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -38,7 +38,7 @@ impl Default for PlayerData {
             selected: Vec3::ZERO,
             selected_adjacent: Vec3::ZERO,
             selector: 0,
-            hotbar_ids: hotbar_ids,
+            hotbar_ids,
         }
     }
 }
@@ -114,7 +114,7 @@ pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
     }
 }
 
-fn update_cursor_and_input(
+pub fn update_cursor_and_input(
     window: &mut Window,
     controller_query: &mut Query<&mut FpsController>,
     grab_mode: CursorGrabMode,
@@ -128,51 +128,72 @@ fn update_cursor_and_input(
     }
 }
 
-/// Adjusts the window cursor and FPS controller input based on mouse and keyboard events.
-pub fn cursor_system(
+pub fn input_event_system(
     mouse_input: Res<ButtonInput<MouseButton>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut window_query: Query<&mut Window>,
-    mut controller_query: Query<&mut FpsController>,
-) {
-    // For a single-window game, you might want to only update the primary window.
-    if let Ok(mut window) = window_query.get_single_mut() {
-        if mouse_input.just_pressed(MouseButton::Left) {
-            update_cursor_and_input(&mut window, &mut controller_query, CursorGrabMode::Locked, false, true);
-        } else if keyboard_input.just_pressed(KeyCode::Escape) {
-            update_cursor_and_input(&mut window, &mut controller_query, CursorGrabMode::None, true, false);
-        } else if keyboard_input.pressed(KeyCode::Tab) {
-            // When inventory is open, we might want the cursor visible even if locked.
-            update_cursor_and_input(&mut window, &mut controller_query, CursorGrabMode::Locked, true, false);
-        } else if keyboard_input.just_released(KeyCode::Tab) {
-            // When the inventory is closed, revert to game mode.
-            update_cursor_and_input(&mut window, &mut controller_query, CursorGrabMode::Locked, false, true);
-        }
-    }
-}
-/// Processes player actions based on mouse clicks and scroll events.
-pub fn player_action_system(
-    mouse: Res<ButtonInput<MouseButton>>,
-    keyboard: Res<ButtonInput<KeyCode>>,
     player: Res<PlayerData>,
     voxel_assets: Res<VoxelAssets>,
+    voxel_map: Res<VoxelMap>,
+    mut window_query: Query<&mut Window>,
     mut event_writer: EventWriter<GameEvent>,
+    mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    let direction = cardinalize(player.camera_dir);    
+    // --- Cursor and Input Mode Updates ---
+    if let Ok(_) = window_query.get_single_mut() {
+        if mouse_input.just_pressed(MouseButton::Left) {
+            event_writer.send(GameEvent::UpdateCursor {
+                mode: CursorGrabMode::Locked,
+                show_cursor: false,
+                enable_input: true,
+            });
+        } else if keyboard_input.just_pressed(KeyCode::Escape) {
+            event_writer.send(GameEvent::UpdateCursor {
+                mode: CursorGrabMode::None,
+                show_cursor: true,
+                enable_input: false,
+            });
+        } else if keyboard_input.pressed(KeyCode::Tab) {
+            event_writer.send(GameEvent::UpdateCursor {
+                mode: CursorGrabMode::Locked,
+                show_cursor: true,
+                enable_input: false,
+            });
+        } else if keyboard_input.just_released(KeyCode::Tab) {
+            event_writer.send(GameEvent::UpdateCursor {
+                mode: CursorGrabMode::Locked,
+                show_cursor: false,
+                enable_input: true,
+            });
+        }
+    }
+
+    // --- Player Action Events ---
     
-    if mouse.just_pressed(MouseButton::Left) && !keyboard.pressed(KeyCode::Tab) {
+    let direction = cardinalize(player.camera_dir);
+    
+    if mouse_input.just_pressed(MouseButton::Left) && !keyboard_input.pressed(KeyCode::Tab) {
         let voxel = Voxel {
             position: player.selected_adjacent.as_ivec3(),
             voxel_id: player.hotbar_ids[player.selector],
             state: false,
             direction,
         };
-        let voxel_asset = voxel_assets.voxel_assets[&voxel.voxel_id].clone();
+        let mut voxel_asset = voxel_assets.voxel_assets[&voxel.voxel_id].clone();
         
-        event_writer.send(GameEvent::PlaceBlock {voxel, voxel_asset});
+        if voxel.voxel_id.0 == 1 || voxel.voxel_id.0 == 2 {
+            let voxel_map = &voxel_map;
+            let connections = count_neighbors(voxel.position, voxel_map);
+            voxel_asset.mesh_handle = meshes.add(create_cable_mesh(0, connections));
+        }
         
-        //add_voxel(commands, voxel_map, voxel_asset, voxel);
-    } else if mouse.just_pressed(MouseButton::Right) {
+        event_writer.send(GameEvent::PlaceBlock { voxel, voxel_asset });
+        // Meshes that need updating to event handler
+        let mesh_updates = get_neighbors(voxel.position);
+        event_writer.send(GameEvent::UpdateMeshCall { updates: mesh_updates });
+    } else if mouse_input.just_pressed(MouseButton::Right) {
         event_writer.send(GameEvent::RemoveBlock { position: player.selected.as_ivec3() });
+        let mesh_updates = get_neighbors(player.selected.as_ivec3());
+        event_writer.send(GameEvent::UpdateMeshCall { updates: mesh_updates });
     }
 }
+

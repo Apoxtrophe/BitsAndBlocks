@@ -1,13 +1,20 @@
 use std::cmp::Ordering;
 
-use bevy::{input::mouse::MouseWheel, prelude::*};
+use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
+use bevy_fps_controller::controller::FpsController;
 
-use crate::{player::PlayerData, voxel::{add_voxel, remove_voxel, Voxel, VoxelAsset}, VoxelMap};
+use crate::{player::{update_cursor_and_input, PlayerData}, voxel::{add_voxel, remove_voxel, update_meshes, Voxel, VoxelAsset}, VoxelMap};
 
 #[derive(Event)]
 pub enum GameEvent {
     PlaceBlock {voxel: Voxel, voxel_asset: VoxelAsset},
     RemoveBlock {position: IVec3},
+    UpdateMeshCall {updates: [IVec3;6]},
+    UpdateCursor {
+        mode: CursorGrabMode,
+        show_cursor: bool,
+        enable_input: bool,
+    },
 }
 
 pub fn event_handler(
@@ -16,6 +23,10 @@ pub fn event_handler(
     mut commands: Commands,
     mut voxel_map: ResMut<VoxelMap>,
     mut player: ResMut<PlayerData>,
+    mut controller_query: Query<&mut FpsController>,
+    mut window_query: Query<&mut Window>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut query: Query<(Entity, &Voxel)>,
 ) {
     for event in event_reader.read() {
         match event {
@@ -25,10 +36,18 @@ pub fn event_handler(
             GameEvent::RemoveBlock { position } => {
                 remove_voxel(&mut commands, &mut voxel_map, position.clone());
             }
+            GameEvent::UpdateCursor { mode, show_cursor, enable_input } => {
+                if let Ok(mut window) = window_query.get_single_mut() {
+                    update_cursor_and_input(&mut window, &mut controller_query, *mode, *show_cursor, *enable_input,);
+                }
+            }
+            GameEvent::UpdateMeshCall { updates} => {
+                update_meshes(*updates, &mut voxel_map, &mut commands, &mut meshes, &mut query);
+            }
         }
     }
     
-    // Mouse Scroll Events
+    // Mouse Scroll Events for scrolling hotbar
     for event in evr_scroll.read() {
         match event.y.partial_cmp(&0.0) {
             Some(Ordering::Greater) => {

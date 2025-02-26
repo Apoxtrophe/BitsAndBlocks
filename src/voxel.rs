@@ -8,7 +8,7 @@ use bevy_rapier3d::prelude::Collider;
 
 use crate::{
     config::{ROTATION_LOCKED_SUBSETS, TEXTURE_MAP, TEXTURE_PATH},
-    graphics::create_voxel_mesh, VoxelMap,
+    graphics::{create_cable_mesh, create_voxel_mesh}, VoxelMap,
 };
 
 #[derive(Resource)]
@@ -157,4 +157,44 @@ pub fn count_neighbors(voxel_position: IVec3, voxel_map: &VoxelMap) -> [bool; 6]
         neighbors[i] = voxel_map.voxel_map.contains_key(&neighbor_pos);
     }
     neighbors
+}
+
+pub fn get_neighbors(coord: IVec3) -> [IVec3; 6] {
+    [
+        coord + IVec3::new(1, 0, 0),
+        coord + IVec3::new(-1, 0, 0),
+        coord + IVec3::new(0, 1, 0),
+        coord + IVec3::new(0, -1, 0),
+        coord + IVec3::new(0, 0, 1),
+        coord + IVec3::new(0, 0, -1),
+    ]
+}
+
+/// Updating meshes, especially cables which need to change mesh to connect to those around it. 
+pub fn update_meshes (
+    voxel_positions: [IVec3; 6],
+    voxel_map: &VoxelMap,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    query: &mut Query<(Entity, &Voxel)>,
+) {
+    for i in 0..6 {
+        if let Some(entity) = voxel_map.voxel_map.get(&voxel_positions[i]) {
+            if let Ok(mut component) = query.get_mut(*entity) {
+                println!("{:?}", component.1);
+                
+                let entity = component.0;
+                let voxel = component.1;
+                if voxel.voxel_id.0 == 1 || voxel.voxel_id.0 == 2 {
+                    let position = voxel_positions[i];
+                    
+                    let connections = count_neighbors(position, voxel_map);
+                    
+                    let new_mesh_handle = meshes.add(create_cable_mesh(0, connections));
+                    
+                    commands.entity(entity).insert(Mesh3d(new_mesh_handle.clone()));
+                }
+            }
+        }
+    }
 }

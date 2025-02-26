@@ -30,7 +30,6 @@ pub fn raycast_system(
         let distance = intersection.distance;
         // Round the normal to simplify voxel alignment.
         let normal = intersection.normal.round();
-
         // Compute the average position of the hit triangle's vertices.
         let triangle = intersection.triangle.expect("Missing triangle data");
         let avg = (triangle[0] + triangle[1] + triangle[2]) / 3.0;

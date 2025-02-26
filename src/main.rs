@@ -61,14 +61,13 @@ fn main() {
         .add_systems(
             Update,
             (
-                cursor_system, 
+                event_handler,
+                input_event_system,
                 respawn_system, 
                 raycast_system, 
                 update_text, 
-                player_action_system,
                 update_hotbar,
                 update_inventory_ui,
-                event_handler,
             ),
         )
         .run();
