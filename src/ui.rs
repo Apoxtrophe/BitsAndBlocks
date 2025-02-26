@@ -1,5 +1,5 @@
 use bevy::{input::gamepad::ButtonSettings, prelude::*};
-use crate::{config::{HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::PlayerData, DebugText};
+use crate::{config::{HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::PlayerData, texture_row, DebugText};
 
 #[derive(Component)]
 pub struct GridMenu;
@@ -224,18 +224,7 @@ pub fn update_hotbar(
     player: ResMut<PlayerData>,
     mut image_query: Query<(&HotbarSlot, &mut ImageNode)>,
     mut border_query: Query<(&HotbarSlot, &mut BorderColor)>,
-    
 ) {
-    // Compute cumulative offsets for each hotbar subset.
-    let offsets: Vec<_> = SUBSET_SIZES
-        .iter()
-        .scan(0, |state, &size| {
-            let offset = *state;
-            *state += size;
-            Some(offset)
-        })
-        .collect();
-
     // Update border colors based on the player's selected slot.
     for (slot, mut border_color) in border_query.iter_mut() {
         *border_color = if slot.index == player.selector {
@@ -249,7 +238,7 @@ pub fn update_hotbar(
     for (slot, mut image_node) in image_query.iter_mut() {
         let (_, sub_index) = player.hotbar_ids[slot.index];
         if let Some(atlas) = &mut image_node.texture_atlas {
-            atlas.index = offsets[slot.index] + sub_index;
+            atlas.index = texture_row((slot.index,sub_index));
         }
     }
 }
@@ -303,15 +292,6 @@ pub fn update_inventory_ui(
         }
     }
     
-    let offsets: Vec<_> = SUBSET_SIZES
-        .iter()
-        .scan(0, |state, &size| {
-            let offset = *state;
-            *state += size;
-            Some(offset)
-        })
-        .collect();
-    
     for (slot, mut image_node) in image_query.iter_mut() {
         let set = player.selector;
         let mut subset = (slot.index);
@@ -320,7 +300,7 @@ pub fn update_inventory_ui(
             subset = 0;
         }
         if let Some(atlas) = &mut image_node.texture_atlas {
-            atlas.index = subset + offsets[set];
+            atlas.index = texture_row((set,subset));
         }
     }
 }

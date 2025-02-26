@@ -7,14 +7,14 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::Collider;
 
 use crate::{
-    config::{ROTATION_LOCKED_SUBSETS, TEXTURE_MAP, TEXTURE_PATH},
+    config::{OFFSETS, ROTATION_LOCKED_SUBSETS, TEXTURE_PATH, VOXEL_LIST},
     graphics::{create_cable_mesh, create_voxel_mesh}, VoxelMap,
 };
 
 #[derive(Resource)]
 pub struct VoxelTypes {
-    pub voxels: Vec<Vec<(usize,usize)>>,
-    pub voxel_texture_row: HashMap<(usize,usize), usize>,
+    pub voxels: Vec<Vec<(usize, usize)>>,
+    pub voxel_texture_row: HashMap<(usize, usize), usize>,
 }
 
 /// Resource holding the texture atlas and mapping voxel IDs to assets.
@@ -49,6 +49,45 @@ pub struct VoxelAsset {
     pub material_handle: Handle<StandardMaterial>,
 }
 
+/// Helper: Returns true if a voxel already exists at the given position.
+fn voxel_exists(voxel_map: &VoxelMap, position: IVec3) -> bool {
+    voxel_map.voxel_map.contains_key(&position)
+}
+
+/// Helper: Calculates the rotation factor for a voxel (used to lock rotation for specific subsets).
+fn get_voxel_rotation_factor(voxel: &Voxel) -> f32 {
+    if voxel.voxel_id.0 <= ROTATION_LOCKED_SUBSETS {
+        0.0
+    } else {
+        1.0
+    }
+}
+
+/// Computes the transform for a voxel based on its position and direction.
+fn compute_voxel_transform(voxel: &Voxel) -> Transform {
+    let rotation_factor = get_voxel_rotation_factor(voxel);
+    let rotation_angle = rotation_factor * FRAC_PI_2 * voxel.direction as f32 + PI;
+    Transform {
+        translation: voxel.position.as_vec3(),
+        rotation: Quat::from_rotation_y(rotation_angle),
+        scale: Vec3::ONE,
+    }
+}
+
+/// Helper: Spawns a voxel entity and returns its Entity id.
+fn spawn_voxel_entity(commands: &mut Commands, voxel: Voxel, voxel_asset: &VoxelAsset) -> Entity {
+    let transform = compute_voxel_transform(&voxel);
+    commands
+        .spawn(VoxelBundle {
+            voxel,
+            mesh: Mesh3d(voxel_asset.mesh_handle.clone()),
+            material: MeshMaterial3d(voxel_asset.material_handle.clone()),
+            transform,
+            collider: Collider::cuboid(0.5, 0.5, 0.5),
+        })
+        .id()
+}
+
 /// Loads the texture atlas and creates voxel assets (meshes and materials) using an iterator.
 pub fn setup_voxel_assets(
     mut commands: Commands,
@@ -58,7 +97,7 @@ pub fn setup_voxel_assets(
 ) {
     let texture_atlas: Handle<Image> = asset_server.load(TEXTURE_PATH);
 
-    let voxel_assets = TEXTURE_MAP
+    let voxel_assets = VOXEL_LIST
         .iter()
         .enumerate()
         .map(|(i, &(x, y))| {
@@ -75,23 +114,6 @@ pub fn setup_voxel_assets(
     commands.insert_resource(VoxelAssets { voxel_assets });
 }
 
-/// Computes the transform for a voxel based on its position and direction.
-/// If the voxel ID is in a "rotation locked" subset, its rotation remains unchanged.
-fn compute_voxel_transform(voxel: &Voxel) -> Transform {
-    let rotation_factor = if voxel.voxel_id.0 <= ROTATION_LOCKED_SUBSETS {
-        0.0
-    } else {
-        1.0
-    };
-    let rotation_angle = rotation_factor * FRAC_PI_2 * voxel.direction as f32 + PI;
-    Transform {
-        translation: voxel.position.as_vec3(),
-        rotation: Quat::from_rotation_y(rotation_angle),
-        scale: Vec3::ONE,
-    }
-}
-
-
 /// Spawns a voxel entity if one is not already present at the specified position.
 pub fn add_voxel(
     commands: &mut Commands,
@@ -99,23 +121,10 @@ pub fn add_voxel(
     voxel_asset: VoxelAsset,
     voxel: Voxel,
 ) {
-    // Avoid adding duplicate voxels at the same position.
-    if voxel_resources.voxel_map.contains_key(&voxel.position) {
+    if voxel_exists(voxel_resources, voxel.position) {
         return;
     }
-
-    let transform = compute_voxel_transform(&voxel);
-
-    let entity = commands
-        .spawn(VoxelBundle {
-            voxel,
-            mesh: Mesh3d(voxel_asset.mesh_handle.clone()),
-            material: MeshMaterial3d(voxel_asset.material_handle.clone()),
-            transform,
-            collider: Collider::cuboid(0.5, 0.5, 0.5),
-        })
-        .id();
-
+    let entity = spawn_voxel_entity(commands, voxel, &voxel_asset);
     voxel_resources.voxel_map.insert(voxel.position, entity);
 }
 
@@ -159,7 +168,8 @@ pub fn count_neighbors(voxel_position: IVec3, voxel_map: &VoxelMap) -> [bool; 6]
     neighbors
 }
 
-pub fn get_neighbors(coord: IVec3) -> [IVec3; 6] {
+/// Returns all 6 neighbor positions for a given coordinate.
+pub fn get_neighboring_coords(coord: IVec3) -> [IVec3; 6] {
     [
         coord + IVec3::new(1, 0, 0),
         coord + IVec3::new(-1, 0, 0),
@@ -170,29 +180,36 @@ pub fn get_neighbors(coord: IVec3) -> [IVec3; 6] {
     ]
 }
 
-/// Updating meshes, especially cables which need to change mesh to connect to those around it. 
-pub fn update_meshes (
+/// Helper: Updates the cable mesh for a given voxel entity based on its neighbor connections.
+fn update_voxel_cable_mesh(
+    entity: Entity,
+    position: IVec3,
+    voxel: &Voxel,
+    voxel_map: &VoxelMap,
+    meshes: &mut Assets<Mesh>,
+    commands: &mut Commands,
+) {
+    let connections = count_neighbors(position, voxel_map);
+    let image_row = OFFSETS[voxel.voxel_id.0] + voxel.voxel_id.1;
+    let new_mesh_handle = meshes.add(create_cable_mesh(image_row, connections));
+    commands.entity(entity).insert(Mesh3d(new_mesh_handle));
+}
+
+/// Updates meshes, especially cables which need to change mesh to connect to those around it.
+pub fn update_meshes(
     voxel_positions: [IVec3; 6],
     voxel_map: &VoxelMap,
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     query: &mut Query<(Entity, &Voxel)>,
 ) {
-    for i in 0..6 {
-        if let Some(entity) = voxel_map.voxel_map.get(&voxel_positions[i]) {
-            if let Ok(mut component) = query.get_mut(*entity) {
-                println!("{:?}", component.1);
-                
-                let entity = component.0;
-                let voxel = component.1;
+    for pos in voxel_positions.iter() {
+        if let Some(entity) = voxel_map.voxel_map.get(pos) {
+            if let Ok((entity, voxel)) = query.get_mut(*entity) {
+                println!("{:?}", voxel);
+                // If the voxel is a cable-type, update its mesh.
                 if voxel.voxel_id.0 == 1 || voxel.voxel_id.0 == 2 {
-                    let position = voxel_positions[i];
-                    
-                    let connections = count_neighbors(position, voxel_map);
-                    
-                    let new_mesh_handle = meshes.add(create_cable_mesh(0, connections));
-                    
-                    commands.entity(entity).insert(Mesh3d(new_mesh_handle.clone()));
+                    update_voxel_cable_mesh(entity, *pos, voxel, voxel_map, meshes, commands);
                 }
             }
         }

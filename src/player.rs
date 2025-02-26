@@ -7,7 +7,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{events::GameEvent, graphics::create_cable_mesh, raycast::cardinalize, voxel::{count_neighbors, get_neighbors, Voxel, VoxelAssets}, VoxelMap};
+use crate::{events::GameEvent, graphics::create_cable_mesh, raycast::cardinalize, voxel::{count_neighbors, get_neighboring_coords, Voxel, VoxelAssets}, VoxelMap};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -180,19 +180,13 @@ pub fn input_event_system(
         };
         let mut voxel_asset = voxel_assets.voxel_assets[&voxel.voxel_id].clone();
         
-        if voxel.voxel_id.0 == 1 || voxel.voxel_id.0 == 2 {
-            let voxel_map = &voxel_map;
-            let connections = count_neighbors(voxel.position, voxel_map);
-            voxel_asset.mesh_handle = meshes.add(create_cable_mesh(0, connections));
-        }
-        
         event_writer.send(GameEvent::PlaceBlock { voxel, voxel_asset });
         // Meshes that need updating to event handler
-        let mesh_updates = get_neighbors(voxel.position);
+        let mesh_updates = get_neighboring_coords(voxel.position);
         event_writer.send(GameEvent::UpdateMeshCall { updates: mesh_updates });
     } else if mouse_input.just_pressed(MouseButton::Right) {
         event_writer.send(GameEvent::RemoveBlock { position: player.selected.as_ivec3() });
-        let mesh_updates = get_neighbors(player.selected.as_ivec3());
+        let mesh_updates = get_neighboring_coords(player.selected.as_ivec3());
         event_writer.send(GameEvent::UpdateMeshCall { updates: mesh_updates });
     }
 }
