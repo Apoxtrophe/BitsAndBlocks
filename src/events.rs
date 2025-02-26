@@ -34,8 +34,8 @@ pub fn event_handler(
                 let mut voxel_assets = voxel_asset.clone(); 
                 
                 if voxel.voxel_id.0 == 1 || voxel.voxel_id.0 == 2 {
-                    let connections = count_neighbors(voxel.position, &voxel_map);
-                    
+                    let connections = count_neighbors(*voxel, &voxel_map);
+                    println!("{:?}", connections);
                     let image_row = texture_row(voxel.voxel_id);
                     
                     voxel_assets.mesh_handle = meshes.add(create_cable_mesh(image_row, connections));

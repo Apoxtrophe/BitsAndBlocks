@@ -81,7 +81,8 @@ pub struct DebugText;
 
 #[derive(Resource, Clone)]
 pub struct VoxelMap {
-    pub voxel_map: HashMap<IVec3, Entity>,
+    pub entity_map: HashMap<IVec3, Entity>,
+    pub voxel_map: HashMap<IVec3, Voxel>,
 }
 
 pub fn setup(
@@ -95,6 +96,7 @@ pub fn setup(
     window.title = String::from("Bits&Blocks");
     
     let game_resources = VoxelMap {
+        entity_map: HashMap::new(),
         voxel_map: HashMap::new(),
     };
 
