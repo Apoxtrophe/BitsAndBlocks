@@ -1,5 +1,6 @@
-use bevy::{input::gamepad::ButtonSettings, prelude::*};
-use crate::{config::{HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::PlayerData, texture_row, DebugText};
+use bevy::prelude::*;
+use crate::{config::{HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, helpers::texture_row, player::PlayerData, DebugText};
+
 
 #[derive(Component)]
 pub struct GridMenu;
@@ -294,7 +295,7 @@ pub fn update_inventory_ui(
     
     for (slot, mut image_node) in image_query.iter_mut() {
         let set = player.selector;
-        let mut subset = (slot.index);
+        let mut subset = slot.index;
         
         if subset >= SUBSET_SIZES[set] {
             subset = 0;

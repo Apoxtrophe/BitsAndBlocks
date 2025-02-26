@@ -25,7 +25,7 @@ pub const VOXEL_LIST: [(usize,usize); 16]  =
         (8,0),
     ];
 pub const SUBSET_SIZES: [usize; 9] = [8, 1, 1, 1, 1, 1, 1, 1, 1];
-pub const OFFSETS: [usize;9] = [0, 8, 9, 10, 11, 12, 13, 14, 15];
+
 
 // UI 
 pub const HOTBAR_BORDER_COLOR: Srgba = Srgba::GREEN;

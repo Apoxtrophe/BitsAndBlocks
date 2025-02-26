@@ -7,7 +7,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{events::GameEvent, graphics::create_cable_mesh, raycast::cardinalize, voxel::{count_neighbors, get_neighboring_coords, Voxel, VoxelAssets}, VoxelMap};
+use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, voxel::{Voxel, VoxelAssets}};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -133,10 +133,8 @@ pub fn input_event_system(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     player: Res<PlayerData>,
     voxel_assets: Res<VoxelAssets>,
-    voxel_map: Res<VoxelMap>,
     mut window_query: Query<&mut Window>,
     mut event_writer: EventWriter<GameEvent>,
-    mut meshes: ResMut<Assets<Mesh>>,
 ) {
     // --- Cursor and Input Mode Updates ---
     if let Ok(_) = window_query.get_single_mut() {
@@ -178,7 +176,7 @@ pub fn input_event_system(
             state: false,
             direction,
         };
-        let mut voxel_asset = voxel_assets.voxel_assets[&voxel.voxel_id].clone();
+        let voxel_asset = voxel_assets.voxel_assets[&voxel.voxel_id].clone();
         
         event_writer.send(GameEvent::PlaceBlock { voxel, voxel_asset });
         // Meshes that need updating to event handler

@@ -62,25 +62,3 @@ pub fn raycast_system(
     player_data.camera_pos = camera_position;
     player_data.camera_dir = camera_forward;
 }
-
-/// Converts a 3D direction into one of four cardinal directions as an index (1 through 4).
-pub fn cardinalize(dir: Vec3) -> usize {
-    // Project the direction onto the XZ plane.
-    let horizontal = Vec2::new(dir.x, dir.z);
-
-    // If the horizontal component is negligible, default to 1.
-    if horizontal.length_squared() < 1e-6 {
-        return 1;
-    }
-
-    // Calculate the angle (in radians) from the positive Y-axis.
-    let mut angle = horizontal.x.atan2(horizontal.y);
-    // Normalize the angle to be within [0, 2π).
-    angle = angle.rem_euclid(2.0 * std::f32::consts::PI);
-
-    // Divide the circle into four sectors (each π/2 radians) and round to the nearest sector.
-    let sector = (angle / (std::f32::consts::PI / 2.0)).round() as i32 % 4;
-
-    // Return a 1-indexed cardinal direction.
-    (sector + 1) as usize
-}

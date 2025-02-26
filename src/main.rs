@@ -141,18 +141,3 @@ fn tile_mesh_uvs(mesh: &mut Mesh, tiling_factor: f32) {
         }
     }
 }
-
-/// Given the id of a voxel, returns the row in the texture atlas.
-fn texture_row(
-    voxel_id: (usize,usize),
-) -> usize {
-    let offsets: Vec<_> = SUBSET_SIZES
-        .iter()
-        .scan(0, |state, &size| {
-            let offset = *state;
-            *state += size;
-            Some(offset)
-        })
-        .collect();
-    offsets[voxel_id.0] + voxel_id.1
-}
