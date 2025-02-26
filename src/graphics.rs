@@ -200,9 +200,9 @@ pub fn create_cable_mesh(tile_row: usize, connections: [bool; 6]) -> Mesh {
         v_bottom: f32,
         num_tiles_x: f32,
     ) {
-        let hx = dims[0] * 0.6;
-        let hy = dims[1] * 0.6;
-        let hz = dims[2] * 0.6;
+        let hx = dims[0] * 0.5;
+        let hy = dims[1] * 0.5;
+        let hz = dims[2] * 0.5;
 
         // Closure to push a face.
         let mut push_face = |face_positions: &[[f32; 3]; 4],
@@ -302,7 +302,7 @@ pub fn create_cable_mesh(tile_row: usize, connections: [bool; 6]) -> Mesh {
     }
     let mut bool_count = 0;
     
-    let mut core_dims = [0.2, 0.2, 0.2];
+    let mut core_dims = [0.3, 0.3, 0.3];
     for i in 0..connections.len() {
         if connections[i] == true {
             bool_count += 1;
@@ -310,7 +310,7 @@ pub fn create_cable_mesh(tile_row: usize, connections: [bool; 6]) -> Mesh {
     }
     
     if bool_count <= 1 {
-        core_dims = [0.4, 0.4, 0.4];
+        core_dims = [0.5, 0.5, 0.5];
     }
     
 
@@ -333,7 +333,7 @@ pub fn create_cable_mesh(tile_row: usize, connections: [bool; 6]) -> Mesh {
     // 2. Add extensions based on connectivity.
     if connections[0] {
         let ext_width = 0.5 - core_dims[0] / 2.0;
-        let ext_dims = [ext_width, 0.2, 0.2];
+        let ext_dims = [ext_width, 0.3, 0.3];
         let ext_offset = [-(core_dims[0] / 2.0 + ext_width / 2.0), 0.0, 0.0];
         add_cuboid(
             &mut positions,
@@ -350,7 +350,7 @@ pub fn create_cable_mesh(tile_row: usize, connections: [bool; 6]) -> Mesh {
     }
     if connections[1] {
         let ext_width = 0.5 - core_dims[0] / 2.0;
-        let ext_dims = [ext_width, 0.2, 0.2];
+        let ext_dims = [ext_width, 0.3, 0.3];
         let ext_offset = [core_dims[0] / 2.0 + ext_width / 2.0, 0.0, 0.0];
         add_cuboid(
             &mut positions,
@@ -367,7 +367,7 @@ pub fn create_cable_mesh(tile_row: usize, connections: [bool; 6]) -> Mesh {
     }
     if connections[2] {
         let ext_height = 0.5 - core_dims[1] / 2.0;
-        let ext_dims = [0.2, ext_height, 0.2];
+        let ext_dims = [0.3, ext_height, 0.3];
         let ext_offset = [0.0, core_dims[1] / 2.0 + ext_height / 2.0, 0.0];
         add_cuboid(
             &mut positions,
@@ -384,7 +384,7 @@ pub fn create_cable_mesh(tile_row: usize, connections: [bool; 6]) -> Mesh {
     }
     if connections[3] {
         let ext_height = 0.5 - core_dims[1] / 2.0;
-        let ext_dims = [0.2, ext_height, 0.2];
+        let ext_dims = [0.3, ext_height, 0.3];
         let ext_offset = [0.0, -(core_dims[1] / 2.0 + ext_height / 2.0), 0.0];
         add_cuboid(
             &mut positions,
@@ -401,7 +401,7 @@ pub fn create_cable_mesh(tile_row: usize, connections: [bool; 6]) -> Mesh {
     }
     if connections[4] {
         let ext_depth = 0.5 - core_dims[2] / 2.0;
-        let ext_dims = [0.2, 0.2, ext_depth];
+        let ext_dims = [0.3, 0.3, ext_depth];
         let ext_offset = [0.0, 0.0, -(core_dims[2] / 2.0 + ext_depth / 2.0)];
         add_cuboid(
             &mut positions,
@@ -418,7 +418,7 @@ pub fn create_cable_mesh(tile_row: usize, connections: [bool; 6]) -> Mesh {
     }
     if connections[5] {
         let ext_depth = 0.5 - core_dims[2] / 2.0;
-        let ext_dims = [0.2, 0.2, ext_depth];
+        let ext_dims = [0.3, 0.3, ext_depth];
         let ext_offset = [0.0, 0.0, core_dims[2] / 2.0 + ext_depth / 2.0];
         add_cuboid(
             &mut positions,
