@@ -200,9 +200,9 @@ pub fn create_cable_mesh(tile_row: usize, connections: [bool; 6]) -> Mesh {
         v_bottom: f32,
         num_tiles_x: f32,
     ) {
-        let hx = dims[0] * 0.5;
-        let hy = dims[1] * 0.5;
-        let hz = dims[2] * 0.5;
+        let hx = dims[0] * 0.6;
+        let hy = dims[1] * 0.6;
+        let hz = dims[2] * 0.6;
 
         // Closure to push a face.
         let mut push_face = |face_positions: &[[f32; 3]; 4],
@@ -300,9 +300,22 @@ pub fn create_cable_mesh(tile_row: usize, connections: [bool; 6]) -> Mesh {
             [0.0, 0.0, 1.0],
         );
     }
+    let mut bool_count = 0;
+    
+    let mut core_dims = [0.2, 0.2, 0.2];
+    for i in 0..connections.len() {
+        if connections[i] == true {
+            bool_count += 1;
+        }
+    }
+    
+    if bool_count <= 1 {
+        core_dims = [0.4, 0.4, 0.4];
+    }
+    
 
     // 1. Add the cable core.
-    let core_dims = [0.2, 0.2, 0.2];
+
     let core_offset = [0.0, 0.0, 0.0];
     add_cuboid(
         &mut positions,
