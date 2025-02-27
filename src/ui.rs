@@ -84,6 +84,27 @@ pub fn setup_ui(
     commands.entity(main_node).with_children(|parent| {
         spawn_grid_menu(parent, &texture_handle, &texture_atlas_handle);
     });
+    
+    commands.entity(main_node).with_children(|parent| {
+        voxel_ident(parent);
+    });
+}
+
+pub fn voxel_ident(
+    parent: &mut ChildBuilder,
+) {
+    let main_node = (Node {
+        width: Val::Percent(50.0),
+        height: Val::Percent(10.0),
+        bottom: Val::Percent(15.0),
+        position_type: PositionType::Absolute,
+        ..default()
+    });
+    
+    let text_node = 
+    
+    parent.spawn(main_node);
+    
 }
 
 pub fn spawn_grid_menu(
@@ -92,8 +113,8 @@ pub fn spawn_grid_menu(
     texture_atlas_handle: &Handle<TextureAtlasLayout>,
 ) {  
     let grid_node = (Node {
-        width: Val::Px(320.0),
-        height: Val::Px(320.0),
+        width: Val::Px(400.0),
+        height: Val::Px(400.0),
         margin: UiRect::all(Val::Auto),
         flex_wrap: FlexWrap::Wrap,
         justify_content: JustifyContent::Center,

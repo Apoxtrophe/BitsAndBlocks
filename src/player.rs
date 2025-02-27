@@ -176,7 +176,7 @@ pub fn input_event_system(
             state: false,
             direction,
         };
-        let voxel_asset = voxel_assets.voxel_assets[&voxel.voxel_id].clone();
+        let voxel_asset = voxel_assets.voxel_asset_map[&voxel.voxel_id].clone();
         
         event_writer.send(GameEvent::PlaceBlock { voxel, voxel_asset });
         // Meshes that need updating to event handler

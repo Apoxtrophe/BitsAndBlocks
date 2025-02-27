@@ -1,6 +1,9 @@
 mod player;
 use player::*;
 
+mod voxel_config;
+use voxel_config::*;
+
 mod helpers;
 use helpers::*;
 
@@ -58,8 +61,8 @@ fn main() {
         .add_systems(Startup, (
             setup_player, 
             setup, 
-            setup_voxel_assets, 
-            setup_ui
+            setup_ui,
+            setup_voxels,
         ))
         .add_systems(
             Update,
@@ -79,11 +82,6 @@ fn main() {
 #[derive(Component)]
 pub struct DebugText; 
 
-#[derive(Resource, Clone)]
-pub struct VoxelMap {
-    pub entity_map: HashMap<IVec3, Entity>,
-    pub voxel_map: HashMap<IVec3, Voxel>,
-}
 
 pub fn setup(
     mut commands: Commands, 
@@ -95,12 +93,19 @@ pub fn setup(
     let mut window = window.single_mut();
     window.title = String::from("Bits&Blocks");
     
-    let game_resources = VoxelMap {
+    /*
+    let game_resources: VoxelMap = VoxelMap {
         entity_map: HashMap::new(),
         voxel_map: HashMap::new(),
+        //entity_map: HashMap::new(),
+        //voxel_map: HashMap::new(),
     };
+    
+        commands.insert_resource(game_resources);
+    */
 
-    commands.insert_resource(game_resources);
+
+
     
     // Spawn Sun 
     commands.spawn((

@@ -1,21 +1,20 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs};
 
-use bevy::prelude::*;
+use bevy::{prelude::*, render::render_resource::encase::private::RuntimeSizedArray};
 use bevy_rapier3d::prelude::Collider;
 
 use crate::{
-    config::{TEXTURE_PATH, VOXEL_LIST},
+    config::{TEXTURE_PATH, VOXEL_DEFINITITION_PATH},
     graphics::{create_cable_mesh, create_voxel_mesh},
     helpers::{
         compute_voxel_transform, get_neighboring_coords, texture_row, voxel_exists,
         NEIGHBOR_DIRECTIONS, VOXEL_COLLIDER_SIZE,
     },
-    VoxelMap,
 };
 
 #[derive(Resource)]
 pub struct VoxelAssets {
-    pub voxel_assets: HashMap<(usize, usize), VoxelAsset>,
+    pub voxel_asset_map: HashMap<(usize, usize), VoxelAsset>,
 }
 
 #[derive(Component, Debug, Copy, Clone)]
@@ -39,6 +38,54 @@ pub struct VoxelBundle {
 pub struct VoxelAsset {
     pub mesh_handle: Handle<Mesh>,
     pub material_handle: Handle<StandardMaterial>,
+    pub voxel_definition: VoxelDefinition,
+    pub texture_row: usize, 
+}
+
+
+#[derive(Resource, Clone)]
+pub struct VoxelMap {
+    pub entity_map: HashMap<IVec3, Entity>,
+    pub voxel_map: HashMap<IVec3, Voxel>,
+    pub voxel_asset_map: HashMap<(usize, usize), VoxelAsset>,
+}
+
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+pub struct VoxelDefinition{
+    pub voxel_id: (usize, usize),
+    pub name: String,
+}
+
+pub fn setup_voxels(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let texture_handle = asset_server.load(TEXTURE_PATH);
+    let file_content = fs::read_to_string(VOXEL_DEFINITITION_PATH)
+        .expect("Failed to read file");
+    let voxel_defs: Vec<VoxelDefinition> = serde_json::from_str(&file_content)
+        .expect("Failed to parse JSON");
+
+    let voxel_asset_map = voxel_defs
+        .into_iter()
+        .enumerate()
+        .map(|(i, voxel_def)| {
+            let mesh_handle = meshes.add(create_voxel_mesh(i));
+            let material_handle = materials.add(create_voxel_material(texture_handle.clone()));
+            let texture_row = i;
+            (voxel_def.voxel_id, VoxelAsset {
+                mesh_handle,
+                material_handle,
+                voxel_definition: voxel_def,
+                texture_row,
+            })
+        })
+        .collect::<HashMap<_, _>>();
+
+    commands.insert_resource(VoxelAssets { voxel_asset_map });
 }
 
 /// Spawns a voxel entity and returns its Entity id.
@@ -59,31 +106,6 @@ fn spawn_voxel_entity(commands: &mut Commands, voxel: Voxel, asset: &VoxelAsset)
         .id()
 }
 
-/// Loads the texture atlas and creates voxel assets.
-pub fn setup_voxel_assets(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
-) {
-    let texture_atlas: Handle<Image> = asset_server.load(TEXTURE_PATH);
-
-    let voxel_assets = VOXEL_LIST
-        .iter()
-        .enumerate()
-        .map(|(i, &(x, y))| {
-            (
-                (x, y),
-                VoxelAsset {
-                    mesh_handle: meshes.add(create_voxel_mesh(i)),
-                    material_handle: materials.add(create_voxel_material(texture_atlas.clone())),
-                },
-            )
-        })
-        .collect::<HashMap<_, _>>();
-
-    commands.insert_resource(VoxelAssets { voxel_assets });
-}
 
 /// Spawns a voxel entity if one is not already present at the specified position.
 pub fn add_voxel(
@@ -118,6 +140,7 @@ pub fn create_voxel_material(atlas_handle: Handle<Image>) -> StandardMaterial {
 }
 
 /// Checks for neighboring voxels and returns an array of booleans.
+/// Used for cable connections, and ignores some types of voxel such as structural blocks or cables that do not match. 
 pub fn count_neighbors(voxel: Voxel, voxel_map: &VoxelMap) -> [bool; 6] {
     let mut neighbors: [bool; 6] = [false; 6];
 
@@ -132,7 +155,11 @@ pub fn count_neighbors(voxel: Voxel, voxel_map: &VoxelMap) -> [bool; 6] {
             let home_id = voxel.voxel_id;
             let neighbor_id = neighbor_voxel.voxel_id;
 
-            if home_id == neighbor_id || neighbor_id.0 >= 1{
+            if home_id == neighbor_id || neighbor_id.0 > 1{
+                neighbors[i] = true;
+            }
+            
+            if home_id.0 == 2 && neighbor_id.0 == 2 {
                 neighbors[i] = true;
             }
         }
@@ -143,7 +170,6 @@ pub fn count_neighbors(voxel: Voxel, voxel_map: &VoxelMap) -> [bool; 6] {
 /// Updates the cable mesh for a given voxel entity based on its neighbor connections.
 fn update_voxel_cable_mesh(
     entity: Entity,
-    position: IVec3,
     voxel: &Voxel,
     voxel_map: &VoxelMap,
     meshes: &mut Assets<Mesh>,
@@ -167,10 +193,9 @@ pub fn update_meshes(
     for pos in voxel_positions.iter() {
         if let Some(entity) = voxel_map.entity_map.get(pos) {
             if let Ok((entity, voxel)) = query.get_mut(*entity) {
-                println!("{:?}", voxel);
                 // If the voxel is a cable-type, update its mesh.
                 if voxel.voxel_id.0 == 1 || voxel.voxel_id.0 == 2 {
-                    update_voxel_cable_mesh(entity, *pos, voxel, voxel_map, meshes, commands);
+                    update_voxel_cable_mesh(entity, voxel, voxel_map, meshes, commands);
                 }
             }
         }
