@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
 
-use crate::{graphics::create_cable_mesh, player::{update_cursor_and_input, PlayerData}, texture_row, voxel::{add_voxel, count_neighbors, remove_voxel, update_meshes, Voxel, VoxelAsset}, VoxelMap};
+use crate::{graphics::create_cable_mesh, player::{update_cursor_and_input, PlayerData}, voxel::{add_voxel, count_neighbors, remove_voxel, update_meshes, Voxel, VoxelAsset}, VoxelMap};
 
 #[derive(Event)]
 pub enum GameEvent {
@@ -35,7 +35,7 @@ pub fn event_handler(
                 
                 if voxel.voxel_id.0 == 1 || voxel.voxel_id.0 == 2 {
                     let connections = count_neighbors(*voxel, &voxel_map);
-                    let image_row = texture_row(voxel.voxel_id);
+                    let image_row = voxel_map.voxel_asset_map[&voxel.voxel_id].texture_row;
                     
                     voxel_assets.mesh_handle = meshes.add(create_cable_mesh(image_row, connections));
                 }

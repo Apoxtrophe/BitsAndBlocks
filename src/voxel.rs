@@ -7,7 +7,7 @@ use crate::{
     config::{TEXTURE_PATH, VOXEL_DEFINITITION_PATH},
     graphics::{create_cable_mesh, create_voxel_mesh},
     helpers::{
-        compute_voxel_transform, get_neighboring_coords, texture_row, voxel_exists,
+        compute_voxel_transform, get_neighboring_coords, voxel_exists,
         NEIGHBOR_DIRECTIONS, VOXEL_COLLIDER_SIZE,
     },
 };
@@ -175,8 +175,7 @@ fn update_voxel_cable_mesh(
     commands: &mut Commands,
 ) {
     let connections = count_neighbors(*voxel, voxel_map);
-
-    let image_row = texture_row(voxel.voxel_id);
+    let image_row = voxel_map.voxel_asset_map[&voxel.voxel_id].texture_row;
     let new_mesh_handle = meshes.add(create_cable_mesh(image_row, connections));
     commands.entity(entity).insert(Mesh3d(new_mesh_handle));
 }

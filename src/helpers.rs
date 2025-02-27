@@ -16,20 +16,6 @@ pub const NEIGHBOR_DIRECTIONS: [IVec3; 6] = [
 ];
 
 // Helper functions should be small in scope and self explanitory. Used only for the readability of code. 
-/// Given the id of a voxel, returns the row in the texture atlas.
-pub fn texture_row(
-    voxel_id: (usize,usize),
-) -> usize {
-    let offsets: Vec<_> = SUBSET_SIZES
-        .iter()
-        .scan(0, |state, &size| {
-            let offset = *state;
-            *state += size;
-            Some(offset)
-        })
-        .collect();
-    offsets[voxel_id.0] + voxel_id.1
-}
 
 /// Returns all 6 neighbor positions for a given coordinate.
 pub fn get_neighboring_coords(coord: IVec3) -> [IVec3; 6] {

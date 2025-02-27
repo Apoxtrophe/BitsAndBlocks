@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{config::{HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, helpers::texture_row, player::PlayerData, DebugText};
+use crate::{config::{HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::PlayerData, voxel::VoxelMap, DebugText};
 
 
 #[derive(Component)]
@@ -90,6 +90,7 @@ pub fn setup_ui(
     });
 }
 
+// WIP
 pub fn voxel_ident(
     parent: &mut ChildBuilder,
 ) {
@@ -246,6 +247,7 @@ pub fn update_hotbar(
     player: ResMut<PlayerData>,
     mut image_query: Query<(&HotbarSlot, &mut ImageNode)>,
     mut border_query: Query<(&HotbarSlot, &mut BorderColor)>,
+    voxel_map: Res<VoxelMap>,
 ) {
     // Update border colors based on the player's selected slot.
     for (slot, mut border_color) in border_query.iter_mut() {
@@ -260,7 +262,9 @@ pub fn update_hotbar(
     for (slot, mut image_node) in image_query.iter_mut() {
         let (_, sub_index) = player.hotbar_ids[slot.index];
         if let Some(atlas) = &mut image_node.texture_atlas {
-            atlas.index = texture_row((slot.index,sub_index));
+            //atlas.index = texture_row((slot.index,sub_index));
+            let id = (slot.index, sub_index);
+            atlas.index = voxel_map.voxel_asset_map[&id].texture_row;
         }
     }
 }
@@ -279,6 +283,7 @@ pub fn update_inventory_ui(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut image_query: Query<(&InventorySlot, &mut ImageNode)>,
     mut player: ResMut<PlayerData>,
+    voxel_map: Res<VoxelMap>,
 ) {
     const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
     const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
@@ -322,7 +327,8 @@ pub fn update_inventory_ui(
             subset = 0;
         }
         if let Some(atlas) = &mut image_node.texture_atlas {
-            atlas.index = texture_row((set,subset));
+            let id = (set, subset);
+            atlas.index = voxel_map.voxel_asset_map[&id].texture_row;
         }
     }
 }
