@@ -12,11 +12,6 @@ use crate::{
     },
 };
 
-#[derive(Resource)]
-pub struct VoxelAssets {
-    pub voxel_asset_map: HashMap<(usize, usize), VoxelAsset>,
-}
-
 #[derive(Component, Debug, Copy, Clone)]
 pub struct Voxel {
     pub voxel_id: (usize, usize),
@@ -45,9 +40,9 @@ pub struct VoxelAsset {
 
 #[derive(Resource, Clone)]
 pub struct VoxelMap {
-    pub entity_map: HashMap<IVec3, Entity>,
-    pub voxel_map: HashMap<IVec3, Voxel>,
-    pub voxel_asset_map: HashMap<(usize, usize), VoxelAsset>,
+    pub entity_map: HashMap<IVec3, Entity>, // Entity ids by location
+    pub voxel_map: HashMap<IVec3, Voxel>, // Local voxel values by location
+    pub voxel_asset_map: HashMap<(usize, usize), VoxelAsset>, // global voxel values by id 
 }
 
 
@@ -57,6 +52,7 @@ pub struct VoxelDefinition{
     pub name: String,
 }
 
+/// Setup responcible for loading voxel assets from voxel_definitions.json, and for initializing entity and voxel maps.
 pub fn setup_voxels(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -84,8 +80,11 @@ pub fn setup_voxels(
             })
         })
         .collect::<HashMap<_, _>>();
-
-    commands.insert_resource(VoxelAssets { voxel_asset_map });
+    
+    let entity_map = HashMap::new();
+    let voxel_map = HashMap::new();
+    
+    commands.insert_resource(VoxelMap { entity_map, voxel_map, voxel_asset_map });
 }
 
 /// Spawns a voxel entity and returns its Entity id.

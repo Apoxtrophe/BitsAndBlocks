@@ -7,7 +7,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, voxel::{Voxel, VoxelAssets}};
+use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, voxel::{Voxel, VoxelMap}};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -132,7 +132,7 @@ pub fn input_event_system(
     mouse_input: Res<ButtonInput<MouseButton>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     player: Res<PlayerData>,
-    voxel_assets: Res<VoxelAssets>,
+    voxel_assets: Res<VoxelMap>,
     mut window_query: Query<&mut Window>,
     mut event_writer: EventWriter<GameEvent>,
 ) {

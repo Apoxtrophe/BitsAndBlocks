@@ -91,21 +91,7 @@ pub fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let mut window = window.single_mut();
-    window.title = String::from("Bits&Blocks");
-    
-    /*
-    let game_resources: VoxelMap = VoxelMap {
-        entity_map: HashMap::new(),
-        voxel_map: HashMap::new(),
-        //entity_map: HashMap::new(),
-        //voxel_map: HashMap::new(),
-    };
-    
-        commands.insert_resource(game_resources);
-    */
-
-
-
+    window.title = String::from("Bits And Blocks");
     
     // Spawn Sun 
     commands.spawn((
