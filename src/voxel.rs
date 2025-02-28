@@ -8,7 +8,7 @@ use crate::{
     graphics::{create_cable_mesh, create_voxel_mesh},
     helpers::{
         compute_voxel_transform, get_neighboring_coords, voxel_exists,
-        NEIGHBOR_DIRECTIONS, VOXEL_COLLIDER_SIZE,
+        VOXEL_COLLIDER_SIZE,
     },
 };
 
@@ -33,7 +33,7 @@ pub struct VoxelBundle {
 pub struct VoxelAsset {
     pub mesh_handle: Handle<Mesh>,
     pub material_handle: Handle<StandardMaterial>,
-    pub voxel_definition: VoxelDefinition,
+    pub definition: VoxelDefinition,
     pub texture_row: usize, 
 }
 
@@ -42,7 +42,7 @@ pub struct VoxelAsset {
 pub struct VoxelMap {
     pub entity_map: HashMap<IVec3, Entity>, // Entity ids by location
     pub voxel_map: HashMap<IVec3, Voxel>, // Local voxel values by location
-    pub voxel_asset_map: HashMap<(usize, usize), VoxelAsset>, // global voxel values by id 
+    pub asset_map: HashMap<(usize, usize), VoxelAsset>, // global voxel values by id 
 }
 
 
@@ -75,7 +75,7 @@ pub fn setup_voxels(
             (voxel_def.voxel_id, VoxelAsset {
                 mesh_handle,
                 material_handle,
-                voxel_definition: voxel_def,
+                definition: voxel_def,
                 texture_row,
             })
         })
@@ -84,7 +84,7 @@ pub fn setup_voxels(
     let entity_map = HashMap::new();
     let voxel_map = HashMap::new();
     
-    commands.insert_resource(VoxelMap { entity_map, voxel_map, voxel_asset_map });
+    commands.insert_resource(VoxelMap { entity_map, voxel_map, asset_map: voxel_asset_map });
 }
 
 /// Spawns a voxel entity and returns its Entity id.
@@ -158,7 +158,7 @@ pub fn count_neighbors(voxel: Voxel, voxel_map: &VoxelMap) -> [bool; 6] {
                 neighbors[i] = true;
             }
             
-            if home_id.0 == 2 && neighbor_id.0 == 2 {
+            if home_id.0 == 2 && neighbor_id.0 == 1 {
                 neighbors[i] = true;
             }
         }
@@ -175,7 +175,7 @@ fn update_voxel_cable_mesh(
     commands: &mut Commands,
 ) {
     let connections = count_neighbors(*voxel, voxel_map);
-    let image_row = voxel_map.voxel_asset_map[&voxel.voxel_id].texture_row;
+    let image_row = voxel_map.asset_map[&voxel.voxel_id].texture_row;
     let new_mesh_handle = meshes.add(create_cable_mesh(image_row, connections));
     commands.entity(entity).insert(Mesh3d(new_mesh_handle));
 }

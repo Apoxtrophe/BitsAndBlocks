@@ -1,4 +1,5 @@
 mod player;
+use bevy_atmosphere::plugin::AtmospherePlugin;
 use player::*;
 
 mod voxel_config;
@@ -55,6 +56,7 @@ fn main() {
                 ..default()
             }
         }))
+        .add_plugins(AtmospherePlugin)
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         //.add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(FpsControllerPlugin)
@@ -113,8 +115,8 @@ pub fn setup(
     let image_handle = assets.load("textures/ground3.png");
     let material = materials.add(StandardMaterial {
         base_color_texture: Some(image_handle),
-        perceptual_roughness: 1.0,
-        metallic: 0.0,
+        perceptual_roughness: 0.2,
+        metallic: 0.2,
         ..default()
     });
     

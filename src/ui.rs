@@ -264,7 +264,7 @@ pub fn update_hotbar(
         if let Some(atlas) = &mut image_node.texture_atlas {
             //atlas.index = texture_row((slot.index,sub_index));
             let id = (slot.index, sub_index);
-            atlas.index = voxel_map.voxel_asset_map[&id].texture_row;
+            atlas.index = voxel_map.asset_map[&id].texture_row;
         }
     }
 }
@@ -328,7 +328,7 @@ pub fn update_inventory_ui(
         }
         if let Some(atlas) = &mut image_node.texture_atlas {
             let id = (set, subset);
-            atlas.index = voxel_map.voxel_asset_map[&id].texture_row;
+            atlas.index = voxel_map.asset_map[&id].texture_row;
         }
     }
 }

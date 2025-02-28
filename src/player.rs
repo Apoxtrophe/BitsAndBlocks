@@ -3,6 +3,7 @@ use std::f32::consts::TAU;
 use bevy::{
     prelude::*, render::camera::Exposure, window::CursorGrabMode
 };
+use bevy_atmosphere::plugin::AtmosphereCamera;
 use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
@@ -100,13 +101,14 @@ pub fn setup_player(mut commands: Commands) {
     ));
     // Insert player camera component
     player_camera.insert(PlayerCamera);
+    player_camera.insert(AtmosphereCamera::default());
 }
 
 /// Respawn entities whose vertical position falls below the threshold.
 pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
     for (mut transform, mut velocity) in query.iter_mut() {
-        // Only respawn if the entity is below -50.0
-        if transform.translation.y > -50.0 {
+        // Only respawn if the entity is below -10.0
+        if transform.translation.y > -10.0 {
             continue;
         }
         velocity.linvel = Vec3::ZERO;
@@ -176,7 +178,7 @@ pub fn input_event_system(
             state: false,
             direction,
         };
-        let voxel_asset = voxel_assets.voxel_asset_map[&voxel.voxel_id].clone();
+        let voxel_asset = voxel_assets.asset_map[&voxel.voxel_id].clone();
         
         event_writer.send(GameEvent::PlaceBlock { voxel, voxel_asset });
         // Meshes that need updating to event handler

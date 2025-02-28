@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 // WORLD
-pub const WORLD_WIDTH: f32 = 100.0;
+pub const WORLD_WIDTH: f32 = 1000.0;
 pub const WORLD_TRANSFORM: Transform = Transform::from_xyz(0.0, 0.0, 0.0);
 pub const AMBIENT_LIGHT: f32 = 10000.0;
 
