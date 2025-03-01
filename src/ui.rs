@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{config::{FADE_TIME, HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::Player, voxel::VoxelMap, DebugText};
+use crate::{config::{CURSOR_PATH, FADE_TIME, HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::Player, voxel::VoxelMap, DebugText};
 
 
 #[derive(Component)]
@@ -38,11 +38,14 @@ pub fn setup_ui(
     commands.insert_resource(timer);
     
     // Spawn the debug text and cursor node.
+    // 
+    let cursor_texture_handle: Handle<Image> = asset_server.load(CURSOR_PATH);
     spawn_debug_text(&mut commands);
-    spawn_cursor_node(&mut commands);
+    spawn_cursor_node(&mut commands, cursor_texture_handle);
 
     // Load texture and create a texture atlas.
     let texture_handle: Handle<Image> = asset_server.load(TEXTURE_PATH);
+
     let texture_atlas = TextureAtlasLayout::from_grid(
         UVec2::splat(16),
         1,
@@ -233,19 +236,26 @@ fn spawn_debug_text(commands: &mut Commands) {
 }
 
 /// Spawns the cursor node at the center.
-fn spawn_cursor_node(commands: &mut Commands) {
+fn spawn_cursor_node(
+    commands: &mut Commands,
+    image: Handle<Image>,
+) {
+
+    let image_node = ImageNode::new(image);
     let cursor_node = (Node {
-        width: Val::Percent(1.0),
-        height: Val::Percent(1.0),
-        left: Val::Percent(49.75),
-        top: Val::Percent(49.5),
+        width: Val::VMin(2.0),
+        height: Val::VMin(2.0),
         position_type: PositionType::Absolute,
-        justify_content: JustifyContent::Center,
-        align_items: AlignItems::Center,
+        justify_self: JustifySelf::Center,
+        align_self: AlignSelf::Center,
         ..default()
     },
-    BackgroundColor(Color::BLACK),
+    
+    image_node,
     );
+    
+
+
 
     commands.spawn(cursor_node);
 }

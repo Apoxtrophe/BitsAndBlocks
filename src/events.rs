@@ -99,6 +99,7 @@ pub fn event_handler(
             Some(Ordering::Less) => {
                 // Increment and wrap-around automatically
                 player.hotbar_selector = (player.hotbar_selector + 1) % 9;
+                fade_timer.timer.reset();
             }
             _ => (),
         }
