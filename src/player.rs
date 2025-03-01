@@ -8,7 +8,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, voxel::{Voxel, VoxelAsset, VoxelDefinition, VoxelMap}};
+use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, ui::FadeTimer, voxel::{Voxel, VoxelAsset, VoxelDefinition, VoxelMap}};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -16,7 +16,7 @@ const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 pub struct PlayerCamera;
 
 #[derive(Resource)]
-pub struct PlayerData {
+pub struct Player {
     pub camera_pos: Vec3,
     pub camera_dir: Vec3,
     pub ray_hit_pos: Vec3,
@@ -27,7 +27,7 @@ pub struct PlayerData {
     pub hotbar_ids: Vec<(usize, usize)>,
 }
 
-impl Default for PlayerData {
+impl Default for Player {
     fn default() -> Self {
         let mut hotbar_ids = Vec::new();
         for i in 0..9 {
@@ -135,7 +135,7 @@ pub fn update_cursor_and_input(
 pub fn input_event_system(
     mouse_input: Res<ButtonInput<MouseButton>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    player: Res<PlayerData>,
+    player: Res<Player>,
     voxel_assets: Res<VoxelMap>,
     mut window_query: Query<&mut Window>,
     mut event_writer: EventWriter<GameEvent>,

@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 
-use crate::{config::*, player::{PlayerCamera, PlayerData}, voxel::{Voxel, VoxelMap}};
+use crate::{config::*, player::{PlayerCamera, Player}, voxel::{Voxel, VoxelMap}};
 
 pub fn raycast_system(
     query: Query<&GlobalTransform, With<PlayerCamera>>,
     mut ray_cast: MeshRayCast,
     mut gizmos: Gizmos,
-    mut player: ResMut<PlayerData>,
+    mut player: ResMut<Player>,
     voxel_map: Res<VoxelMap>,
 ) {
     // Retrieve the camera's transform; exit early if not found.

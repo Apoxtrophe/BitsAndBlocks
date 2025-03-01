@@ -38,7 +38,7 @@ fn main() {
             brightness: AMBIENT_LIGHT,
         })
         .add_event::<GameEvent>()
-        .insert_resource(PlayerData::default())
+        .insert_resource(Player::default())
         .insert_resource(ClearColor(Color::linear_rgb(0.83, 0.96, 0.96)))
         .add_plugins(DefaultPlugins.set(ImagePlugin {
             default_sampler: ImageSamplerDescriptor { 
@@ -73,6 +73,7 @@ fn main() {
                 update_text, 
                 update_hotbar,
                 update_inventory_ui,
+                update_voxel_identifier,
             ),
         )
         .run();

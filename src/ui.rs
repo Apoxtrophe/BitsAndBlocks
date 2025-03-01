@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{config::{HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::PlayerData, voxel::VoxelMap, DebugText};
+use crate::{config::{FADE_TIME, HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::Player, voxel::VoxelMap, DebugText};
 
 
 #[derive(Component)]
@@ -30,6 +30,13 @@ pub fn setup_ui(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
 ) {
+    // Spawn the fading text timer resource
+    let timer = FadeTimer {
+        timer: Timer::from_seconds(FADE_TIME, TimerMode::Once),
+    };
+    
+    commands.insert_resource(timer);
+    
     // Spawn the debug text and cursor node.
     spawn_debug_text(&mut commands);
     spawn_cursor_node(&mut commands);
@@ -86,26 +93,64 @@ pub fn setup_ui(
     });
     
     commands.entity(main_node).with_children(|parent| {
-        voxel_ident(parent);
+        setup_voxel_identifier(parent);
     });
 }
 
-// WIP
-pub fn voxel_ident(
+#[derive(Component)]
+pub struct VoxelIdentifierText;
+
+#[derive(Resource)]
+pub struct FadeTimer {
+    pub timer: Timer,
+}
+
+pub fn setup_voxel_identifier(
     parent: &mut ChildBuilder,
 ) {
+
+    
     let main_node = (Node {
         width: Val::Percent(50.0),
-        height: Val::Percent(10.0),
+        height: Val::Percent(5.0),
         bottom: Val::Percent(15.0),
         position_type: PositionType::Absolute,
         ..default()
-    });
+    },
+    );
     
-    let text_node = 
+    let text_settings = TextFont {
+        font_size: 32.0,
+        ..default()
+    };
     
-    parent.spawn(main_node);
+    parent.spawn((
+        Text::new("Voxel Identifier"),
+        text_settings,
+        TextColor(Color::BLACK),
+        TextLayout::new_with_justify(JustifyText::Center),
+        main_node,
+        )).insert(VoxelIdentifierText);
+}
+
+pub fn update_voxel_identifier(
+    mut query: Query<(&mut Text, &mut TextColor,  &mut VoxelIdentifierText)>,
+    player: Res<Player>,
+    mut fade_timer: ResMut<FadeTimer>,
+    time: Res<Time>,
+) {
+    fade_timer.timer.tick(time.delta());
     
+    if let Some(voxel_identifier) = player.selected_descriptor.clone() {
+        for (mut text, mut color, _) in query.iter_mut() {
+            text.0 = voxel_identifier.name.clone();
+            let alpha = fade_timer.timer.fraction_remaining();
+            println!("{}", alpha);
+            color.0 = Color::linear_rgba(1.0, 1.0, 1.0, alpha);
+        }
+    } else {
+        return;
+    }
 }
 
 pub fn spawn_grid_menu(
@@ -245,7 +290,7 @@ fn spawn_hotbar_slot(
 
 
 pub fn update_hotbar(
-    player: ResMut<PlayerData>,
+    player: ResMut<Player>,
     mut image_query: Query<(&HotbarSlot, &mut ImageNode)>,
     mut border_query: Query<(&HotbarSlot, &mut BorderColor)>,
     voxel_map: Res<VoxelMap>,
@@ -283,7 +328,7 @@ pub fn update_inventory_ui(
     mut query: Query<&mut Visibility, With<GridMenu>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut image_query: Query<(&InventorySlot, &mut ImageNode)>,
-    mut player: ResMut<PlayerData>,
+    mut player: ResMut<Player>,
     voxel_map: Res<VoxelMap>,
 ) {
     const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
@@ -365,7 +410,7 @@ fn box_shadow_node_bundle(
 pub fn update_text(
     mut text_query: Query<&mut Text, With<DebugText>>,
     entity_query: Query<Entity>,
-    player: Res<PlayerData>,
+    player: Res<Player>,
 ) {
     let entity_count = entity_query.iter().count();
 

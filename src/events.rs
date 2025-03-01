@@ -4,10 +4,7 @@ use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
 
 use crate::{
-    graphics::create_cable_mesh,
-    player::{update_cursor_and_input, PlayerData},
-    voxel::{add_voxel, count_neighbors, remove_voxel, update_meshes, Voxel, VoxelAsset},
-    VoxelMap,
+    graphics::create_cable_mesh, player::{update_cursor_and_input, Player}, ui::FadeTimer, voxel::{add_voxel, count_neighbors, remove_voxel, update_meshes, Voxel, VoxelAsset}, VoxelMap
 };
 
 #[derive(Event)]
@@ -34,11 +31,13 @@ pub fn event_handler(
     mut evr_scroll: EventReader<MouseWheel>,
     mut commands: Commands,
     mut voxel_map: ResMut<VoxelMap>,
-    mut player: ResMut<PlayerData>,
+    mut player: ResMut<Player>,
     mut controller_query: Query<&mut FpsController>,
     mut window_query: Query<&mut Window>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut query: Query<(Entity, &Voxel)>,
+    mut fade_timer: ResMut<FadeTimer>,
+    
 ) {
     for event in event_reader.read() {
         match event {
@@ -95,6 +94,7 @@ pub fn event_handler(
             Some(Ordering::Greater) => {
                 // When subtracting 1, add 8 instead (because (x - 1) mod 9 == (x + 8) mod 9)
                 player.hotbar_selector = (player.hotbar_selector + 8) % 9;
+                fade_timer.timer.reset();
             }
             Some(Ordering::Less) => {
                 // Increment and wrap-around automatically

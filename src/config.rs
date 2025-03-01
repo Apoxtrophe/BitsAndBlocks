@@ -19,3 +19,4 @@ pub const SUBSET_SIZES: [usize; 9] = [8, 16, 1, 1, 1, 1, 1, 1, 1];
 
 // UI 
 pub const HOTBAR_BORDER_COLOR: Srgba = Srgba::GREEN;
+pub const FADE_TIME: f32 = 1.0; // Fade time of Voxel Identifier text
