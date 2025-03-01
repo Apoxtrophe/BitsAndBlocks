@@ -8,7 +8,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, voxel::{Voxel, VoxelMap}};
+use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, voxel::{Voxel, VoxelAsset, VoxelDefinition, VoxelMap}};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -20,9 +20,10 @@ pub struct PlayerData {
     pub camera_pos: Vec3,
     pub camera_dir: Vec3,
     pub ray_hit_pos: Vec3,
-    pub selected: Vec3,
-    pub selected_adjacent: Vec3,
-    pub selector: usize,
+    pub hit_voxel: Option<Voxel>,
+    pub selected_voxel: Option<Voxel>,
+    pub selected_descriptor: Option<VoxelDefinition>,
+    pub hotbar_selector: usize,
     pub hotbar_ids: Vec<(usize, usize)>,
 }
 
@@ -36,9 +37,10 @@ impl Default for PlayerData {
             camera_pos: Vec3::ZERO,
             camera_dir: Vec3::ZERO,
             ray_hit_pos: Vec3::ZERO,
-            selected: Vec3::ZERO,
-            selected_adjacent: Vec3::ZERO,
-            selector: 0,
+            hit_voxel: None,
+            selected_voxel: None,
+            selected_descriptor: None,
+            hotbar_selector: 0,
             hotbar_ids,
         }
     }
@@ -169,24 +171,31 @@ pub fn input_event_system(
 
     // --- Player Action Events ---
     
-    let direction = cardinalize(player.camera_dir);
+
     
     if mouse_input.just_pressed(MouseButton::Left) && !keyboard_input.pressed(KeyCode::Tab) {
-        let voxel = Voxel {
-            position: player.selected_adjacent.as_ivec3(),
-            voxel_id: player.hotbar_ids[player.selector],
-            state: false,
-            direction,
+
+        let mut selected_voxel = match player.selected_voxel {
+            Some(voxel) => voxel,
+            None => return,
         };
-        let voxel_asset = voxel_assets.asset_map[&voxel.voxel_id].clone();
         
-        event_writer.send(GameEvent::PlaceBlock { voxel, voxel_asset });
+        selected_voxel.direction = cardinalize(player.camera_dir); // Set the direction of the selected voxel on camera dir
+        
+        let voxel_asset = voxel_assets.asset_map[&selected_voxel.voxel_id].clone();
+        
+        event_writer.send(GameEvent::PlaceBlock { voxel: selected_voxel, voxel_asset });
         // Meshes that need updating to event handler
-        let mesh_updates = get_neighboring_coords(voxel.position);
+        let mesh_updates = get_neighboring_coords(selected_voxel.position);
         event_writer.send(GameEvent::UpdateMeshCall { updates: mesh_updates });
     } else if mouse_input.just_pressed(MouseButton::Right) {
-        event_writer.send(GameEvent::RemoveBlock { position: player.selected.as_ivec3() });
-        let mesh_updates = get_neighboring_coords(player.selected.as_ivec3());
+
+        let hit_voxel = match player.hit_voxel {
+            Some(voxel) => voxel,
+            None => return,
+        };
+        event_writer.send(GameEvent::RemoveBlock { position: hit_voxel.position });
+        let mesh_updates = get_neighboring_coords(hit_voxel.position);
         event_writer.send(GameEvent::UpdateMeshCall { updates: mesh_updates });
     }
 }

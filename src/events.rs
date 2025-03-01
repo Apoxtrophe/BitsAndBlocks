@@ -94,11 +94,11 @@ pub fn event_handler(
         match event.y.partial_cmp(&0.0) {
             Some(Ordering::Greater) => {
                 // When subtracting 1, add 8 instead (because (x - 1) mod 9 == (x + 8) mod 9)
-                player.selector = (player.selector + 8) % 9;
+                player.hotbar_selector = (player.hotbar_selector + 8) % 9;
             }
             Some(Ordering::Less) => {
                 // Increment and wrap-around automatically
-                player.selector = (player.selector + 1) % 9;
+                player.hotbar_selector = (player.hotbar_selector + 1) % 9;
             }
             _ => (),
         }

@@ -2,11 +2,8 @@ mod player;
 use bevy_atmosphere::plugin::AtmospherePlugin;
 use player::*;
 
-mod voxel_config;
-use voxel_config::*;
 
 mod helpers;
-use helpers::*;
 
 mod events;
 use events::*;
@@ -29,7 +26,7 @@ use config::*;
 //use ui::*;
 
 
-use bevy::{image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor}, prelude::*, render::mesh::VertexAttributeValues, utils::HashMap};
+use bevy::{image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor}, prelude::*, render::mesh::VertexAttributeValues};
 use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;

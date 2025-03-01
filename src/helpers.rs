@@ -2,18 +2,11 @@ use std::f32::consts::{FRAC_PI_2, PI};
 
 use bevy::prelude::*;
 
-use crate::{config::{ROTATION_LOCKED_SUBSETS, SUBSET_SIZES}, voxel::Voxel, VoxelMap};
+use crate::{config::ROTATION_LOCKED_SUBSETS, voxel::Voxel, VoxelMap};
 
 pub const VOXEL_COLLIDER_SIZE: f32 = 0.5;
 
-pub const NEIGHBOR_DIRECTIONS: [IVec3; 6] = [
-    IVec3::new(1, 0, 0),
-    IVec3::new(-1, 0, 0),
-    IVec3::new(0, 1, 0),
-    IVec3::new(0, -1, 0),
-    IVec3::new(0, 0, 1),
-    IVec3::new(0, 0, -1),
-];
+
 
 // Helper functions should be small in scope and self explanitory. Used only for the readability of code. 
 

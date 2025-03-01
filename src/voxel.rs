@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs};
 
-use bevy::{prelude::*, render::render_resource::encase::private::RuntimeSizedArray};
+use bevy::prelude::*;
 use bevy_rapier3d::prelude::Collider;
 
 use crate::{

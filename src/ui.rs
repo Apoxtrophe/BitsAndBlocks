@@ -190,10 +190,11 @@ fn spawn_debug_text(commands: &mut Commands) {
 /// Spawns the cursor node at the center.
 fn spawn_cursor_node(commands: &mut Commands) {
     let cursor_node = (Node {
-        width: Val::Percent(0.5),
+        width: Val::Percent(1.0),
         height: Val::Percent(1.0),
         left: Val::Percent(49.75),
         top: Val::Percent(49.5),
+        position_type: PositionType::Absolute,
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         ..default()
@@ -251,7 +252,7 @@ pub fn update_hotbar(
 ) {
     // Update border colors based on the player's selected slot.
     for (slot, mut border_color) in border_query.iter_mut() {
-        *border_color = if slot.index == player.selector {
+        *border_color = if slot.index == player.hotbar_selector {
             Color::WHITE.into() // Highlighted
         } else {
             Color::BLACK.into()
@@ -294,7 +295,7 @@ pub fn update_inventory_ui(
             Interaction::Pressed => {
                 *color = PRESSED_BUTTON.into();
                 border_color.0 = PRESSED_BUTTON.into();
-                let selector = player.selector.clone();
+                let selector = player.hotbar_selector.clone();
                 let index = (inventory_slot.index).clamp(0, SUBSET_SIZES[selector] - 1);
                 player.hotbar_ids[selector].1 = index;
             }
@@ -320,7 +321,7 @@ pub fn update_inventory_ui(
     }
     
     for (slot, mut image_node) in image_query.iter_mut() {
-        let set = player.selector;
+        let set = player.hotbar_selector;
         let mut subset = slot.index;
         
         if subset >= SUBSET_SIZES[set] {
@@ -374,17 +375,19 @@ pub fn update_text(
 Camera Pos: {:.1}
 Camera Direction: {:.1}
 Ray Hit: {:.1}
-Selected Block: {:.1}
-Selected Adj.: {:.1}
+Hit Voxel: {:?}
+Selected Voxel.: {:?}
+Selected Definition: {:?}
 Voxel ID: {:?}
 Hotbar: {:?}
 Entity Count: {}",
         player.camera_pos,
         player.camera_dir,
         player.ray_hit_pos,
-        player.selected,
-        player.selected_adjacent,
-        player.selector,
+        player.hit_voxel,
+        player.selected_voxel,
+        player.selected_descriptor,
+        player.hotbar_selector,
         player.hotbar_ids,
         entity_count,
     );
