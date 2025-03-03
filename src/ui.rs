@@ -1,5 +1,6 @@
 use bevy::prelude::*;
-use crate::{config::{CURSOR_TEXTURE_PATH, FADE_TIME, NUM_VOXELS, SUBSET_SIZES, VOXEL_TEXTURE_PATH}, helpers::box_shadow_node_bundle, loading::GameTextures, player::Player, voxel::VoxelMap, DebugText};
+use crate::{config::{FADE_TIME, NUM_VOXELS, SUBSET_SIZES, VOXEL_TEXTURE_PATH}, helpers::box_shadow_node_bundle, loading::{GameTextures, VoxelMap}, player::Player, DebugText};
+
 
 
 #[derive(Component)]

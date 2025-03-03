@@ -85,7 +85,7 @@ fn main() {
         // ======================================================================
         // LOADING STATE SYSTEMS
         // ======================================================================
-        .add_systems(Startup, (setup_main_menu))
+        .add_systems(Startup, (loading))
         
         // ======================================================================
         // IN GAME STATE SYSTEMS
@@ -96,7 +96,6 @@ fn main() {
                 setup_player, 
                 setup_world, 
                 setup_ui, 
-                setup_voxels
             ))
         // Update Systems
         .add_systems(

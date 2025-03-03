@@ -2,7 +2,7 @@ use std::f32::consts::{FRAC_PI_2, PI};
 
 use bevy::{prelude::*, render::mesh::VertexAttributeValues};
 
-use crate::{config::{HOTBAR_BORDER_COLOR, ROTATION_LOCKED_SETS}, voxel::Voxel, VoxelMap};
+use crate::{config::{HOTBAR_BORDER_COLOR, ROTATION_LOCKED_SETS}, loading::Voxel, VoxelMap};
 
 pub const VOXEL_COLLIDER_SIZE: f32 = 0.5;
 

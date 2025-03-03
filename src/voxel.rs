@@ -1,4 +1,3 @@
-use std::{collections::HashMap, fs};
 
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::Collider;
@@ -9,16 +8,10 @@ use crate::{
     helpers::{
         compute_voxel_transform, get_neighboring_coords, voxel_exists,
         VOXEL_COLLIDER_SIZE,
-    }, loading::GameTextures,
+    }, loading::{GameTextures, Voxel, VoxelAsset, VoxelMap},
 };
 
-#[derive(Component, Debug, Copy, Clone)]
-pub struct Voxel {
-    pub voxel_id: (usize, usize),
-    pub position: IVec3,
-    pub direction: usize,
-    pub state: bool,
-}
+
 
 #[derive(Bundle)]
 pub struct VoxelBundle {
@@ -27,65 +20,6 @@ pub struct VoxelBundle {
     pub material: MeshMaterial3d<StandardMaterial>,
     pub transform: Transform,
     pub collider: Collider,
-}
-
-#[derive(Clone)]
-pub struct VoxelAsset {
-    pub mesh_handle: Handle<Mesh>,
-    pub material_handle: Handle<StandardMaterial>,
-    pub definition: VoxelDefinition,
-    pub texture_row: usize, 
-}
-
-
-#[derive(Resource, Clone)]
-pub struct VoxelMap {
-    pub entity_map: HashMap<IVec3, Entity>, // Entity ids by location
-    pub voxel_map: HashMap<IVec3, Voxel>, // Local voxel values by location
-    pub asset_map: HashMap<(usize, usize), VoxelAsset>, // global voxel values by id 
-}
-
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct VoxelDefinition{
-    pub voxel_id: (usize, usize),
-    pub name: String,
-}
-
-/// Setup responcible for loading voxel assets from voxel_definitions.json, and for initializing entity and voxel maps.
-pub fn setup_voxels(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    image_handles: Res<GameTextures>,
-) {
-    //let texture_handle = asset_server.load(VOXEL_TEXTURE_PATH);
-    let texture_handle = image_handles.voxel_textures.clone();
-    let file_content = fs::read_to_string(VOXEL_DEFINITITION_PATH)
-        .expect("Failed to read file");
-    let voxel_defs: Vec<VoxelDefinition> = serde_json::from_str(&file_content)
-        .expect("Failed to parse JSON");
-
-    let voxel_asset_map = voxel_defs
-        .into_iter()
-        .enumerate()
-        .map(|(i, voxel_def)| {
-            let mesh_handle = meshes.add(create_voxel_mesh(i));
-            let material_handle = materials.add(create_voxel_material(texture_handle.clone()));
-            let texture_row = i;
-            (voxel_def.voxel_id, VoxelAsset {
-                mesh_handle,
-                material_handle,
-                definition: voxel_def,
-                texture_row,
-            })
-        })
-        .collect::<HashMap<_, _>>();
-    
-    let entity_map = HashMap::new();
-    let voxel_map = HashMap::new();
-    
-    commands.insert_resource(VoxelMap { entity_map, voxel_map, asset_map: voxel_asset_map });
 }
 
 /// Spawns a voxel entity and returns its Entity id.

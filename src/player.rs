@@ -8,7 +8,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, voxel::{Voxel, VoxelDefinition, VoxelMap}};
+use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, loading::{Voxel, VoxelDefinition, VoxelMap}};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
