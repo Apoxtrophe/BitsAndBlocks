@@ -4,12 +4,12 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::Collider;
 
 use crate::{
-    config::{TEXTURE_PATH, VOXEL_DEFINITITION_PATH},
+    config::{VOXEL_DEFINITITION_PATH, VOXEL_TEXTURE_PATH},
     graphics::{create_cable_mesh, create_voxel_mesh},
     helpers::{
         compute_voxel_transform, get_neighboring_coords, voxel_exists,
         VOXEL_COLLIDER_SIZE,
-    },
+    }, loading::GameTextures,
 };
 
 #[derive(Component, Debug, Copy, Clone)]
@@ -55,11 +55,12 @@ pub struct VoxelDefinition{
 /// Setup responcible for loading voxel assets from voxel_definitions.json, and for initializing entity and voxel maps.
 pub fn setup_voxels(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    image_handles: Res<GameTextures>,
 ) {
-    let texture_handle = asset_server.load(TEXTURE_PATH);
+    //let texture_handle = asset_server.load(VOXEL_TEXTURE_PATH);
+    let texture_handle = image_handles.voxel_textures.clone();
     let file_content = fs::read_to_string(VOXEL_DEFINITITION_PATH)
         .expect("Failed to read file");
     let voxel_defs: Vec<VoxelDefinition> = serde_json::from_str(&file_content)

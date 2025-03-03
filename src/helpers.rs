@@ -58,6 +58,8 @@ pub fn cardinalize(dir: Vec3) -> usize {
     (sector + 1) as usize
 }
 
+
+
 pub fn tile_mesh_uvs(mesh: &mut Mesh, tiling_factor: f32) {
     if let Some(VertexAttributeValues::Float32x2(uvs)) = mesh.attribute_mut(Mesh::ATTRIBUTE_UV_0) {
         for uv in uvs.iter_mut() {

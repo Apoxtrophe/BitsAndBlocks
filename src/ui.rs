@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{config::{CURSOR_PATH, FADE_TIME, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, helpers::box_shadow_node_bundle, player::Player, voxel::VoxelMap, DebugText};
+use crate::{config::{CURSOR_TEXTURE_PATH, FADE_TIME, NUM_VOXELS, SUBSET_SIZES, VOXEL_TEXTURE_PATH}, helpers::box_shadow_node_bundle, loading::GameTextures, player::Player, voxel::VoxelMap, DebugText};
 
 
 #[derive(Component)]
@@ -29,6 +29,7 @@ pub fn setup_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+    image_handles: Res<GameTextures>,
 ) {
     // Spawn the fading text timer resource
     let timer = FadeTimer {
@@ -38,12 +39,12 @@ pub fn setup_ui(
     commands.insert_resource(timer);
     
     // Spawn the debug text and cursor node.
-    let cursor_texture_handle: Handle<Image> = asset_server.load(CURSOR_PATH);
+    let cursor_texture_handle = image_handles.cursor_texture.clone();
     spawn_debug_text(&mut commands);
     spawn_cursor_node(&mut commands, cursor_texture_handle);
 
     // Load texture and create a texture atlas.
-    let texture_handle: Handle<Image> = asset_server.load(TEXTURE_PATH);
+    let texture_handle: Handle<Image> = asset_server.load(VOXEL_TEXTURE_PATH);
 
     let texture_atlas = TextureAtlasLayout::from_grid(
         UVec2::splat(16),
@@ -94,8 +95,9 @@ pub fn setup_ui(
         spawn_inventory(parent, &texture_handle, &texture_atlas_handle);
     });
     
+    // Spawn Voxel Identifier text above hotbar
     commands.entity(main_node).with_children(|parent| {
-        setup_voxel_identifier(parent);
+        spawn_voxel_identifier(parent);
     });
 }
 
@@ -107,7 +109,7 @@ pub struct FadeTimer {
     pub timer: Timer,
 }
 
-pub fn setup_voxel_identifier(
+pub fn spawn_voxel_identifier(
     parent: &mut ChildBuilder,
 ) {
 
@@ -422,4 +424,3 @@ pub fn update_inventory_ui(
         }
     }
 }
-

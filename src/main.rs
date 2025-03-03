@@ -9,6 +9,7 @@ mod voxel;
 mod ui;
 mod raycast;
 mod config;
+mod loading;
 
 // ======================================================================
 // External Crate Imports
@@ -20,6 +21,7 @@ use bevy::{
 use bevy_atmosphere::plugin::AtmospherePlugin;
 use bevy_rapier3d::prelude::*;
 use bevy_fps_controller::controller::*;
+use bevy::state::app::AppExtStates as _;
 
 // ======================================================================
 // Internal Module Uses
@@ -31,12 +33,23 @@ use ui::*;
 use raycast::*;
 use config::*;
 use helpers::tile_mesh_uvs;
-
+use loading::*;
+// ======================================================================
+// Game States 
+// ======================================================================
+ 
+#[derive(States, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum GameState {
+    #[default]
+    Loading,
+    InGame,
+}
 // ======================================================================
 // Main Application Setup
 // ======================================================================
 fn main() {
     App::new()
+        // States
         // Resources
         .insert_resource(AmbientLight {
             color: Color::WHITE,
@@ -47,6 +60,7 @@ fn main() {
         // Events
         .add_event::<GameEvent>()
         // Plugins
+
         .add_plugins(DefaultPlugins.set(ImagePlugin {
             default_sampler: ImageSamplerDescriptor {
                 address_mode_u: ImageAddressMode::Repeat,
@@ -65,10 +79,25 @@ fn main() {
         //.add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(FpsControllerPlugin)
         // Startup Systems
-        .add_systems(
-            Startup,
-            (setup_player, setup, setup_ui, setup_voxels),
-        )
+        
+        //States
+        .init_state::<GameState>()
+        // ======================================================================
+        // LOADING STATE SYSTEMS
+        // ======================================================================
+        .add_systems(Startup, (setup_main_menu))
+        
+        // ======================================================================
+        // IN GAME STATE SYSTEMS
+        // ======================================================================
+        // Setup Systems
+        .add_systems(OnEnter(GameState::InGame),
+            (
+                setup_player, 
+                setup_world, 
+                setup_ui, 
+                setup_voxels
+            ))
         // Update Systems
         .add_systems(
             Update,
@@ -81,7 +110,7 @@ fn main() {
                 update_hotbar,
                 update_inventory_ui,
                 update_voxel_identifier,
-            ),
+            ).run_if(in_state(GameState::InGame))
         )
         .run();
 }
@@ -92,19 +121,18 @@ fn main() {
 #[derive(Component)]
 pub struct DebugText;
 
+
+
 // ======================================================================
 // Setup Function
 // ======================================================================
-pub fn setup(
+pub fn setup_world(
     mut commands: Commands,
-    mut window: Query<&mut Window>,
-    assets: Res<AssetServer>,
+
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    image_handles: Res<GameTextures>,
 ) {
-    // Configure the main window
-    let mut window = window.single_mut();
-    window.title = String::from("Bits And Blocks");
 
     // Spawn a directional light (Sun)
     commands.spawn((
@@ -123,7 +151,7 @@ pub fn setup(
     let mesh_handle = meshes.add(mesh);
 
     // Create material with texture
-    let image_handle = assets.load(WORLD_TEXTURE_PATH);
+    let image_handle = image_handles.ground_texture.clone();
     let material = materials.add(StandardMaterial {
         base_color_texture: Some(image_handle),
         perceptual_roughness: 0.2,
