@@ -8,7 +8,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, ui::FadeTimer, voxel::{Voxel, VoxelAsset, VoxelDefinition, VoxelMap}};
+use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, voxel::{Voxel, VoxelDefinition, VoxelMap}};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -118,6 +118,7 @@ pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
     }
 }
 
+/// Update the window's cursor options and the FPS controller's input state.
 pub fn update_cursor_and_input(
     window: &mut Window,
     controller_query: &mut Query<&mut FpsController>,
@@ -132,6 +133,7 @@ pub fn update_cursor_and_input(
     }
 }
 
+/// Process input events for updating cursor mode and handling player actions.
 pub fn input_event_system(
     mouse_input: Res<ButtonInput<MouseButton>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -141,7 +143,7 @@ pub fn input_event_system(
     mut event_writer: EventWriter<GameEvent>,
 ) {
     // --- Cursor and Input Mode Updates ---
-    if let Ok(_) = window_query.get_single_mut() {
+    if window_query.get_single_mut().is_ok() {
         if mouse_input.just_pressed(MouseButton::Left) {
             event_writer.send(GameEvent::UpdateCursor {
                 mode: CursorGrabMode::Locked,
@@ -170,33 +172,36 @@ pub fn input_event_system(
     }
 
     // --- Player Action Events ---
-    
-
-    
     if mouse_input.just_pressed(MouseButton::Left) && !keyboard_input.pressed(KeyCode::Tab) {
-
         let mut selected_voxel = match player.selected_voxel {
             Some(voxel) => voxel,
             None => return,
         };
-        
-        selected_voxel.direction = cardinalize(player.camera_dir); // Set the direction of the selected voxel on camera dir
-        
-        let voxel_asset = voxel_assets.asset_map[&selected_voxel.voxel_id].clone();
-        
-        event_writer.send(GameEvent::PlaceBlock { voxel: selected_voxel, voxel_asset });
-        // Meshes that need updating to event handler
-        let mesh_updates = get_neighboring_coords(selected_voxel.position);
-        event_writer.send(GameEvent::UpdateMeshCall { updates: mesh_updates });
-    } else if mouse_input.just_pressed(MouseButton::Right) {
 
+        // Set the direction of the selected voxel based on the camera direction.
+        selected_voxel.direction = cardinalize(player.camera_dir);
+
+        let voxel_asset = voxel_assets.asset_map[&selected_voxel.voxel_id].clone();
+
+        event_writer.send(GameEvent::PlaceBlock {
+            voxel: selected_voxel,
+            voxel_asset,
+        });
+
+        // Send mesh update events for neighboring coordinates.
+        let mesh_updates = get_neighboring_coords(selected_voxel.position);
+        event_writer.send(GameEvent::UpdateMesh { updates: mesh_updates });
+    } else if mouse_input.just_pressed(MouseButton::Right) {
         let hit_voxel = match player.hit_voxel {
             Some(voxel) => voxel,
             None => return,
         };
-        event_writer.send(GameEvent::RemoveBlock { position: hit_voxel.position });
+
+        event_writer.send(GameEvent::RemoveBlock {
+            position: hit_voxel.position,
+        });
+
         let mesh_updates = get_neighboring_coords(hit_voxel.position);
-        event_writer.send(GameEvent::UpdateMeshCall { updates: mesh_updates });
+        event_writer.send(GameEvent::UpdateMesh { updates: mesh_updates });
     }
 }
-

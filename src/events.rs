@@ -16,7 +16,7 @@ pub enum GameEvent {
     RemoveBlock {
         position: IVec3,
     },
-    UpdateMeshCall {
+    UpdateMesh {
         updates: [IVec3; 6],
     },
     UpdateCursor {
@@ -76,7 +76,7 @@ pub fn event_handler(
                     );
                 }
             }
-            GameEvent::UpdateMeshCall { updates } => {
+            GameEvent::UpdateMesh { updates } => {
                 update_meshes(
                     *updates,
                     &mut voxel_map,

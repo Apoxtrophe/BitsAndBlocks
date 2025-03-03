@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{config::{CURSOR_PATH, FADE_TIME, HOTBAR_BORDER_COLOR, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, player::Player, voxel::VoxelMap, DebugText};
+use crate::{config::{CURSOR_PATH, FADE_TIME, NUM_VOXELS, SUBSET_SIZES, TEXTURE_PATH}, helpers::box_shadow_node_bundle, player::Player, voxel::VoxelMap, DebugText};
 
 
 #[derive(Component)]
@@ -38,7 +38,6 @@ pub fn setup_ui(
     commands.insert_resource(timer);
     
     // Spawn the debug text and cursor node.
-    // 
     let cursor_texture_handle: Handle<Image> = asset_server.load(CURSOR_PATH);
     spawn_debug_text(&mut commands);
     spawn_cursor_node(&mut commands, cursor_texture_handle);
@@ -92,7 +91,7 @@ pub fn setup_ui(
     
     // Spawn inventory grid
     commands.entity(main_node).with_children(|parent| {
-        spawn_grid_menu(parent, &texture_handle, &texture_atlas_handle);
+        spawn_inventory(parent, &texture_handle, &texture_atlas_handle);
     });
     
     commands.entity(main_node).with_children(|parent| {
@@ -148,67 +147,11 @@ pub fn update_voxel_identifier(
         for (mut text, mut color, _) in query.iter_mut() {
             text.0 = voxel_identifier.name.clone();
             let alpha = fade_timer.timer.fraction_remaining();
-            println!("{}", alpha);
             color.0 = Color::linear_rgba(1.0, 1.0, 1.0, alpha);
         }
     } else {
         return;
     }
-}
-
-pub fn spawn_grid_menu(
-    parent: &mut ChildBuilder,
-    texture_handle: &Handle<Image>,
-    texture_atlas_handle: &Handle<TextureAtlasLayout>,
-) {  
-    let grid_node = (Node {
-        width: Val::Px(400.0),
-        height: Val::Px(400.0),
-        margin: UiRect::all(Val::Auto),
-        flex_wrap: FlexWrap::Wrap,
-        justify_content: JustifyContent::Center,
-        align_items: AlignItems::Center,
-        position_type: PositionType::Absolute,
-        ..Default::default()
-    },
-    Visibility::Visible,
-    GridMenu,
-    );
-    
-    let button_node = (Node {
-        width: Val::Percent(25.0),
-        height: Val::Percent(25.0),
-        margin: UiRect::all(Val::Auto),
-        ..Default::default()
-    }, 
-    Visibility::Inherited,
-    BackgroundColor(Color::WHITE),
-    );
-
-    let image_node = (Node {
-        left: Val::Percent(5.0),
-        top: Val::Percent(5.0),
-        width: Val::Percent(90.0),
-        height: Val::Percent(90.0),
-        justify_content: JustifyContent::Center,
-        align_items: AlignItems::Center,
-        position_type: PositionType::Absolute,
-        ..Default::default()
-    },
-    ImageNode::from_atlas_image(texture_handle.clone(), TextureAtlas::from(texture_atlas_handle.clone())),
-    );
-    
-    parent.spawn(grid_node)
-    .with_children(|grid_parent| {
-        for i in 0..16 {
-            grid_parent.spawn((Button, button_node.clone()))
-                .insert(InventorySlot { index: i })
-            .with_children(|child| {
-                child.spawn(image_node.clone())
-                    .insert(InventorySlot { index: i });
-            });
-        }
-    });
 }
 
 /// Spawns the debug text node.
@@ -233,6 +176,42 @@ fn spawn_debug_text(commands: &mut Commands) {
         TextLayout::new_with_justify(JustifyText::Left),
         text_node,
     ));
+}
+
+pub fn update_debug_text(
+    mut text_query: Query<&mut Text, With<DebugText>>,
+    entity_query: Query<Entity>,
+    player: Res<Player>,
+) {
+    let entity_count = entity_query.iter().count();
+
+    // Create the debug text string.
+    let debug_text = format!(
+        "\
+Camera Pos: {:.1}
+Camera Direction: {:.1}
+Ray Hit: {:.1}
+Hit Voxel: {:?}
+Selected Voxel.: {:?}
+Selected Definition: {:?}
+Voxel ID: {:?}
+Hotbar: {:?}
+Entity Count: {}",
+        player.camera_pos,
+        player.camera_dir,
+        player.ray_hit_pos,
+        player.hit_voxel,
+        player.selected_voxel,
+        player.selected_descriptor,
+        player.hotbar_selector,
+        player.hotbar_ids,
+        entity_count,
+    );
+
+    // Update all debug text entities.
+    for mut text in text_query.iter_mut() {
+        text.0 = debug_text.clone();
+    }
 }
 
 /// Spawns the cursor node at the center.
@@ -325,6 +304,61 @@ pub fn update_hotbar(
     }
 }
 
+pub fn spawn_inventory(
+    parent: &mut ChildBuilder,
+    texture_handle: &Handle<Image>,
+    texture_atlas_handle: &Handle<TextureAtlasLayout>,
+) {  
+    let grid_node = (Node {
+        width: Val::Px(400.0),
+        height: Val::Px(400.0),
+        margin: UiRect::all(Val::Auto),
+        flex_wrap: FlexWrap::Wrap,
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        position_type: PositionType::Absolute,
+        ..Default::default()
+    },
+    Visibility::Visible,
+    GridMenu,
+    );
+    
+    let button_node = (Node {
+        width: Val::Percent(25.0),
+        height: Val::Percent(25.0),
+        margin: UiRect::all(Val::Auto),
+        ..Default::default()
+    }, 
+    Visibility::Inherited,
+    BackgroundColor(Color::WHITE),
+    );
+
+    let image_node = (Node {
+        left: Val::Percent(5.0),
+        top: Val::Percent(5.0),
+        width: Val::Percent(90.0),
+        height: Val::Percent(90.0),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        position_type: PositionType::Absolute,
+        ..Default::default()
+    },
+    ImageNode::from_atlas_image(texture_handle.clone(), TextureAtlas::from(texture_atlas_handle.clone())),
+    );
+    
+    parent.spawn(grid_node)
+    .with_children(|grid_parent| {
+        for i in 0..16 {
+            grid_parent.spawn((Button, button_node.clone()))
+                .insert(InventorySlot { index: i })
+            .with_children(|child| {
+                child.spawn(image_node.clone())
+                    .insert(InventorySlot { index: i });
+            });
+        }
+    });
+}
+
 pub fn update_inventory_ui(
     mut interaction_query: Query<
         (
@@ -389,66 +423,3 @@ pub fn update_inventory_ui(
     }
 }
 
-fn box_shadow_node_bundle(
-    size: Vec2,
-    offset: Vec2,
-    spread: f32,
-    blur: f32,
-    border_radius: BorderRadius,
-) -> impl Bundle {
-    (   
-        Node {
-            top: Val::Percent(90.0),
-            width: Val::Px(size.x),
-            height: Val::Px(size.y),
-            border: UiRect::all(Val::Px(6.0)),
-            ..default()
-        },
-        BorderColor(HOTBAR_BORDER_COLOR.into()),
-        border_radius,
-        BackgroundColor(Color::linear_rgba(0.2, 0.2, 0.2, 0.1)),
-        BoxShadow {
-            color: Color::BLACK.with_alpha(0.8),
-            x_offset: Val::Percent(offset.x),
-            y_offset: Val::Percent(offset.y),
-            spread_radius: Val::Percent(spread),
-            blur_radius: Val::Px(blur),
-        },
-    )
-}
-
-pub fn update_text(
-    mut text_query: Query<&mut Text, With<DebugText>>,
-    entity_query: Query<Entity>,
-    player: Res<Player>,
-) {
-    let entity_count = entity_query.iter().count();
-
-    // Create the debug text string.
-    let debug_text = format!(
-        "\
-Camera Pos: {:.1}
-Camera Direction: {:.1}
-Ray Hit: {:.1}
-Hit Voxel: {:?}
-Selected Voxel.: {:?}
-Selected Definition: {:?}
-Voxel ID: {:?}
-Hotbar: {:?}
-Entity Count: {}",
-        player.camera_pos,
-        player.camera_dir,
-        player.ray_hit_pos,
-        player.hit_voxel,
-        player.selected_voxel,
-        player.selected_descriptor,
-        player.hotbar_selector,
-        player.hotbar_ids,
-        entity_count,
-    );
-
-    // Update all debug text entities.
-    for mut text in text_query.iter_mut() {
-        text.0 = debug_text.clone();
-    }
-}
