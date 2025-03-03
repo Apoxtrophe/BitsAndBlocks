@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{config::{FADE_TIME, NUM_VOXELS, SUBSET_SIZES, VOXEL_TEXTURE_PATH}, helpers::box_shadow_node_bundle, loading::{FadeTimer, GameTextures, VoxelMap}, player::Player, DebugText};
+use crate::{config::{FADE_TIME, NUM_VOXELS, SUBSET_SIZES}, helpers::box_shadow_node_bundle, loading::{FadeTimer, GameTextures, VoxelMap}, player::Player, DebugText};
 
 
 
@@ -37,7 +37,6 @@ pub fn create_definition_timer () -> FadeTimer{
 
 pub fn setup_ui(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     image_handles: Res<GameTextures>,
 ) {
@@ -48,7 +47,7 @@ pub fn setup_ui(
     spawn_cursor_node(&mut commands, cursor_texture_handle);
 
     // Load texture and create a texture atlas.
-    let texture_handle: Handle<Image> = asset_server.load(VOXEL_TEXTURE_PATH);
+    let texture_handle: Handle<Image> = image_handles.voxel_textures.clone();
 
     let texture_atlas = TextureAtlasLayout::from_grid(
         UVec2::splat(16),

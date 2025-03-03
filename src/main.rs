@@ -28,7 +28,6 @@ use bevy::state::app::AppExtStates as _;
 // ======================================================================
 use player::*;
 use events::*;
-use voxel::*;
 use ui::*;
 use raycast::*;
 use config::*;

@@ -5,12 +5,12 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::Collider;
 
 use crate::{
-    config::{VOXEL_DEFINITITION_PATH, VOXEL_TEXTURE_PATH},
+    config::VOXEL_DEFINITITION_PATH,
     graphics::{create_cable_mesh, create_voxel_mesh},
     helpers::{
         compute_voxel_transform, get_neighboring_coords, voxel_exists,
         VOXEL_COLLIDER_SIZE,
-    }, loading::{GameTextures, Voxel, VoxelAsset, VoxelDefinition, VoxelMap},
+    }, loading::{Voxel, VoxelAsset, VoxelDefinition, VoxelMap},
 };
 
 
