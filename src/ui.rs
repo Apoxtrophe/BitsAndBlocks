@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{config::{FADE_TIME, NUM_VOXELS, SUBSET_SIZES, VOXEL_TEXTURE_PATH}, helpers::box_shadow_node_bundle, loading::{GameTextures, VoxelMap}, player::Player, DebugText};
+use crate::{config::{FADE_TIME, NUM_VOXELS, SUBSET_SIZES, VOXEL_TEXTURE_PATH}, helpers::box_shadow_node_bundle, loading::{FadeTimer, GameTextures, VoxelMap}, player::Player, DebugText};
 
 
 
@@ -26,18 +26,21 @@ struct HotbarSlotStyle {
     border_radius: BorderRadius,
 }
 
+pub fn create_definition_timer () -> FadeTimer{
+    // Spawn the fading text timer resource
+    let timer = FadeTimer {
+        timer: Timer::from_seconds(FADE_TIME, TimerMode::Once),
+    };
+    
+    timer
+}
+
 pub fn setup_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     image_handles: Res<GameTextures>,
 ) {
-    // Spawn the fading text timer resource
-    let timer = FadeTimer {
-        timer: Timer::from_seconds(FADE_TIME, TimerMode::Once),
-    };
-    
-    commands.insert_resource(timer);
     
     // Spawn the debug text and cursor node.
     let cursor_texture_handle = image_handles.cursor_texture.clone();
@@ -104,11 +107,6 @@ pub fn setup_ui(
 
 #[derive(Component)]
 pub struct VoxelIdentifierText;
-
-#[derive(Resource)]
-pub struct FadeTimer {
-    pub timer: Timer,
-}
 
 pub fn spawn_voxel_identifier(
     parent: &mut ChildBuilder,

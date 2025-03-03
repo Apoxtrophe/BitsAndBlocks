@@ -4,7 +4,7 @@ use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
 
 use crate::{
-    graphics::create_cable_mesh, loading::{Voxel, VoxelAsset}, player::{update_cursor_and_input, Player}, ui::FadeTimer, voxel::{add_voxel, count_neighbors, remove_voxel, update_meshes}, VoxelMap
+    graphics::create_cable_mesh, loading::{FadeTimer, Voxel, VoxelAsset}, player::{update_cursor_and_input, Player}, voxel::{add_voxel, count_neighbors, remove_voxel, update_meshes}, VoxelMap
 };
 
 #[derive(Event)]

@@ -1,4 +1,6 @@
 
+use std::{collections::HashMap, fs};
+
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::Collider;
 
@@ -8,7 +10,7 @@ use crate::{
     helpers::{
         compute_voxel_transform, get_neighboring_coords, voxel_exists,
         VOXEL_COLLIDER_SIZE,
-    }, loading::{GameTextures, Voxel, VoxelAsset, VoxelMap},
+    }, loading::{GameTextures, Voxel, VoxelAsset, VoxelDefinition, VoxelMap},
 };
 
 
@@ -71,6 +73,45 @@ pub fn create_voxel_material(atlas_handle: Handle<Image>) -> StandardMaterial {
         metallic: 0.5,
         ..Default::default()
     }
+}
+
+pub fn create_voxel_map(
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    image_handle: Handle<Image>,
+) -> VoxelMap{
+    //let texture_handle = asset_server.load(VOXEL_TEXTURE_PATH);
+    let file_content = fs::read_to_string(VOXEL_DEFINITITION_PATH)
+        .expect("Failed to read file");
+    let voxel_defs: Vec<VoxelDefinition> = serde_json::from_str(&file_content)
+        .expect("Failed to parse JSON");
+
+    let voxel_asset_map = voxel_defs
+        .into_iter()
+        .enumerate()
+        .map(|(i, voxel_def)| {
+            let mesh_handle = meshes.add(create_voxel_mesh(i));
+            let material_handle = materials.add(create_voxel_material(image_handle.clone()));
+            let texture_row = i;
+            (voxel_def.voxel_id, VoxelAsset {
+                mesh_handle,
+                material_handle,
+                definition: voxel_def,
+                texture_row,
+            })
+        })
+        .collect::<HashMap<_, _>>();
+    
+    let entity_map = HashMap::new();
+    let voxel_map = HashMap::new();
+    
+    let voxel_map = VoxelMap {
+        entity_map,
+        voxel_map,
+        asset_map: voxel_asset_map,
+    };
+    
+    voxel_map
 }
 
 /// Checks for neighboring voxels and returns an array of booleans.
