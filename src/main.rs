@@ -10,6 +10,7 @@ mod ui;
 mod raycast;
 mod config;
 mod loading;
+mod main_menu;
 
 // ======================================================================
 // External Crate Imports
@@ -33,6 +34,7 @@ use raycast::*;
 use config::*;
 use helpers::tile_mesh_uvs;
 use loading::*;
+use main_menu::*;
 // ======================================================================
 // Game States 
 // ======================================================================
@@ -41,6 +43,7 @@ use loading::*;
 enum GameState {
     #[default]
     Loading,
+    MainMenu,
     InGame,
 }
 // ======================================================================
@@ -87,7 +90,21 @@ fn main() {
         .add_systems(Startup, (loading))
         
         // ======================================================================
-        // IN GAME STATE SYSTEMS
+        // MAINMENU STATE SYSTEMS
+        // ======================================================================
+        .add_systems(OnEnter(GameState::MainMenu), (setup_main_menu))
+        
+        .add_systems(
+            Update,
+            (
+                menu_interaction_system,
+            ).run_if(in_state(GameState::MainMenu))
+        )
+        
+        .add_systems(OnExit(GameState::MainMenu), (despawn_main_menu))
+        
+        // ======================================================================
+        // INGAME STATE SYSTEMS
         // ======================================================================
         // Setup Systems
         .add_systems(OnEnter(GameState::InGame),

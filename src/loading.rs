@@ -4,6 +4,7 @@ use bevy::prelude::*;
 
 use crate::{config::{CURSOR_TEXTURE_PATH, VOXEL_TEXTURE_PATH, WORLD_TEXTURE_PATH}, ui::create_definition_timer, voxel::create_voxel_map, GameState};
 
+/// Handles Asset and Resource Loading before entering the main menu / Game. 
 pub fn loading(
     mut window: Query<&mut Window>,
     mut app_state: ResMut<NextState<GameState>>,
@@ -17,10 +18,14 @@ pub fn loading(
     let mut window = window.single_mut();
     window.title = String::from("Bits And Blocks");
     
+    println!("State: Loading");
+    
     let game_texture_handles = GameTextures {
         ground_texture: asset_server.load(WORLD_TEXTURE_PATH),
         cursor_texture: asset_server.load(CURSOR_TEXTURE_PATH),
         voxel_textures: asset_server.load(VOXEL_TEXTURE_PATH),
+        home_screen_texture: asset_server.load("textures/homescreen.png"),
+        menu_button_texture: asset_server.load("textures/menu_options.png"),
     };
     
     // Load Game Textures
@@ -32,7 +37,10 @@ pub fn loading(
     // Create Voxel definition text timer
     commands.insert_resource(create_definition_timer());
     
-    app_state.set(GameState::InGame);
+    
+    println!("Assets Loaded, Moving to Main Menu");
+    
+    app_state.set(GameState::MainMenu);
 }
 
 #[derive(Resource, Clone)]
@@ -40,6 +48,8 @@ pub struct GameTextures {
     pub ground_texture: Handle<Image>,
     pub cursor_texture: Handle<Image>,
     pub voxel_textures: Handle<Image>,
+    pub home_screen_texture: Handle<Image>,
+    pub menu_button_texture: Handle<Image>,
 }
 
 #[derive(Resource, Clone)]
