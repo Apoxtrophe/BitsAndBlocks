@@ -98,6 +98,7 @@ fn main() {
             Update,
             (
                 menu_interaction_system,
+                update_pop_window_visibility,
             ).run_if(in_state(GameState::MainMenu))
         )
         

@@ -25,7 +25,10 @@ pub fn loading(
         cursor_texture: asset_server.load(CURSOR_TEXTURE_PATH),
         voxel_textures: asset_server.load(VOXEL_TEXTURE_PATH),
         home_screen_texture: asset_server.load("textures/homescreen.png"),
-        menu_button_texture: asset_server.load("textures/menu_options.png"),
+        menu_button_texture: asset_server.load("textures/buttons.png"),
+        new_game_screen_texture: asset_server.load("textures/new_game.png"),
+        load_game_screen_texture: asset_server.load("textures/load_game.png"),
+        options_screen_texture: asset_server.load("textures/options_screen.png"),
     };
     
     // Load Game Textures
@@ -50,6 +53,9 @@ pub struct GameTextures {
     pub voxel_textures: Handle<Image>,
     pub home_screen_texture: Handle<Image>,
     pub menu_button_texture: Handle<Image>,
+    pub new_game_screen_texture: Handle<Image>,
+    pub load_game_screen_texture: Handle<Image>,
+    pub options_screen_texture: Handle<Image>,
 }
 
 #[derive(Resource, Clone)]
