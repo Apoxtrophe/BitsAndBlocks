@@ -89,8 +89,7 @@ fn main() {
         // ======================================================================
         // LOADING STATE SYSTEMS
         // ======================================================================
-        .add_systems(Startup, (loading))
-        
+        .add_systems(OnEnter(GameState::Loading), (loading))
         // ======================================================================
         // MAINMENU STATE SYSTEMS
         // ======================================================================
@@ -128,9 +127,11 @@ fn main() {
                 update_hotbar,
                 update_inventory_ui,
                 update_voxel_identifier,
-                update_game_window_visibility
+                update_game_window_visibility,
+                exit_menu_interaction,
             ).run_if(in_state(GameState::InGame))
         )
+        .add_systems(OnExit(GameState::InGame), (despawn_all))
         .run();
 }
 
@@ -161,7 +162,7 @@ pub fn setup_world(
             ..default()
         },
         Transform::from_xyz(4.0, 7.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-    ));
+    )).insert(GameEntity);
 
     // Create world mesh
     let mut mesh: Mesh = (Cuboid::new(WORLD_WIDTH, 1.0, WORLD_WIDTH)).into();
@@ -185,5 +186,5 @@ pub fn setup_world(
             MeshMaterial3d(material),
             WORLD_TRANSFORM,
         ))
-        .insert(Collider::cuboid(WORLD_WIDTH * 0.5, 0.5, WORLD_WIDTH * 0.5));
+        .insert(Collider::cuboid(WORLD_WIDTH * 0.5, 0.5, WORLD_WIDTH * 0.5)).insert(GameEntity);
 }

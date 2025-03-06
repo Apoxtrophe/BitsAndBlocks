@@ -10,7 +10,7 @@ use crate::{
     helpers::{
         compute_voxel_transform, get_neighboring_coords, voxel_exists,
         VOXEL_COLLIDER_SIZE,
-    }, loading::{Voxel, VoxelAsset, VoxelDefinition, VoxelMap},
+    }, loading::{Voxel, VoxelAsset, VoxelDefinition, VoxelMap}, ui::GameEntity,
 };
 
 
@@ -38,7 +38,7 @@ fn spawn_voxel_entity(commands: &mut Commands, voxel: Voxel, asset: &VoxelAsset)
                 VOXEL_COLLIDER_SIZE,
                 VOXEL_COLLIDER_SIZE,
             ),
-        })
+        }).insert(GameEntity)
         .id()
 }
 

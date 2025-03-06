@@ -1,5 +1,5 @@
-use bevy::prelude::*;
-use crate::{config::{FADE_TIME, NUM_VOXELS, SUBSET_SIZES}, helpers::box_shadow_node_bundle, loading::{FadeTimer, GameTextures, VoxelMap}, player::Player, DebugText};
+use bevy::{prelude::*, window::CursorGrabMode};
+use crate::{config::{FADE_TIME, NUM_VOXELS, SUBSET_SIZES}, events::GameEvent, helpers::box_shadow_node_bundle, loading::{FadeTimer, GameTextures, VoxelMap}, main_menu::{spawn_button, spawn_sub_node, ButtonNumber}, player::{Player, PlayerCamera}, ui_helpers::spawn_ui_node, DebugText, GameState};
 
 #[derive(Component)]
 pub struct GridMenu;
@@ -13,6 +13,9 @@ pub struct HotbarSlot {
 pub struct InventorySlot {
     pub index: usize,
 }
+
+#[derive(Component)]
+pub struct VoxelIdentifierText;
 
 #[derive(Component, PartialEq, Eq, Clone, Copy)]
 pub struct UIType {
@@ -32,6 +35,9 @@ pub enum WhichUI {
     HotbarHidden,
     ExitMenu,
 }
+
+#[derive(Component)]
+pub struct GameEntity; // Entities that are removed after leaving the game state.
 
 /// Defines the style for hotbar slots.
 struct HotbarSlotStyle {
@@ -61,9 +67,9 @@ pub fn setup_ui(
     });
     
     // Spawn the debug text and cursor node.
-    let cursor_texture_handle = image_handles.cursor_texture.clone();
+
     spawn_debug_text(&mut commands);
-    spawn_cursor_node(&mut commands, cursor_texture_handle);
+
 
     // Load texture and create a texture atlas.
     let texture_handle: Handle<Image> = image_handles.voxel_textures.clone();
@@ -77,7 +83,7 @@ pub fn setup_ui(
     );
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
-    let main_node = Node {
+    let main_node = (Node {
         width: Val::Percent(100.0),
         height: Val::Percent(100.0),
         padding: UiRect::all(Val::Px(30.0)),
@@ -85,10 +91,37 @@ pub fn setup_ui(
         flex_wrap: FlexWrap::Wrap,
         justify_content: JustifyContent::Center,
         ..default()
-    };
+    },
+    GameEntity);
     
     // Spawn the main UI node.
     let main_node = commands.spawn(main_node).id();
+    
+    let cursor_texture_handle = image_handles.cursor_texture.clone();
+    let cursor = spawn_cursor_node(&mut commands, cursor_texture_handle);
+    commands.entity(cursor).set_parent(main_node);
+    
+    let exit_menu = spawn_exit_menu(&mut commands);
+    commands.entity(exit_menu).set_parent(main_node);
+    
+    let sub_exit_menu =  spawn_sub_node(&mut commands, 30.0, 70.0, 15.0);
+    commands.entity(sub_exit_menu).set_parent(exit_menu);
+    
+    // Prepare button texture atlas
+    let buttons_texture = image_handles.menu_button_texture.clone();
+    let button_atlas = TextureAtlasLayout::from_grid(UVec2::new(144, 32), 1, 16, None, None);
+    let button_atlas_handle = texture_atlases.add(button_atlas);
+    
+    for i in 0..4 {
+        spawn_button (
+            &mut commands,
+            sub_exit_menu,
+            buttons_texture.clone(),
+            button_atlas_handle.clone(),
+            i + 8,
+            24.0,
+        );
+    }
 
     // Define a common style for hotbar slots.
     let hotbar_style = HotbarSlotStyle {
@@ -123,9 +156,71 @@ pub fn setup_ui(
     });
 }
 
-#[derive(Component)]
-pub struct VoxelIdentifierText;
+fn spawn_exit_menu (
+    commands: &mut Commands,
+) -> Entity {
+    spawn_ui_node(
+        commands,
+        Node {
+            width: Val::Percent(80.0),
+            height: Val::Percent(80.0),
+            flex_wrap: FlexWrap::Wrap,
+            justify_content: JustifyContent::Center,
+            position_type: PositionType::Absolute,
+            ..default()
+        },
+        (BackgroundColor(Color::linear_rgba(0.1, 0.1, 0.1, 0.8)), UIType { ui: WhichUI::ExitMenu }, Visibility::Hidden),
+    )
+}
 
+pub fn exit_menu_interaction(
+    mut query: Query<(&Interaction, &mut BackgroundColor, &ButtonNumber), (Changed<Interaction>, With<Button>)>,
+    mut which_ui: ResMut<WhichUIShown>,
+    mut event_writer: EventWriter<GameEvent>,
+    mut app_state: ResMut<NextState<GameState>>,
+) {
+    
+    for (interaction, mut bg_color, button_number) in query.iter_mut() {
+        match *interaction {
+            
+            Interaction::Pressed => {                
+                match button_number.index {
+                    8 => {
+                        println!("Back To Game");
+                        which_ui.ui = WhichUI::Default;
+                        event_writer.send(GameEvent::UpdateCursor {
+                            mode: CursorGrabMode::Locked,
+                            show_cursor: false,
+                            enable_input: true,
+                        });
+                    }
+                    9 => {
+                        println!("Main Menu");
+
+                        
+                        app_state.set(GameState::Loading);
+                    }
+                    10 => {
+                        println!("Save & Quit");
+                    }
+                    11 => {
+                        println!("Placeholder");
+                    }
+                    _ => {}
+                }
+
+                *bg_color = Color::linear_rgba(0.0, 1.0, 0.0, 1.0).into();
+            }
+            Interaction::Hovered => {
+                *bg_color = Color::linear_rgba(1.0, 1.0, 1.0, 1.0).into();
+            }
+            Interaction::None => {
+                *bg_color = Color::linear_rgba(0.0, 0.0, 0.0, 0.0).into();
+            }
+        }
+    }
+    
+}
 pub fn spawn_voxel_identifier(
     parent: &mut ChildBuilder,
 ) {
@@ -179,7 +274,8 @@ fn spawn_debug_text(commands: &mut Commands) {
         right: Val::Percent(5.0),
         ..default()
     },
-    DebugText);
+    DebugText,
+    GameEntity);
     
     let text_settings = TextFont {
         font_size: 16.0,
@@ -235,7 +331,7 @@ Entity Count: {}",
 fn spawn_cursor_node(
     commands: &mut Commands,
     image: Handle<Image>,
-) {
+) -> Entity {
 
     let image_node = ImageNode::new(image);
     let cursor_node = (Node {
@@ -250,7 +346,7 @@ fn spawn_cursor_node(
     image_node,
     );
 
-    commands.spawn(cursor_node);
+    commands.spawn(cursor_node).id()
 }
 
 /// Spawns an individual hotbar slot and its child image node.
@@ -383,8 +479,6 @@ pub fn update_inventory_ui(
         ),
         (Changed<Interaction>, With<Button>),
     >,
-    mut query: Query<&mut Visibility, With<GridMenu>>,
-    keyboard_input: Res<ButtonInput<KeyCode>>,
     mut image_query: Query<(&InventorySlot, &mut ImageNode)>,
     mut player: ResMut<Player>,
     voxel_map: Res<VoxelMap>,
@@ -420,7 +514,6 @@ pub fn update_inventory_ui(
     }
 }
 
-
 pub fn update_game_window_visibility(
 
     mut query: Query<(&UIType, &mut Visibility)>,
@@ -433,4 +526,28 @@ pub fn update_game_window_visibility(
             *visibility = Visibility::Hidden;
         }
     }
+}
+
+pub fn despawn_all(
+    mut commands: Commands,
+    entities: Query<Entity, With<GameEntity>>,
+    camera_query: Query<Entity, With<PlayerCamera>>,
+) {
+    
+    
+    for camera_entity in camera_query.iter() {
+        commands.entity(camera_entity).despawn_recursive();
+    }
+    for (entity) in entities.iter() {
+        if commands.get_entity(entity).is_some() {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
+    
+    
+    
+    
+    
+
+    println!("Entities Despawned");
 }

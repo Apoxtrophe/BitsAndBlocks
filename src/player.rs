@@ -8,7 +8,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, loading::{Voxel, VoxelDefinition, VoxelMap}, ui::{WhichUI, WhichUIShown}};
+use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, loading::{Voxel, VoxelDefinition, VoxelMap}, ui::{GameEntity, WhichUI, WhichUIShown}};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -86,7 +86,7 @@ pub fn setup_player(mut commands: Commands) {
         ))
         .insert(CameraConfig {
             height_offset: -0.5,
-        })
+        }).insert(GameEntity)
         .id();
 
     let mut player_camera = commands.spawn((
@@ -104,6 +104,7 @@ pub fn setup_player(mut commands: Commands) {
     // Insert player camera component
     player_camera.insert(PlayerCamera);
     player_camera.insert(AtmosphereCamera::default());
+    player_camera.insert(GameEntity);
 }
 
 /// Respawn entities whose vertical position falls below the threshold.
@@ -142,9 +143,7 @@ pub fn input_event_system(
     mut window_query: Query<&mut Window>,
     mut event_writer: EventWriter<GameEvent>,
     mut which_ui: ResMut<WhichUIShown>,
-) {
-    println!("{:?}", which_ui.ui);
-    
+) { 
     // --- Cursor and Input Mode Updates ---
     if window_query.get_single_mut().is_ok() {
         if mouse_input.just_pressed(MouseButton::Left)  && false{
@@ -170,19 +169,26 @@ pub fn input_event_system(
                 which_ui.ui = WhichUI::Default; // Set the UI to the exit menu.
             }
         } else if keyboard_input.pressed(KeyCode::Tab) {
-            event_writer.send(GameEvent::UpdateCursor {
-                mode: CursorGrabMode::Locked,
-                show_cursor: true,
-                enable_input: false,
-            });
-            which_ui.ui = WhichUI::Inventory; // Set the UI to the inventory screen.
+
+            if which_ui.ui != WhichUI::ExitMenu {
+                which_ui.ui = WhichUI::Inventory; // Set the UI to the inventory screen.
+                
+                event_writer.send(GameEvent::UpdateCursor {
+                    mode: CursorGrabMode::Locked,
+                    show_cursor: true,
+                    enable_input: false,
+                });
+            }
         } else if keyboard_input.just_released(KeyCode::Tab) {
-            event_writer.send(GameEvent::UpdateCursor {
-                mode: CursorGrabMode::Locked,
-                show_cursor: false,
-                enable_input: true,
-            });
-            which_ui.ui = WhichUI::Default; // Set the UI to the inventory screen.
+
+            if which_ui.ui != WhichUI::ExitMenu {
+                which_ui.ui = WhichUI::Default; // Set the UI to the inventory screen.
+                event_writer.send(GameEvent::UpdateCursor {
+                    mode: CursorGrabMode::Locked,
+                    show_cursor: false,
+                    enable_input: true,
+                });
+            }
         }
     }
 

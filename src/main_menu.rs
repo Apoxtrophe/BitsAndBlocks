@@ -1,4 +1,5 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::CursorGrabMode};
+use bevy_fps_controller::controller::FpsController;
 use crate::{loading::GameTextures, ui_helpers::{create_atlas_image, spawn_ui_node}, GameState};
 
 #[derive(Component)]
@@ -6,7 +7,7 @@ pub struct MainMenuEntity;
 
 #[derive(Component)]
 pub struct ButtonNumber {
-    index: usize,
+    pub index: usize,
 }
 
 #[derive(Component, Debug)]
@@ -68,7 +69,7 @@ pub fn setup_main_menu(
     
     // Prepare button texture atlas
     let buttons_texture = image_handles.menu_button_texture.clone();
-    let button_atlas = TextureAtlasLayout::from_grid(UVec2::new(144, 32), 1, 8, None, None);
+    let button_atlas = TextureAtlasLayout::from_grid(UVec2::new(144, 32), 1, 16, None, None);
     let button_atlas_handle = texture_atlases.add(button_atlas);
 
     // Spawn four buttons
@@ -132,13 +133,14 @@ fn spawn_popup(
 }
 
 /// Creates a sub-node that can be attached as a child (for instance, to hold extra buttons).
-fn spawn_sub_node(commands: &mut Commands, width: f32, height: f32, bottom: f32) -> Entity {
+pub fn spawn_sub_node(commands: &mut Commands, width: f32, height: f32, bottom: f32) -> Entity {
     spawn_ui_node(
         commands,
         Node {
             width: Val::Percent(width),
             height: Val::Percent(height),
             bottom: Val::Percent(bottom),
+            row_gap: Val::Px(8.0),
             align_content: AlignContent::Center,
             position_type: PositionType::Absolute,
             justify_content: JustifyContent::Center,
@@ -153,7 +155,7 @@ fn spawn_sub_node(commands: &mut Commands, width: f32, height: f32, bottom: f32)
 /// The container includes a BackgroundColor that will update based on user interaction.
 /// Spawns a button consisting of a container and an image child.
 /// The button container is spawned with default styling, then an image node is attached.
-fn spawn_button(
+pub fn spawn_button(
     commands: &mut Commands,
     parent: Entity,
     texture_handle: Handle<Image>,
@@ -264,7 +266,21 @@ pub fn update_pop_window_visibility(
 pub fn despawn_main_menu(
     mut commands: Commands,
     query: Query<Entity, With<MainMenuEntity>>,
+    mut window: Query<&mut Window>,
+    mut controller_query: Query<&mut FpsController>,
 ) {
+    let mut twindow = window.single_mut();
+    twindow.cursor_options = bevy::window::CursorOptions {
+        visible: false,
+        grab_mode: CursorGrabMode::Locked,
+        
+        ..Default::default()
+    };
+    
+    for mut controller in controller_query.iter_mut() {
+        controller.enable_input = true;
+    }
+    
     println!("Exiting Main Menu, Moving to In Game");
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();

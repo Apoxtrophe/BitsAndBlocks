@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fs};
 
-use bevy::prelude::*;
+use bevy::{prelude::*, window::CursorGrabMode};
+use bevy_fps_controller::controller::FpsController;
 
 use crate::{config::{CURSOR_TEXTURE_PATH, VOXEL_TEXTURE_PATH, WORLD_TEXTURE_PATH}, ui::create_definition_timer, voxel::create_voxel_map, GameState};
 
@@ -13,10 +14,22 @@ pub fn loading(
     
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<StandardMaterial>>,
+    mut controller_query: Query<&mut FpsController>,
 ) {
     // Configure the main window
     let mut window = window.single_mut();
     window.title = String::from("Bits And Blocks");
+    
+    window.cursor_options = bevy::window::CursorOptions {
+        visible: true,
+        grab_mode: CursorGrabMode::None,
+        
+        ..Default::default()
+    };
+    
+    for mut controller in controller_query.iter_mut() {
+        controller.enable_input = false;
+    }
     
     println!("State: Loading");
     
