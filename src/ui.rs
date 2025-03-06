@@ -110,8 +110,6 @@ pub struct VoxelIdentifierText;
 pub fn spawn_voxel_identifier(
     parent: &mut ChildBuilder,
 ) {
-
-    
     let main_node = (Node {
         width: Val::Percent(50.0),
         height: Val::Percent(5.0),
@@ -232,9 +230,6 @@ fn spawn_cursor_node(
     
     image_node,
     );
-    
-
-
 
     commands.spawn(cursor_node);
 }
@@ -364,7 +359,6 @@ pub fn update_inventory_ui(
         (
             &Interaction,
             &mut BackgroundColor,
-            &mut BorderColor,
             &InventorySlot,
         ),
         (Changed<Interaction>, With<Button>),
@@ -374,27 +368,20 @@ pub fn update_inventory_ui(
     mut image_query: Query<(&InventorySlot, &mut ImageNode)>,
     mut player: ResMut<Player>,
     voxel_map: Res<VoxelMap>,
-) {
-    const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
-    const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
-    const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
-    
-    for (interaction, mut color, mut border_color, inventory_slot) in &mut interaction_query {
+) {   
+    for (interaction, mut color, inventory_slot) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
-                *color = PRESSED_BUTTON.into();
-                border_color.0 = PRESSED_BUTTON.into();
+                *color = Color::srgb(0.15, 0.90, 0.15).into();
                 let selector = player.hotbar_selector.clone();
                 let index = (inventory_slot.index).clamp(0, SUBSET_SIZES[selector] - 1);
                 player.hotbar_ids[selector].1 = index;
             }
             Interaction::Hovered => {
-                *color = HOVERED_BUTTON.into();
-                border_color.0 = Color::WHITE;
+                *color = Color::srgb(0.5, 0.5, 0.5).into();
             }
             Interaction::None => {
-                *color = NORMAL_BUTTON.into();
-                border_color.0 = Color::BLACK;
+                *color = Color::srgb(0.15, 0.15, 0.15).into();
             }
         }
     }

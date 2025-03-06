@@ -11,6 +11,7 @@ mod raycast;
 mod config;
 mod loading;
 mod main_menu;
+mod ui_helpers;
 
 // ======================================================================
 // External Crate Imports
@@ -35,6 +36,7 @@ use config::*;
 use helpers::tile_mesh_uvs;
 use loading::*;
 use main_menu::*;
+use ui_helpers::*;
 // ======================================================================
 // Game States 
 // ======================================================================
