@@ -128,6 +128,7 @@ fn main() {
                 update_hotbar,
                 update_inventory_ui,
                 update_voxel_identifier,
+                update_game_window_visibility
             ).run_if(in_state(GameState::InGame))
         )
         .run();

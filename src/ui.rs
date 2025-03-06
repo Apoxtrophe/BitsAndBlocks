@@ -1,11 +1,8 @@
 use bevy::prelude::*;
 use crate::{config::{FADE_TIME, NUM_VOXELS, SUBSET_SIZES}, helpers::box_shadow_node_bundle, loading::{FadeTimer, GameTextures, VoxelMap}, player::Player, DebugText};
 
-
-
 #[derive(Component)]
 pub struct GridMenu;
-
 
 #[derive(Component)]
 pub struct HotbarSlot {
@@ -15,6 +12,25 @@ pub struct HotbarSlot {
 #[derive(Component)]
 pub struct InventorySlot {
     pub index: usize,
+}
+
+#[derive(Component, PartialEq, Eq, Clone, Copy)]
+pub struct UIType {
+    pub ui: WhichUI,
+}
+
+#[derive(Resource, PartialEq, Eq, Clone, Copy)]
+pub struct WhichUIShown {
+    pub ui: WhichUI,
+}
+
+// Local resource for InGame that keeps track of which toggleable ui is shown. 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum WhichUI {
+    Default,
+    Inventory,
+    HotbarHidden,
+    ExitMenu,
 }
 
 /// Defines the style for hotbar slots.
@@ -40,6 +56,9 @@ pub fn setup_ui(
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     image_handles: Res<GameTextures>,
 ) {
+    commands.insert_resource(WhichUIShown {
+        ui: WhichUI::Default,
+    });
     
     // Spawn the debug text and cursor node.
     let cursor_texture_handle = image_handles.cursor_texture.clone();
@@ -314,8 +333,9 @@ pub fn spawn_inventory(
         position_type: PositionType::Absolute,
         ..Default::default()
     },
-    Visibility::Visible,
+    Visibility::Hidden,
     GridMenu,
+    UIType { ui: WhichUI::Inventory },
     );
     
     let button_node = (Node {
@@ -385,17 +405,7 @@ pub fn update_inventory_ui(
             }
         }
     }
-    
-    if keyboard_input.pressed(KeyCode::Tab) {
-        for mut visibility in query.iter_mut() {
-            *visibility = Visibility::Visible;
-        }
-    } else {
-        for mut visibility in query.iter_mut() {
-            *visibility = Visibility::Hidden;
-        }
-    }
-    
+
     for (slot, mut image_node) in image_query.iter_mut() {
         let set = player.hotbar_selector;
         let mut subset = slot.index;
@@ -406,6 +416,21 @@ pub fn update_inventory_ui(
         if let Some(atlas) = &mut image_node.texture_atlas {
             let id = (set, subset);
             atlas.index = voxel_map.asset_map[&id].texture_row;
+        }
+    }
+}
+
+
+pub fn update_game_window_visibility(
+
+    mut query: Query<(&UIType, &mut Visibility)>,
+    current_screen: Res<WhichUIShown>,
+) {
+    for (ui, mut visibility) in query.iter_mut() {
+        if ui.ui == current_screen.ui {
+            *visibility = Visibility::Visible;
+        } else {
+            *visibility = Visibility::Hidden;
         }
     }
 }

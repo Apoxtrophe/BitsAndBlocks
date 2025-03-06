@@ -8,7 +8,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, loading::{Voxel, VoxelDefinition, VoxelMap}};
+use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, loading::{Voxel, VoxelDefinition, VoxelMap}, ui::{WhichUI, WhichUIShown}};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -141,38 +141,53 @@ pub fn input_event_system(
     voxel_assets: Res<VoxelMap>,
     mut window_query: Query<&mut Window>,
     mut event_writer: EventWriter<GameEvent>,
+    mut which_ui: ResMut<WhichUIShown>,
 ) {
+    println!("{:?}", which_ui.ui);
+    
     // --- Cursor and Input Mode Updates ---
     if window_query.get_single_mut().is_ok() {
-        if mouse_input.just_pressed(MouseButton::Left) {
+        if mouse_input.just_pressed(MouseButton::Left)  && false{
             event_writer.send(GameEvent::UpdateCursor {
                 mode: CursorGrabMode::Locked,
                 show_cursor: false,
                 enable_input: true,
             });
         } else if keyboard_input.just_pressed(KeyCode::Escape) {
-            event_writer.send(GameEvent::UpdateCursor {
-                mode: CursorGrabMode::None,
-                show_cursor: true,
-                enable_input: false,
-            });
+            if which_ui.ui != WhichUI::ExitMenu {
+                event_writer.send(GameEvent::UpdateCursor {
+                    mode: CursorGrabMode::None,
+                    show_cursor: true,
+                    enable_input: false,
+                });
+                which_ui.ui = WhichUI::ExitMenu; // Set the UI to the exit menu.
+            } else if which_ui.ui == WhichUI::ExitMenu {
+                event_writer.send(GameEvent::UpdateCursor {
+                    mode: CursorGrabMode::Locked,
+                    show_cursor: false,
+                    enable_input: true,
+                });
+                which_ui.ui = WhichUI::Default; // Set the UI to the exit menu.
+            }
         } else if keyboard_input.pressed(KeyCode::Tab) {
             event_writer.send(GameEvent::UpdateCursor {
                 mode: CursorGrabMode::Locked,
                 show_cursor: true,
                 enable_input: false,
             });
+            which_ui.ui = WhichUI::Inventory; // Set the UI to the inventory screen.
         } else if keyboard_input.just_released(KeyCode::Tab) {
             event_writer.send(GameEvent::UpdateCursor {
                 mode: CursorGrabMode::Locked,
                 show_cursor: false,
                 enable_input: true,
             });
+            which_ui.ui = WhichUI::Default; // Set the UI to the inventory screen.
         }
     }
 
     // --- Player Action Events ---
-    if mouse_input.just_pressed(MouseButton::Left) && !keyboard_input.pressed(KeyCode::Tab) {
+    if mouse_input.just_pressed(MouseButton::Left) && !keyboard_input.pressed(KeyCode::Tab) && which_ui.ui != WhichUI::ExitMenu {
         let mut selected_voxel = match player.selected_voxel {
             Some(voxel) => voxel,
             None => return,
