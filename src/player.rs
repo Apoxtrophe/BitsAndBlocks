@@ -48,7 +48,7 @@ impl Default for Player {
 
 pub fn setup_player(mut commands: Commands) {
 
-    let height = 3.0;
+    let height = 1.9;
     let logical_entity = commands
         .spawn((
             Collider::cylinder(height / 2.0, 0.5),
@@ -80,6 +80,10 @@ pub fn setup_player(mut commands: Commands) {
                 ..default()
             },
             FpsController {
+                height: 1.9,
+                upright_height: 1.9,
+                crouch_height: 1.5,
+
                 air_acceleration: 80.0,
                 ..default()
             },
