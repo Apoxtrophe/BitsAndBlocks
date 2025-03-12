@@ -37,7 +37,8 @@ pub fn raycast_system(
         let hit_point = intersection.point;
 
         // Adjust adjacent voxel if the hit point is low.
-        if hit_point.y < 0.55 {
+        // Fixes wonky shit with ground collisions
+        if hit_point.y < 0.51 {
             adjacent_voxel_pos = (hit_point + Vec3::Y * 0.5).round();
         }
 

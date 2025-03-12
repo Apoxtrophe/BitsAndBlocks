@@ -142,7 +142,7 @@ pub fn update_cursor_and_input(
 pub fn input_event_system(
     mouse_input: Res<ButtonInput<MouseButton>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    player: Res<Player>,
+    mut player: ResMut<Player>,
     voxel_assets: Res<VoxelMap>,
     mut window_query: Query<&mut Window>,
     mut event_writer: EventWriter<GameEvent>,
@@ -213,7 +213,7 @@ pub fn input_event_system(
             voxel_asset,
         });
 
-        // Send mesh update events for neighboring coordinates.
+        // Send mesh update events for neighboring coordinates.2
         let mesh_updates = get_neighboring_coords(selected_voxel.position);
         event_writer.send(GameEvent::UpdateMesh { updates: mesh_updates });
     } else if mouse_input.just_pressed(MouseButton::Right) {
@@ -228,5 +228,14 @@ pub fn input_event_system(
 
         let mesh_updates = get_neighboring_coords(hit_voxel.position);
         event_writer.send(GameEvent::UpdateMesh { updates: mesh_updates });
+    } else if mouse_input.just_pressed(MouseButton::Middle) {
+        let hit_voxel = match player.hit_voxel {
+            Some(voxel) => voxel,
+            None => return,
+        };
+        let voxel_def = voxel_assets.asset_map[&hit_voxel.voxel_id].definition.clone();
+        let (set, sub) = voxel_def.voxel_id;
+        player.hotbar_selector = set; 
+        player.hotbar_ids[set] = (set, sub);
     }
 }
