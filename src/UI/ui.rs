@@ -1,5 +1,6 @@
 use bevy::{prelude::*, window::CursorGrabMode};
-use crate::{config::{FADE_TIME, NUM_VOXELS, SUBSET_SIZES}, events::GameEvent, helpers::box_shadow_node_bundle, loading::{FadeTimer, GameTextures, VoxelMap}, main_menu::{spawn_button, spawn_sub_node, ButtonNumber}, player::{Player, PlayerCamera}, ui_helpers::spawn_ui_node, GameState};
+
+use crate::{prelude::*, GameState};
 
 #[derive(Component)]
 pub struct DebugText;
@@ -541,7 +542,7 @@ pub fn despawn_all(
     for camera_entity in camera_query.iter() {
         commands.entity(camera_entity).despawn_recursive();
     }
-    for (entity) in entities.iter() {
+    for entity in entities.iter() {
         if commands.get_entity(entity).is_some() {
             commands.entity(entity).despawn_recursive();
         }

@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
-use crate::{config::RAY_MAX_DIST, loading::{Voxel, VoxelMap}, player::{Player, PlayerCamera}};
+use crate::prelude::*;
+
 
 pub fn raycast_system(
     query: Query<&GlobalTransform, With<PlayerCamera>>,

@@ -2,7 +2,7 @@ use bevy::{prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
 use bevy_simple_text_input::{TextInput, TextInputSettings, TextInputSubmitEvent, TextInputTextColor, TextInputTextFont};
 
-use crate::{loading::{GameTextures, LoadedSaves, VoxelMap}, save::{load_world, SavedWorld}, ui_helpers::{create_atlas_image, spawn_ui_node}, GameState};
+use crate::{prelude::*, GameState};
 
 #[derive(Component)]
 pub struct MainMenuEntity;
@@ -235,7 +235,7 @@ fn create_editable_text(
             .spawn((
                 Node {
                     width: Val::Percent(25.0),
-                    height: Val::Percent(15.0),
+                    height: Val::Percent(10.0),
                     top: Val::Percent(50.0),
                     border: UiRect::all(Val::Px(5.0)),
                     padding: UiRect::all(Val::Px(5.0)),
@@ -326,8 +326,8 @@ pub fn menu_interaction_system(
     mut exit: EventWriter<AppExit>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut app_state: ResMut<NextState<GameState>>,
-    mut save_world: ResMut<SavedWorld>,
-    mut events: EventReader<TextInputSubmitEvent>,
+    save_world: ResMut<SavedWorld>,
+    events: EventReader<TextInputSubmitEvent>,
 ) {
 
     for (interaction, mut bg_color, button_number) in query.iter_mut() {
@@ -383,7 +383,7 @@ pub fn world_button_system(
     mut world_button_query: Query<(&Interaction, &mut BackgroundColor, &WorldButton), (Changed<Interaction>, With<Button>)>,
     mut app_state: ResMut<NextState<GameState>>,
     
-    mut commands: Commands,
+    commands: Commands,
     voxel_map: ResMut<VoxelMap>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {

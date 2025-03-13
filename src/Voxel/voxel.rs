@@ -4,14 +4,7 @@ use std::{collections::HashMap, fs};
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::Collider;
 
-use crate::{
-    config::VOXEL_DEFINITITION_PATH,
-    graphics::{create_cable_mesh, create_voxel_mesh},
-    helpers::{
-        compute_voxel_transform, get_neighboring_coords, voxel_exists,
-        VOXEL_COLLIDER_SIZE,
-    }, loading::{Voxel, VoxelAsset, VoxelDefinition, VoxelMap}, ui::GameEntity,
-};
+use crate::prelude::*;
 
 #[derive(Bundle)]
 pub struct VoxelBundle {

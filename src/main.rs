@@ -1,18 +1,13 @@
 // ======================================================================
 // Module Declarations
 // ======================================================================
-mod player;
-mod helpers;
-mod events;
-mod graphics;
-mod voxel;
-mod ui;
-mod raycast;
-mod config;
-mod loading;
-mod main_menu;
-mod ui_helpers;
-mod save;
+pub mod prelude;
+mod Character;
+mod EventHandling;
+mod UI;
+mod Voxel;
+mod Loading; 
+mod Meta; 
 
 // ======================================================================
 // External Crate Imports
@@ -29,22 +24,15 @@ use bevy_simple_text_input::TextInputPlugin;
 // ======================================================================
 // Internal Module Uses
 // ======================================================================
-use player::*;
-use events::*;
-use ui::*;
-use raycast::*;
-use config::*;
-use helpers::tile_mesh_uvs;
-use loading::*;
-use main_menu::*;
-use save::*;
+
+pub use prelude::*;
 
 // ======================================================================
 // Game States 
 // ======================================================================
  
 #[derive(States, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum GameState {
+pub enum GameState {
     #[default]
     Loading,
     MainMenu,

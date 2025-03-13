@@ -4,7 +4,7 @@ use bevy::{
     render::mesh::{Indices, PrimitiveTopology},
 };
 
-use crate::config::NUM_VOXELS;
+use crate::prelude::*;
 
 pub fn create_voxel_mesh(tile_row: usize) -> Mesh {
     // === Texture Atlas Setup ===

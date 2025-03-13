@@ -3,7 +3,7 @@ use serde_json;
 
 use bevy::prelude::*;
 
-use crate::{config::AUTOSAVE_TIME, loading::{Voxel, VoxelMap}, voxel::{add_voxel, update_voxel_cable_mesh}};
+use crate::prelude::*;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Resource, Clone)]
 pub struct SavedWorld {
@@ -42,7 +42,7 @@ pub fn autosave_system(
     
     if autosave_timer.finished(){
         println!("Saving World...");
-        save_world(query, save_game);
+        save_world(query, save_game).expect("Couldn't Save");
         
         autosave_timer.reset();
     }
