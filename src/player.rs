@@ -1,4 +1,4 @@
-use std::f32::consts::TAU;
+use std::{f32::consts::TAU, time::Duration};
 
 use bevy::{
     prelude::*, render::camera::Exposure, window::CursorGrabMode
@@ -8,7 +8,7 @@ use bevy_rapier3d::prelude::*;
 
 use bevy_fps_controller::controller::*;
 
-use crate::{events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, loading::{Voxel, VoxelDefinition, VoxelMap}, ui::{GameEntity, WhichUI, WhichUIShown}};
+use crate::{config::{PLAYER_BREAK_DELAY, PLAYER_CROUCHED_HEIGHT, PLAYER_HEIGHT, PLAYER_PLACE_DELAY}, events::GameEvent, helpers::{cardinalize, get_neighboring_coords}, loading::{Voxel, VoxelDefinition, VoxelMap}, save::load_world, ui::{GameEntity, WhichUI, WhichUIShown}};
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
@@ -48,7 +48,7 @@ impl Default for Player {
 
 pub fn setup_player(mut commands: Commands) {
 
-    let height = 1.9;
+    let height = PLAYER_HEIGHT;
     let logical_entity = commands
         .spawn((
             Collider::cylinder(height / 2.0, 0.5),
@@ -80,9 +80,9 @@ pub fn setup_player(mut commands: Commands) {
                 ..default()
             },
             FpsController {
-                height: 1.9,
-                upright_height: 1.9,
-                crouch_height: 1.5,
+                height: PLAYER_HEIGHT,
+                upright_height: PLAYER_HEIGHT,
+                crouch_height: PLAYER_CROUCHED_HEIGHT,
 
                 air_acceleration: 80.0,
                 ..default()
@@ -147,7 +147,12 @@ pub fn input_event_system(
     mut window_query: Query<&mut Window>,
     mut event_writer: EventWriter<GameEvent>,
     mut which_ui: ResMut<WhichUIShown>,
+    mut place_timer: Local<Timer>,
+    mut remove_timer: Local<Timer>,
+    time: Res<Time>,
 ) { 
+
+    
     // --- Cursor and Input Mode Updates ---
     if window_query.get_single_mut().is_ok() {
         if mouse_input.just_pressed(MouseButton::Left)  && false{
@@ -195,9 +200,18 @@ pub fn input_event_system(
             }
         }
     }
+    
+    let place_delay = Duration::from_millis(PLAYER_PLACE_DELAY);
+    let remove_delay = Duration::from_millis(PLAYER_BREAK_DELAY);
+    
+    // Disable player interaction if they menus are open
+    if keyboard_input.pressed(KeyCode::Tab) || which_ui.ui == WhichUI::ExitMenu {
+        return;
+    }
 
     // --- Player Action Events ---
-    if mouse_input.just_pressed(MouseButton::Left) && !keyboard_input.pressed(KeyCode::Tab) && which_ui.ui != WhichUI::ExitMenu {
+    if mouse_input.just_pressed(MouseButton::Left) 
+    || (mouse_input.pressed(MouseButton::Left) && place_timer.tick(time.delta()).finished()) {
         let mut selected_voxel = match player.selected_voxel {
             Some(voxel) => voxel,
             None => return,
@@ -216,7 +230,12 @@ pub fn input_event_system(
         // Send mesh update events for neighboring coordinates.2
         let mesh_updates = get_neighboring_coords(selected_voxel.position);
         event_writer.send(GameEvent::UpdateMesh { updates: mesh_updates });
-    } else if mouse_input.just_pressed(MouseButton::Right) {
+        
+        place_timer.reset();
+        place_timer.set_duration(place_delay);
+        
+    } else if mouse_input.just_pressed(MouseButton::Right)
+   || (mouse_input.pressed(MouseButton::Right) && remove_timer.tick(time.delta()).finished()) {
         let hit_voxel = match player.hit_voxel {
             Some(voxel) => voxel,
             None => return,
@@ -228,7 +247,11 @@ pub fn input_event_system(
 
         let mesh_updates = get_neighboring_coords(hit_voxel.position);
         event_writer.send(GameEvent::UpdateMesh { updates: mesh_updates });
-    } else if mouse_input.just_pressed(MouseButton::Middle) {
+        
+        remove_timer.reset();
+        remove_timer.set_duration(remove_delay);
+        
+    } else if mouse_input.just_pressed(MouseButton::Middle) { // Middle click to copy looked at voxel. 
         let hit_voxel = match player.hit_voxel {
             Some(voxel) => voxel,
             None => return,

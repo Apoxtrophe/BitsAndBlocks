@@ -1,5 +1,8 @@
 use bevy::{prelude::*, window::CursorGrabMode};
-use crate::{config::{FADE_TIME, NUM_VOXELS, SUBSET_SIZES}, events::GameEvent, helpers::box_shadow_node_bundle, loading::{FadeTimer, GameTextures, VoxelMap}, main_menu::{spawn_button, spawn_sub_node, ButtonNumber}, player::{Player, PlayerCamera}, ui_helpers::spawn_ui_node, DebugText, GameState};
+use crate::{config::{FADE_TIME, NUM_VOXELS, SUBSET_SIZES}, events::GameEvent, helpers::box_shadow_node_bundle, loading::{FadeTimer, GameTextures, VoxelMap}, main_menu::{spawn_button, spawn_sub_node, ButtonNumber}, player::{Player, PlayerCamera}, ui_helpers::spawn_ui_node, GameState};
+
+#[derive(Component)]
+pub struct DebugText;
 
 #[derive(Component)]
 pub struct GridMenu;

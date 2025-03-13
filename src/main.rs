@@ -12,6 +12,7 @@ mod config;
 mod loading;
 mod main_menu;
 mod ui_helpers;
+mod save;
 
 // ======================================================================
 // External Crate Imports
@@ -23,8 +24,8 @@ use bevy::{
 use bevy_atmosphere::plugin::AtmospherePlugin;
 use bevy_rapier3d::prelude::*;
 use bevy_fps_controller::controller::*;
-use bevy::state::app::AppExtStates as _;
 
+use bevy_simple_text_input::TextInputPlugin;
 // ======================================================================
 // Internal Module Uses
 // ======================================================================
@@ -36,7 +37,8 @@ use config::*;
 use helpers::tile_mesh_uvs;
 use loading::*;
 use main_menu::*;
-use ui_helpers::*;
+use save::*;
+
 // ======================================================================
 // Game States 
 // ======================================================================
@@ -59,7 +61,6 @@ fn main() {
             color: Color::WHITE,
             brightness: AMBIENT_LIGHT,
         })
-        .insert_resource(ClearColor(Color::linear_rgb(0.83, 0.96, 0.96)))
         .insert_resource(Player::default())
         // Events
         .add_event::<GameEvent>()
@@ -80,6 +81,7 @@ fn main() {
         }))
         .add_plugins(AtmospherePlugin)
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_plugins(TextInputPlugin)
         //.add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(FpsControllerPlugin)
         // Startup Systems
@@ -99,13 +101,14 @@ fn main() {
             Update,
             (
                 menu_interaction_system,
+                world_button_system, 
                 update_pop_window_visibility,
             ).run_if(in_state(GameState::MainMenu))
         )
         
         .add_systems(OnExit(GameState::MainMenu), (despawn_main_menu))
         
-        // ======================================================================
+     // ======================================================================
         // INGAME STATE SYSTEMS
         // ======================================================================
         // Setup Systems
@@ -129,19 +132,12 @@ fn main() {
                 update_voxel_identifier,
                 update_game_window_visibility,
                 exit_menu_interaction,
+                autosave_system,
             ).run_if(in_state(GameState::InGame))
         )
         .add_systems(OnExit(GameState::InGame), (despawn_all))
         .run();
 }
-
-// ======================================================================
-// Components
-// ======================================================================
-#[derive(Component)]
-pub struct DebugText;
-
-
 
 // ======================================================================
 // Setup Function

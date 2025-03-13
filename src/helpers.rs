@@ -89,7 +89,7 @@ pub fn box_shadow_node_bundle(
         border_radius,
         BackgroundColor(Color::linear_rgba(0.2, 0.2, 0.2, 0.1)),
         BoxShadow {
-            color: Color::BLACK.with_alpha(0.8),
+            color: Color::BLACK.with_alpha(1.0),
             x_offset: Val::Percent(offset.x),
             y_offset: Val::Percent(offset.y),
             spread_radius: Val::Percent(spread),

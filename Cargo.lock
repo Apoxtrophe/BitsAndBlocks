@@ -10,6 +10,7 @@ dependencies = [
  "bevy_atmosphere",
  "bevy_fps_controller",
  "bevy_rapier3d",
+ "bevy_simple_text_input",
  "serde",
  "serde_json",
 ]
@@ -1054,6 +1055,15 @@ dependencies = [
  "derive_more",
  "serde",
  "uuid",
+]
+
+[[package]]
+name = "bevy_simple_text_input"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b07acb8f19ebf40f56981dd400e18ab64da32b245c80655e336725e2c13368a3"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]

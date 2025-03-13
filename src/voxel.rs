@@ -13,8 +13,6 @@ use crate::{
     }, loading::{Voxel, VoxelAsset, VoxelDefinition, VoxelMap}, ui::GameEntity,
 };
 
-
-
 #[derive(Bundle)]
 pub struct VoxelBundle {
     pub voxel: Voxel,
@@ -143,7 +141,7 @@ pub fn count_neighbors(voxel: Voxel, voxel_map: &VoxelMap) -> [bool; 6] {
 }
 
 /// Updates the cable mesh for a given voxel entity based on its neighbor connections.
-fn update_voxel_cable_mesh(
+pub fn update_voxel_cable_mesh(
     entity: Entity,
     voxel: &Voxel,
     voxel_map: &VoxelMap,

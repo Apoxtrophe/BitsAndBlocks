@@ -2,8 +2,9 @@ use std::{collections::HashMap, fs};
 
 use bevy::{prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
+use serde::{Deserialize, Serialize};
 
-use crate::{config::{CURSOR_TEXTURE_PATH, VOXEL_TEXTURE_PATH, WORLD_TEXTURE_PATH}, ui::create_definition_timer, voxel::create_voxel_map, GameState};
+use crate::{config::{CURSOR_TEXTURE_PATH, VOXEL_TEXTURE_PATH, WORLD_TEXTURE_PATH}, save::SavedWorld, ui::create_definition_timer, voxel::create_voxel_map, GameState};
 
 /// Handles Asset and Resource Loading before entering the main menu / Game. 
 pub fn loading(
@@ -27,6 +28,9 @@ pub fn loading(
         ..Default::default()
     };
     
+    let saved_games = load_saved_names();
+    commands.insert_resource(saved_games);
+    
     for mut controller in controller_query.iter_mut() {
         controller.enable_input = false;
     }
@@ -43,6 +47,12 @@ pub fn loading(
         load_game_screen_texture: asset_server.load("textures/load_game.png"),
         options_screen_texture: asset_server.load("textures/options_screen.png"),
     };
+    
+    let saved_world = SavedWorld {
+        world_name: "".to_string(),
+        voxels: Vec::new(),
+    };
+    commands.insert_resource(saved_world);
     
     // Load Game Textures
     commands.insert_resource(game_texture_handles.clone());
@@ -78,7 +88,7 @@ pub struct VoxelMap {
     pub asset_map: HashMap<(usize, usize), VoxelAsset>, // global voxel values by id 
 }
 
-#[derive(Component, Debug, Copy, Clone)]
+#[derive(Component, Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct Voxel {
     pub voxel_id: (usize, usize),
     pub position: IVec3,
@@ -94,6 +104,42 @@ pub struct VoxelAsset {
     pub texture_row: usize, 
 }
 
+#[derive(Resource)]
+pub struct LoadedSaves {
+    pub saves: Vec<Option<String>>,
+}
+
+fn load_saved_names(
+) -> LoadedSaves {
+    // Define the folder path where your JSON save files are located.
+    let path = "assets/saves/";
+    let mut file_names = Vec::new();
+
+    // Read the directory and collect JSON file names (without the .json extension).
+    if let Ok(entries) = fs::read_dir(path) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            // Check if the file has a ".json" extension.
+            if path.extension().and_then(|s| s.to_str()) == Some("json") {
+                // Extract the file stem (name without extension).
+                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                    file_names.push(stem.to_string());
+                }
+            }
+        }
+    }
+
+    // We want exactly 4 slots; if fewer files are found, fill remaining with None.
+    const NUM_FILES: usize = 6;
+    let mut saves = Vec::with_capacity(NUM_FILES);
+    for i in 0..NUM_FILES {
+        saves.push(file_names.get(i).cloned());
+    }
+    
+    LoadedSaves {
+        saves,
+    }
+} 
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct VoxelDefinition{
