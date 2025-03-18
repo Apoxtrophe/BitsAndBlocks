@@ -58,7 +58,7 @@ pub enum WhichMenuUI {
     MainScreen,
     NewGame,
     LoadGame,
-    Settings,
+    Options,
 }
 
 

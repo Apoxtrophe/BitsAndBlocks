@@ -13,6 +13,7 @@ pub use crate::UI::in_game::exit_menu::*;
 pub use crate::UI::main_menu::new_game::*;
 pub use crate::UI::main_menu::load_game::*;
 pub use crate::UI::main_menu::options::*;
+pub use crate::UI::main_menu::main_ui::*;
 pub use crate::UI::ui_helpers::*;
 pub use crate::Voxel::voxel::*;
 pub use crate::Voxel::graphics::*;

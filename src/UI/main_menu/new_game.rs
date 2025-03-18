@@ -4,7 +4,7 @@ use crate::prelude::*;
 pub fn spawn_new_game_ui(
     mut commands: &mut Commands,
     image_handles: &Res<GameTextures>,
-    image_handle: &Handle<Image>,
+    button_handle: &Handle<Image>,
     atlas_handle: &Handle<TextureAtlasLayout>,
     button_pointer: (usize, usize), // Starting index and number of buttons
 ) -> Entity {
@@ -19,7 +19,7 @@ pub fn spawn_new_game_ui(
         spawn_button(
             &mut commands,
             new_game_sub,
-            image_handle.clone(),
+            button_handle.clone(),
             atlas_handle.clone(),
             i,
             100.0,

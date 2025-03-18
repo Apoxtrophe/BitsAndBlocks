@@ -19,46 +19,26 @@ pub fn setup_main_menu(
 
     // Spawn the camera tagged for the main menu
     commands.spawn(Camera2d).insert(MainMenuEntity);
-
-    // Spawn the main menu background node (fills the screen)
-    let root_node = spawn_root_node(&mut commands);
-    // Spawn the main screen node with a fixed 16:9 aspect ratio
-
-    let main_menu = spawn_popup(&mut commands, image_handles.home_screen_texture.clone(), WhichMenuUI::MainScreen);
-    commands.entity(main_menu).set_parent(root_node);
-    
-        let main_menu_sub = spawn_sub_node(&mut commands, 40.0, 60.0, 10.0);
-        commands.entity(main_menu_sub).set_parent(main_menu);
-    
     
     // Prepare button texture atlas
     let buttons_texture = image_handles.menu_button_texture.clone();
     let button_atlas = TextureAtlasLayout::from_grid(UVec2::new(144, 32), 1, 16, None, None);
     let button_atlas_handle = texture_atlases.add(button_atlas);
     
+    // Spawn the main ui Window (The root node of the rest)
+    let main_ui = spawn_main_ui(&mut commands, &image_handles, &buttons_texture, &button_atlas_handle, (0,4));
+    
     // Spawn the New Game Window
     let new_game_window = spawn_new_game_ui(&mut commands, &image_handles, &buttons_texture, &button_atlas_handle, (4,1));
-    commands.entity(new_game_window).set_parent(root_node);
+    commands.entity(new_game_window).set_parent(main_ui);
     
     // Spawn the Load Game Window
     let load_game_window = spawn_load_game_ui(&mut commands, &image_handles, (0,6), &saved_games.saves);
-    commands.entity(load_game_window).set_parent(root_node);
-        
+    commands.entity(load_game_window).set_parent(main_ui);
+
     
-    let options_screen = spawn_popup(&mut commands, image_handles.options_screen_texture.clone(), WhichMenuUI::Settings);
-    commands.entity(options_screen).set_parent(root_node);
-    
-    // Spawn four buttons
-    for i in 0..4 {
-        spawn_button(
-            &mut commands,
-            main_menu_sub,
-            buttons_texture.clone(),
-            button_atlas_handle.clone(),
-            i,
-            24.0,
-        );
-    }
+    let options_window = spawn_options_ui(&mut commands, &image_handles);
+    commands.entity(options_window).set_parent(main_ui);
 }
 
 /// System to update button colors based on user interaction.
@@ -88,7 +68,7 @@ pub fn menu_interaction_system(
                     }
                     2 => {
                         println!("Options");
-                        current_screen.screen = WhichMenuUI::Settings;
+                        current_screen.screen = WhichMenuUI::Options;
                     }
                     3 => {
                         println!("Quit Game");
