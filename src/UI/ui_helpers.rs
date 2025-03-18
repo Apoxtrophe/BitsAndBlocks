@@ -116,3 +116,88 @@ pub fn edit_text_listener(
         save_world.world_name = event.value.clone();
     }
 }
+
+pub fn spawn_text_button(
+    commands: &mut Commands,
+    parent: Entity,
+    weight: f32,
+    height: f32,
+    button_index: usize,
+    text: String,
+) {
+    let button_container = spawn_ui_node(
+        commands,
+        Node {
+            width: Val::Percent(weight),
+            height: Val::Percent(height),
+            justify_content: JustifyContent::Center,
+            justify_self: JustifySelf::Center,
+            align_self: AlignSelf::Center,
+            margin: UiRect::all(Val::Px(4.0)),
+            ..default()
+        },
+        (Button, BackgroundColor(Color::WHITE), WorldButton { index: button_index, name: text.clone() }),
+    );
+    
+    commands.entity(button_container).set_parent(parent);
+    
+    let text_node = commands.spawn((
+        Text::new(text),
+        TextFont {
+            font_size: 32.0, 
+            ..Default::default()
+        },
+        TextLayout::new_with_justify(JustifyText::Center),
+        Node {
+            justify_content: JustifyContent::Center,
+            justify_self: JustifySelf::Center,
+            align_self: AlignSelf::Center,
+            ..Default::default()
+        },
+    )).id();
+    
+    commands.entity(text_node).set_parent(button_container);
+}
+
+/// Spawns a button with a container (acting as the border) and an image child.
+/// The container includes a BackgroundColor that will update based on user interaction.
+/// Spawns a button consisting of a container and an image child.
+/// The button container is spawned with default styling, then an image node is attached.
+pub fn spawn_button(
+    commands: &mut Commands,
+    parent: Entity,
+    texture_handle: Handle<Image>,
+    button_atlas_handle: Handle<TextureAtlasLayout>,
+    index: usize,
+    height_percent: f32,
+) -> Entity {
+    // Spawn the button container with a white background.
+    let button_container = spawn_ui_node(
+        commands,
+        Node {
+            width: Val::Auto,
+            height: Val::Percent(height_percent),
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        (Button, BackgroundColor(Color::WHITE), ButtonNumber { index }),
+    );
+    commands.entity(button_container).set_parent(parent);
+
+    // Spawn the child image node with a margin so the container's border shows.
+    let image_entity = spawn_ui_node(
+        commands,
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(90.0),
+            justify_self: JustifySelf::Center,
+            align_self: AlignSelf::Center,
+            margin: UiRect::all(Val::Px(4.0)),
+            ..default()
+        },
+        create_atlas_image(texture_handle, button_atlas_handle, index),
+    );
+    commands.entity(image_entity).set_parent(button_container);
+
+    button_container
+}

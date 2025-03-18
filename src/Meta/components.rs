@@ -74,3 +74,10 @@ pub struct ButtonNumber {
 pub struct PopUp {
     pub screen_type: WhichMenuUI,
 }
+
+/// Marking component for game_save buttons
+#[derive(Component)]
+pub struct WorldButton {
+    pub index: usize,
+    pub name: String,
+}
