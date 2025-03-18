@@ -1,35 +1,9 @@
 use bevy::window::CursorGrabMode;
 use bevy_fps_controller::controller::FpsController;
-use bevy_simple_text_input::{TextInput, TextInputSettings, TextInputSubmitEvent, TextInputTextColor, TextInputTextFont};
+use bevy_simple_text_input::TextInputSubmitEvent;
+
 
 use crate::{prelude::*, GameState};
-
-#[derive(Component)]
-pub struct MainMenuEntity;
-
-#[derive(Component)]
-pub struct ButtonNumber {
-    pub index: usize,
-}
-
-#[derive(Component, Debug)]
-pub struct PopUp {
-    screen_type: CurrentScreen,
-}
-
-// Temporary Resource
-#[derive(Resource, Debug)]
-pub struct WhichScreen {
-    pub screen: CurrentScreen,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum CurrentScreen {
-    MainScreen,
-    NewGame,
-    LoadGame,
-    Settings,
-}
 
 pub fn setup_main_menu(
     mut commands: Commands,
@@ -40,7 +14,7 @@ pub fn setup_main_menu(
     println!("State: Main Menu");
 
     commands.insert_resource(WhichScreen {
-        screen: CurrentScreen::MainScreen,
+        screen: WhichMenuUI::MainScreen,
     });
 
     // Spawn the camera tagged for the main menu
@@ -50,39 +24,30 @@ pub fn setup_main_menu(
     let root_node = spawn_root_node(&mut commands);
     // Spawn the main screen node with a fixed 16:9 aspect ratio
 
-    let main_menu = spawn_popup(&mut commands, image_handles.home_screen_texture.clone(), CurrentScreen::MainScreen);
+    let main_menu = spawn_popup(&mut commands, image_handles.home_screen_texture.clone(), WhichMenuUI::MainScreen);
     commands.entity(main_menu).set_parent(root_node);
     
         let main_menu_sub = spawn_sub_node(&mut commands, 40.0, 60.0, 10.0);
         commands.entity(main_menu_sub).set_parent(main_menu);
-    
-    // Spawn the popups
-    let new_game = spawn_popup(&mut commands, image_handles.new_game_screen_texture.clone(), CurrentScreen::NewGame);
-    commands.entity(new_game).set_parent(root_node);
-    
-    let new_game_text = create_editable_text(&mut commands);
-    commands.entity(new_game_text).set_parent(new_game);
-    
-    
-        let new_game_sub = spawn_sub_node(&mut commands, 100.0, 15.0, 10.0);
-        commands.entity(new_game_sub.clone()).set_parent(new_game);
-    
-    let load_game = spawn_popup(&mut commands, image_handles.load_game_screen_texture.clone(), CurrentScreen::LoadGame);
-    commands.entity(load_game).set_parent(root_node);
-        
-        let load_game_sub = spawn_sub_node(&mut commands, 50.0, 40.0, 20.0);
-        commands.entity(load_game_sub).set_parent(load_game);
-        
-    
-    let options_screen = spawn_popup(&mut commands, image_handles.options_screen_texture.clone(), CurrentScreen::Settings);
-    commands.entity(options_screen).set_parent(root_node);
     
     
     // Prepare button texture atlas
     let buttons_texture = image_handles.menu_button_texture.clone();
     let button_atlas = TextureAtlasLayout::from_grid(UVec2::new(144, 32), 1, 16, None, None);
     let button_atlas_handle = texture_atlases.add(button_atlas);
-
+    
+    // Spawn the New Game Window
+    let new_game_window = spawn_new_game_ui(&mut commands, &image_handles, &buttons_texture, &button_atlas_handle, (4,1));
+    commands.entity(new_game_window).set_parent(root_node);
+    
+    // Spawn the Load Game Window
+    let load_game_window = spawn_load_game_ui(&mut commands, &image_handles, (0,6), &saved_games.saves);
+    commands.entity(load_game_window).set_parent(root_node);
+        
+    
+    let options_screen = spawn_popup(&mut commands, image_handles.options_screen_texture.clone(), WhichMenuUI::Settings);
+    commands.entity(options_screen).set_parent(root_node);
+    
     // Spawn four buttons
     for i in 0..4 {
         spawn_button(
@@ -94,32 +59,40 @@ pub fn setup_main_menu(
             24.0,
         );
     }
+}
+
+/*
+
+let load_game = spawn_popup(&mut commands, image_handles.load_game_screen_texture.clone(), WhichMenuUI::LoadGame);
+commands.entity(load_game).set_parent(root_node);
     
-    // New Game Buttons
-    for i in 4..5 {
-        spawn_button(
-            &mut commands,
-            new_game_sub,
-            buttons_texture.clone(),
-            button_atlas_handle.clone(),
-            i,
-            100.0,
-        );
-    }
-    let save_names = saved_games.saves.clone();
+    let load_game_sub = spawn_sub_node(&mut commands, 50.0, 40.0, 20.0);
+    commands.entity(load_game_sub).set_parent(load_game);
+*/
+
+pub fn spawn_load_game_ui(
+    mut commands: &mut Commands,
+    image_handles: &Res<GameTextures>,
+    button_pointer: (usize, usize), // Starting index and number of buttons
+    names_list: &Vec<Option<String>>,
+) -> Entity{
+    let load_game_window = spawn_popup(&mut commands, image_handles.load_game_screen_texture.clone(), WhichMenuUI::LoadGame);
+    let load_game_sub = spawn_sub_node(&mut commands, 50.0, 40.0, 20.0);
     
+    // Load world names as Options (They may not exist)
     let mut names = Vec::new();
-    for i in 0..save_names.len() {
-        if save_names[i].is_some() {
-            names.push(save_names[i].clone().unwrap());
+    for i in 0..names_list.len() {
+        if names_list[i].is_some() {
+            names.push(names_list[i].clone().unwrap());
         } else {
             let slot_name = format!("empty");
             names.push(slot_name);
         }
     }
-    
     // Load Game Buttons
-    for i in 0..6 {
+    let (start, end) = (button_pointer.0, button_pointer.0 + button_pointer.1);
+    
+    for i in start..end {
         spawn_text_button(
             &mut commands,
             load_game_sub,
@@ -129,60 +102,10 @@ pub fn setup_main_menu(
             names[i].clone(),
         );
     }
-}
-
-/// Spawns the root container node that fills the screen and has a black background.
-fn spawn_root_node(commands: &mut Commands) -> Entity {
-    spawn_ui_node(
-        commands,
-        Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            flex_wrap: FlexWrap::Wrap,
-            justify_content: JustifyContent::Center,
-            ..default()
-        },
-        (BackgroundColor(Color::BLACK), MainMenuEntity),
-    )
-}
-
-fn spawn_popup(
-    commands: &mut Commands,
-    image_handle: Handle<Image>,
-    screen_type: CurrentScreen,
-) -> Entity {
-    spawn_ui_node(
-        commands,
-        Node {
-            width: Val::Auto,
-            height: Val::Percent(100.0),
-            aspect_ratio: Some(16.0 / 9.0),
-            flex_wrap: FlexWrap::Wrap,
-            position_type: PositionType::Absolute,
-            justify_content: JustifyContent::Center,
-            ..default()
-        },
-        (ImageNode::new(image_handle), Visibility::Hidden, PopUp { screen_type }),
-    )
-}
-
-/// Creates a sub-node that can be attached as a child (for instance, to hold extra buttons).
-pub fn spawn_sub_node(commands: &mut Commands, width: f32, height: f32, bottom: f32) -> Entity {
-    spawn_ui_node(
-        commands,
-        Node {
-            width: Val::Percent(width),
-            height: Val::Percent(height),
-            bottom: Val::Percent(bottom),
-            row_gap: Val::Px(8.0),
-            align_content: AlignContent::Center,
-            position_type: PositionType::Absolute,
-            justify_content: JustifyContent::Center,
-            flex_wrap: FlexWrap::Wrap,
-            ..default()
-        },
-        (), // No extra components
-    )
+    
+    commands.entity(load_game_sub).set_parent(load_game_window);
+    
+    load_game_window
 }
 
 /// Spawns a button with a container (acting as the border) and an image child.
@@ -226,47 +149,6 @@ pub fn spawn_button(
     commands.entity(image_entity).set_parent(button_container);
 
     button_container
-}
-
-fn create_editable_text(
-    commands: &mut Commands,
-) -> Entity {
-    let edit_text = commands
-            .spawn((
-                Node {
-                    width: Val::Percent(25.0),
-                    height: Val::Percent(10.0),
-                    top: Val::Percent(50.0),
-                    border: UiRect::all(Val::Px(5.0)),
-                    padding: UiRect::all(Val::Px(5.0)),
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-                
-                BorderColor(Color::srgb(0.75, 0.52, 0.99)),
-                BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
-                TextInput,
-                TextInputTextFont(TextFont {
-                    font_size: 34.,
-                    ..default()
-                }),
-                TextInputTextColor(TextColor(Color::srgb(0.9, 0.9, 0.9))),
-                TextInputSettings {
-                    retain_on_submit: true,
-                    ..default()
-                }
-            )).id();
-
-    edit_text
-}
-
-fn edit_text_listener(
-    mut events: EventReader<TextInputSubmitEvent>,
-    mut save_world: ResMut<SavedWorld>,
-) {
-    for event in events.read() {
-        save_world.world_name = event.value.clone();
-    }
 }
 
 #[derive(Component)]
@@ -337,15 +219,15 @@ pub fn menu_interaction_system(
                 match button_number.index {
                     0 => {
                         println!("New Game");
-                        current_screen.screen = CurrentScreen::NewGame;
+                        current_screen.screen = WhichMenuUI::NewGame;
                     }
                     1 => {
                         println!("Load Game");
-                        current_screen.screen = CurrentScreen::LoadGame;
+                        current_screen.screen = WhichMenuUI::LoadGame;
                     }
                     2 => {
                         println!("Options");
-                        current_screen.screen = CurrentScreen::Settings;
+                        current_screen.screen = WhichMenuUI::Settings;
                     }
                     3 => {
                         println!("Quit Game");
@@ -373,7 +255,7 @@ pub fn menu_interaction_system(
     
     if keyboard_input.just_pressed(KeyCode::Escape) {
         println!("Main Menu");
-        current_screen.screen = CurrentScreen::MainScreen;
+        current_screen.screen = WhichMenuUI::MainScreen;
     }
     
     edit_text_listener(events, save_world);
@@ -385,7 +267,8 @@ pub fn world_button_system(
     
     commands: Commands,
     voxel_map: ResMut<VoxelMap>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    meshes: ResMut<Assets<Mesh>>,
+    mut game_save: ResMut<SavedWorld>,
 ) {
     let mut loaded_world: Option<&str> = None;
     
@@ -401,8 +284,6 @@ pub fn world_button_system(
                         loaded_world = Some(world_button.name.as_str());
                     }
                 }
-                
-                
                 *bg_color = Color::linear_rgba(0.0, 1.0, 0.0, 0.5).into();
             }
             Interaction::Hovered => {
@@ -416,6 +297,7 @@ pub fn world_button_system(
     
     if loaded_world.is_some() {
         load_world(loaded_world.unwrap(), commands, voxel_map, meshes);
+        game_save.world_name = loaded_world.unwrap().to_string();
         app_state.set(GameState::InGame);
     }
 }

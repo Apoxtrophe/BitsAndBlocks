@@ -52,3 +52,25 @@ pub enum WhichGameUI {
     HotbarHidden,
     ExitMenu,
 }
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum WhichMenuUI {
+    MainScreen,
+    NewGame,
+    LoadGame,
+    Settings,
+}
+
+
+#[derive(Component)]
+pub struct MainMenuEntity;
+
+#[derive(Component)]
+pub struct ButtonNumber {
+    pub index: usize,
+}
+
+#[derive(Component, Debug)]
+pub struct PopUp {
+    pub screen_type: WhichMenuUI,
+}

@@ -41,7 +41,7 @@ pub fn autosave_system(
     autosave_timer.tick(time.delta());
     
     if autosave_timer.finished(){
-        println!("Saving World...");
+        println!("Saving World...{}", save_game.world_name);
         save_world(query, save_game).expect("Couldn't Save");
         
         autosave_timer.reset();
@@ -54,6 +54,7 @@ pub fn load_world(
     mut voxel_map: ResMut<VoxelMap>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
+    println!("Loaded: {}", world_name);
     let file_path = format!("assets/saves/{}.json", world_name);
     let file = File::open(file_path).expect("Failed to open file");
     let reader = BufReader::new(file);
