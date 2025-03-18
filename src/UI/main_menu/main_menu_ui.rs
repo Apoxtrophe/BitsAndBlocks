@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::CursorGrabMode};
+use bevy::window::CursorGrabMode;
 use bevy_fps_controller::controller::FpsController;
 use bevy_simple_text_input::{TextInput, TextInputSettings, TextInputSubmitEvent, TextInputTextColor, TextInputTextFont};
 
@@ -253,7 +253,7 @@ fn create_editable_text(
                 TextInputTextColor(TextColor(Color::srgb(0.9, 0.9, 0.9))),
                 TextInputSettings {
                     retain_on_submit: true,
-                    ..Default::default()
+                    ..default()
                 }
             )).id();
 

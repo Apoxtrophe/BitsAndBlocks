@@ -6,13 +6,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::{prelude::*, GameState};
 
-/// Handles Asset and Resource Loading before entering the main menu / Game. 
+/// Handles Asset and Resource Loading before entering the main menu / Game.
 pub fn loading(
     mut window: Query<&mut Window>,
     mut app_state: ResMut<NextState<GameState>>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    
+
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<StandardMaterial>>,
     mut controller_query: Query<&mut FpsController>,
@@ -20,23 +20,23 @@ pub fn loading(
     // Configure the main window
     let mut window = window.single_mut();
     window.title = String::from("Bits And Blocks");
-    
+
     window.cursor_options = bevy::window::CursorOptions {
         visible: true,
         grab_mode: CursorGrabMode::None,
-        
+
         ..Default::default()
     };
-    
+
     let saved_games = load_saved_names();
     commands.insert_resource(saved_games);
-    
+
     for mut controller in controller_query.iter_mut() {
         controller.enable_input = false;
     }
-    
+
     println!("State: Loading");
-    
+
     let game_texture_handles = GameTextures {
         ground_texture: asset_server.load(WORLD_TEXTURE_PATH),
         cursor_texture: asset_server.load(CURSOR_TEXTURE_PATH),
@@ -47,25 +47,28 @@ pub fn loading(
         load_game_screen_texture: asset_server.load("textures/load_game.png"),
         options_screen_texture: asset_server.load("textures/options_screen.png"),
     };
-    
+
     let saved_world = SavedWorld {
         world_name: "".to_string(),
         voxels: Vec::new(),
     };
     commands.insert_resource(saved_world);
-    
+
     // Load Game Textures
     commands.insert_resource(game_texture_handles.clone());
-    
-    // Create VoxelMap    
-    commands.insert_resource(create_voxel_map(meshes, materials, game_texture_handles.voxel_textures)); 
-    
+
+    // Create VoxelMap
+    commands.insert_resource(create_voxel_map(
+        meshes,
+        materials,
+        game_texture_handles.voxel_textures,
+    ));
+
     // Create Voxel definition text timer
-    commands.insert_resource(create_definition_timer());
-    
-    
+    commands.insert_resource(create_identifier_timer());
+
     println!("Assets Loaded, Moving to Main Menu");
-    
+
     app_state.set(GameState::MainMenu);
 }
 
@@ -84,8 +87,8 @@ pub struct GameTextures {
 #[derive(Resource, Clone)]
 pub struct VoxelMap {
     pub entity_map: HashMap<IVec3, Entity>, // Entity ids by location
-    pub voxel_map: HashMap<IVec3, Voxel>, // Local voxel values by location
-    pub asset_map: HashMap<(usize, usize), VoxelAsset>, // global voxel values by id 
+    pub voxel_map: HashMap<IVec3, Voxel>,   // Local voxel values by location
+    pub asset_map: HashMap<(usize, usize), VoxelAsset>, // global voxel values by id
 }
 
 #[derive(Component, Debug, Copy, Clone, Serialize, Deserialize)]
@@ -101,7 +104,7 @@ pub struct VoxelAsset {
     pub mesh_handle: Handle<Mesh>,
     pub material_handle: Handle<StandardMaterial>,
     pub definition: VoxelDefinition,
-    pub texture_row: usize, 
+    pub texture_row: usize,
 }
 
 #[derive(Resource)]
@@ -109,8 +112,7 @@ pub struct LoadedSaves {
     pub saves: Vec<Option<String>>,
 }
 
-fn load_saved_names(
-) -> LoadedSaves {
+fn load_saved_names() -> LoadedSaves {
     // Define the folder path where your JSON save files are located.
     let path = "assets/saves/";
     let mut file_names = Vec::new();
@@ -135,14 +137,12 @@ fn load_saved_names(
     for i in 0..NUM_FILES {
         saves.push(file_names.get(i).cloned());
     }
-    
-    LoadedSaves {
-        saves,
-    }
-} 
+
+    LoadedSaves { saves }
+}
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct VoxelDefinition{
+pub struct VoxelDefinition {
     pub voxel_id: (usize, usize),
     pub name: String,
 }

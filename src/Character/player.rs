@@ -162,25 +162,25 @@ pub fn input_event_system(
                 enable_input: true,
             });
         } else if keyboard_input.just_pressed(KeyCode::Escape) {
-            if which_ui.ui != WhichUI::ExitMenu {
+            if which_ui.ui != WhichGameUI::ExitMenu {
                 event_writer.send(GameEvent::UpdateCursor {
                     mode: CursorGrabMode::None,
                     show_cursor: true,
                     enable_input: false,
                 });
-                which_ui.ui = WhichUI::ExitMenu; // Set the UI to the exit menu.
-            } else if which_ui.ui == WhichUI::ExitMenu {
+                which_ui.ui = WhichGameUI::ExitMenu; // Set the UI to the exit menu.
+            } else if which_ui.ui == WhichGameUI::ExitMenu {
                 event_writer.send(GameEvent::UpdateCursor {
                     mode: CursorGrabMode::Locked,
                     show_cursor: false,
                     enable_input: true,
                 });
-                which_ui.ui = WhichUI::Default; // Set the UI to the exit menu.
+                which_ui.ui = WhichGameUI::Default; // Set the UI to the exit menu.
             }
         } else if keyboard_input.pressed(KeyCode::Tab) {
 
-            if which_ui.ui != WhichUI::ExitMenu {
-                which_ui.ui = WhichUI::Inventory; // Set the UI to the inventory screen.
+            if which_ui.ui != WhichGameUI::ExitMenu {
+                which_ui.ui = WhichGameUI::Inventory; // Set the UI to the inventory screen.
                 
                 event_writer.send(GameEvent::UpdateCursor {
                     mode: CursorGrabMode::Locked,
@@ -190,8 +190,8 @@ pub fn input_event_system(
             }
         } else if keyboard_input.just_released(KeyCode::Tab) {
 
-            if which_ui.ui != WhichUI::ExitMenu {
-                which_ui.ui = WhichUI::Default; // Set the UI to the inventory screen.
+            if which_ui.ui != WhichGameUI::ExitMenu {
+                which_ui.ui = WhichGameUI::Default; // Set the UI to the inventory screen.
                 event_writer.send(GameEvent::UpdateCursor {
                     mode: CursorGrabMode::Locked,
                     show_cursor: false,
@@ -205,7 +205,7 @@ pub fn input_event_system(
     let remove_delay = Duration::from_millis(PLAYER_BREAK_DELAY);
     
     // Disable player interaction if they menus are open
-    if keyboard_input.pressed(KeyCode::Tab) || which_ui.ui == WhichUI::ExitMenu {
+    if keyboard_input.pressed(KeyCode::Tab) || which_ui.ui == WhichGameUI::ExitMenu {
         return;
     }
 

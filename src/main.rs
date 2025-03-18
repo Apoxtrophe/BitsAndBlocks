@@ -28,17 +28,6 @@ use bevy_simple_text_input::TextInputPlugin;
 pub use prelude::*;
 
 // ======================================================================
-// Game States 
-// ======================================================================
- 
-#[derive(States, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum GameState {
-    #[default]
-    Loading,
-    MainMenu,
-    InGame,
-}
-// ======================================================================
 // Main Application Setup
 // ======================================================================
 fn main() {
@@ -117,7 +106,7 @@ fn main() {
                 update_debug_text,
                 update_hotbar,
                 update_inventory_ui,
-                update_voxel_identifier,
+                update_identifier,
                 update_game_window_visibility,
                 exit_menu_interaction,
                 autosave_system,
