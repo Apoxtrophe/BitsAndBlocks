@@ -1,8 +1,7 @@
-use std::{collections::HashMap, fs};
+use std::fs;
 
 use bevy::{prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
-use serde::{Deserialize, Serialize};
 
 use crate::{prelude::*, GameState};
 
@@ -72,46 +71,6 @@ pub fn loading(
     app_state.set(GameState::MainMenu);
 }
 
-#[derive(Resource, Clone)]
-pub struct GameTextures {
-    pub ground_texture: Handle<Image>,
-    pub cursor_texture: Handle<Image>,
-    pub voxel_textures: Handle<Image>,
-    pub home_screen_texture: Handle<Image>,
-    pub menu_button_texture: Handle<Image>,
-    pub new_game_screen_texture: Handle<Image>,
-    pub load_game_screen_texture: Handle<Image>,
-    pub options_screen_texture: Handle<Image>,
-}
-
-#[derive(Resource, Clone)]
-pub struct VoxelMap {
-    pub entity_map: HashMap<IVec3, Entity>, // Entity ids by location
-    pub voxel_map: HashMap<IVec3, Voxel>,   // Local voxel values by location
-    pub asset_map: HashMap<(usize, usize), VoxelAsset>, // global voxel values by id
-}
-
-#[derive(Component, Debug, Copy, Clone, Serialize, Deserialize)]
-pub struct Voxel {
-    pub voxel_id: (usize, usize),
-    pub position: IVec3,
-    pub direction: usize,
-    pub state: bool,
-}
-
-#[derive(Clone)]
-pub struct VoxelAsset {
-    pub mesh_handle: Handle<Mesh>,
-    pub material_handle: Handle<StandardMaterial>,
-    pub definition: VoxelDefinition,
-    pub texture_row: usize,
-}
-
-#[derive(Resource)]
-pub struct LoadedSaves {
-    pub saves: Vec<Option<String>>,
-}
-
 fn load_saved_names() -> LoadedSaves {
     // Define the folder path where your JSON save files are located.
     let path = "assets/saves/";
@@ -139,16 +98,4 @@ fn load_saved_names() -> LoadedSaves {
     }
 
     LoadedSaves { saves }
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct VoxelDefinition {
-    pub voxel_id: (usize, usize),
-    pub name: String,
-}
-
-// Fade timer resource for voxel definition text above the hotbar
-#[derive(Resource)]
-pub struct FadeTimer {
-    pub timer: Timer,
 }

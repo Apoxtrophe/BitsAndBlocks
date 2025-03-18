@@ -2,20 +2,18 @@
 // Module Declarations
 // ======================================================================
 pub mod prelude;
-mod Character;
-mod EventHandling;
-mod UI;
-mod Voxel;
-mod Loading; 
-mod Meta; 
+mod character;
+mod event_handling;
+mod ui;
+mod voxel;
+mod loading; 
+mod meta; 
 
 // ======================================================================
 // External Crate Imports
 // ======================================================================
-use bevy::{
-    image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor},
-    prelude::*,
-};
+use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
+
 use bevy_atmosphere::plugin::AtmospherePlugin;
 use bevy_rapier3d::prelude::*;
 use bevy_fps_controller::controller::*;
@@ -68,11 +66,11 @@ fn main() {
         // ======================================================================
         // LOADING STATE SYSTEMS
         // ======================================================================
-        .add_systems(OnEnter(GameState::Loading), (loading))
+        .add_systems(OnEnter(GameState::Loading), loading)
         // ======================================================================
         // MAINMENU STATE SYSTEMS
         // ======================================================================
-        .add_systems(OnEnter(GameState::MainMenu), (setup_main_menu))
+        .add_systems(OnEnter(GameState::MainMenu), setup_main_menu)
         
         .add_systems(
             Update,
@@ -83,7 +81,7 @@ fn main() {
             ).run_if(in_state(GameState::MainMenu))
         )
         
-        .add_systems(OnExit(GameState::MainMenu), (despawn_main_menu))
+        .add_systems(OnExit(GameState::MainMenu), despawn_main_menu)
         
      // ======================================================================
         // INGAME STATE SYSTEMS
@@ -112,7 +110,7 @@ fn main() {
                 autosave_system,
             ).run_if(in_state(GameState::InGame))
         )
-        .add_systems(OnExit(GameState::InGame), (despawn_all))
+        .add_systems(OnExit(GameState::InGame), despawn_all)
         .run();
 }
 

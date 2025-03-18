@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use crate::prelude::*;
 
 /// Enum containing the global world states
 #[derive(States, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -9,6 +8,10 @@ pub enum GameState {
     MainMenu,
     InGame,
 }
+
+#[derive(Component)]
+pub struct PlayerCamera;
+
 
 /// Marking component for all game entities that belong to the main scene / will be despawned upon changing state. 
 #[derive(Component)]

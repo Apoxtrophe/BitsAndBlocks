@@ -5,12 +5,6 @@ use bevy::prelude::*;
 
 use crate::prelude::*;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Resource, Clone)]
-pub struct SavedWorld {
-    pub world_name: String,
-    pub voxels: Vec<Voxel>,
-}
-
 fn save_world(
     query: Query<(Entity, &Voxel)>,
     save_game: Res<SavedWorld>,
