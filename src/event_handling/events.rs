@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, fmt::Pointer};
 
 use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
@@ -22,9 +22,14 @@ pub enum GameEvent {
         show_cursor: bool,
         enable_input: bool,
     },
+    SaveWorld {
+        world: SavedWorld,
+    }
+    
 }
 
 pub fn event_handler(
+    time: Res<Time>,
     mut event_reader: EventReader<GameEvent>,
     mut evr_scroll: EventReader<MouseWheel>,
     mut commands: Commands,
@@ -35,14 +40,16 @@ pub fn event_handler(
     mut meshes: ResMut<Assets<Mesh>>,
     mut query: Query<(Entity, &Voxel)>,
     mut fade_timer: ResMut<FadeTimer>,
-    
+    save_query: Query<(Entity, &Voxel)>,
 ) {
     for event in event_reader.read() {
+        let event_time = time.elapsed_secs();
         match event {
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
+                println!("{:.3}      GAME EVENT: PLACE BLOCK", event_time);
                 let mut voxel_assets = voxel_asset.clone();
 
-                if voxel.voxel_id.0 == 1 || voxel.voxel_id.0 == 2 {
+                if voxel.voxel_id.0 == 1 || voxel.voxel_id.0 == 2 { // Figures out the mesh for cable type voxels 
                     let connections = count_neighbors(*voxel, &voxel_map);
                     let image_row = voxel_map.asset_map[&voxel.voxel_id].texture_row;
 
@@ -57,6 +64,7 @@ pub fn event_handler(
                 );
             }
             GameEvent::RemoveBlock { position } => {
+                println!("{:.3}      GAME EVENT: REMOVE BLOCK", event_time);
                 remove_voxel(&mut commands, &mut voxel_map, position.clone());
             }
             GameEvent::UpdateCursor {
@@ -64,6 +72,7 @@ pub fn event_handler(
                 show_cursor,
                 enable_input,
             } => {
+                println!("{:.3}      GAME EVENT: UPDATE CURSOR", event_time);
                 if let Ok(mut window) = window_query.get_single_mut() {
                     update_cursor_and_input(
                         &mut window,
@@ -75,6 +84,7 @@ pub fn event_handler(
                 }
             }
             GameEvent::UpdateMesh { updates } => {
+                println!("{:.3}      GAME EVENT: UPDATE MESH", event_time);
                 update_meshes(
                     *updates,
                     &mut voxel_map,
@@ -82,6 +92,10 @@ pub fn event_handler(
                     &mut meshes,
                     &mut query,
                 );
+            }
+            GameEvent::SaveWorld { world } => {
+                println!("{:.3}      GAME EVENT: SAVE WORLD", event_time);
+                save_world(&save_query, world).expect("Couldn't Save");
             }
         }
     }

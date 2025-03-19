@@ -5,9 +5,9 @@ use bevy::prelude::*;
 
 use crate::prelude::*;
 
-fn save_world(
-    query: Query<(Entity, &Voxel)>,
-    save_game: Res<SavedWorld>,
+pub fn save_world(
+    query: & Query<(Entity, &Voxel)>,
+    save_game: & SavedWorld,
 ) -> Result<(), Box<dyn Error>> {  // <-- Change return type to Result
     let world_data: Vec<_> = query.iter().map(|(_, voxel)| voxel.clone()).collect();
 
@@ -26,18 +26,19 @@ fn save_world(
 }
 
 pub fn autosave_system(
-    query: Query<(Entity, &Voxel)>,
     mut autosave_timer: Local<Timer>,
     time: Res<Time>,
     save_game: Res<SavedWorld>,
+    mut event_writer: EventWriter<GameEvent>,
 ) {
     autosave_timer.set_duration(AUTOSAVE_TIME);
     autosave_timer.tick(time.delta());
     
     if autosave_timer.finished(){
-        println!("Saving World...{}", save_game.world_name);
-        save_world(query, save_game).expect("Couldn't Save");
-        
+        let saved_game = save_game.clone();
+        event_writer.send(GameEvent::SaveWorld {
+            world: saved_game,
+        });
         autosave_timer.reset();
     }
 }

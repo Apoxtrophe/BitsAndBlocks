@@ -97,7 +97,7 @@ fn main() {
         .add_systems(
             Update,
             (
-                event_handler,
+                autosave_system,
                 input_event_system,
                 respawn_system,
                 raycast_system,
@@ -107,7 +107,7 @@ fn main() {
                 update_identifier,
                 update_game_window_visibility,
                 exit_menu_interaction,
-                autosave_system,
+                event_handler,
             ).run_if(in_state(GameState::InGame))
         )
         .add_systems(OnExit(GameState::InGame), despawn_all)

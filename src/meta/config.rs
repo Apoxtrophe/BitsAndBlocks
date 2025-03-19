@@ -32,5 +32,5 @@ pub const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 
 // Saving / Loading
 pub const TEMP_SAVE_PATH: &str = "assets/saves/temp_save.json";
-pub const AUTOSAVE_TIME: Duration = Duration::from_secs(10);
+pub const AUTOSAVE_TIME: Duration = Duration::from_secs(60);
 pub const SAVE_SLOTS: usize = 4;

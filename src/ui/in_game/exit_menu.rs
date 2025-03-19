@@ -27,7 +27,7 @@ fn exit_menu_test(
         },
         BorderColor(LIGHT_SKY_BLUE.into()),
         BorderRadius::all(Val::Percent(1.0)),
-        BackgroundColor(Color::linear_rgba(0.8, 0.8, 0.8, 0.8)),
+        BackgroundColor(Color::linear_rgba(0.8, 0.8, 0.8, 0.5)),
         BoxShadow {
             color: Color::BLACK.with_alpha(0.8),
             x_offset: Val::Percent(0.0),
@@ -45,8 +45,9 @@ pub fn exit_menu_interaction(
     mut which_ui: ResMut<WhichUIShown>,
     mut event_writer: EventWriter<GameEvent>,
     mut app_state: ResMut<NextState<GameState>>,
+    save_game: Res<SavedWorld>,
 ) {
-    
+    let saved_world = save_game.clone();
     for (interaction, mut bg_color, button_number) in query.iter_mut() {
         match *interaction {
             
@@ -63,12 +64,13 @@ pub fn exit_menu_interaction(
                     }
                     9 => {
                         println!("Main Menu");
-
+                        event_writer.send(GameEvent::SaveWorld { world: saved_world.clone() });
                         
                         app_state.set(GameState::Loading);
                     }
                     10 => {
                         println!("Save & Quit");
+                        event_writer.send(GameEvent::SaveWorld { world: saved_world.clone() });
                     }
                     11 => {
                         println!("Placeholder");
