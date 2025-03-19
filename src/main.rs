@@ -78,6 +78,7 @@ fn main() {
                 menu_interaction_system,
                 load_world_button_system, 
                 update_pop_window_visibility,
+                update_scroll_position,
             ).run_if(in_state(GameState::MainMenu))
         )
         

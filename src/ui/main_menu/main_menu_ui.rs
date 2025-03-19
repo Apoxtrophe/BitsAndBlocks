@@ -119,7 +119,7 @@ pub fn load_world_button_system(
             
             Interaction::Pressed => {
                 match world_button.name.as_str() {
-                    "empty" => {
+                    "" => {
                         println!("Empty Slot");
                     }
                     _ => {

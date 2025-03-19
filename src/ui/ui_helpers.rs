@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_rapier3d::rapier::crossbeam::epoch::Pointable;
 use crate::prelude::*;
 use bevy_simple_text_input::{TextInput, TextInputAction, TextInputBinding, TextInputNavigationBindings, TextInputSettings, TextInputSubmitEvent, TextInputTextColor, TextInputTextFont};
 
@@ -90,11 +91,11 @@ pub fn create_editable_text(
                     justify_content: JustifyContent::Center,
                     ..default()
                 },
+                Interaction::None,
 
                 BorderColor(Color::srgb(0.75, 0.52, 0.99)),
                 BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
                 TextInput,
-
                 TextInputTextFont(TextFont {
                     font_size: 34.,
                     ..default()

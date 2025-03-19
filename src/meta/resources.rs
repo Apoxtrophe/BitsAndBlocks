@@ -79,7 +79,7 @@ pub struct VoxelDefinition {
 
 #[derive(Resource)]
 pub struct LoadedSaves {
-    pub saves: Vec<Option<String>>,
+    pub saves: Vec<String>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Resource, Clone)]
