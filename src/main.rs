@@ -76,7 +76,7 @@ fn main() {
             Update,
             (
                 menu_interaction_system,
-                world_button_system, 
+                load_world_button_system, 
                 update_pop_window_visibility,
             ).run_if(in_state(GameState::MainMenu))
         )

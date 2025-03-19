@@ -56,7 +56,8 @@ pub fn menu_interaction_system(
     for (interaction, mut bg_color, button_number) in query.iter_mut() {
         match *interaction {
             
-            Interaction::Pressed => {                
+            Interaction::Pressed => {         
+                *bg_color = Color::linear_rgba(0.0, 1.0, 0.0, 1.0).into();       
                 match button_number.index {
                     0 => {
                         println!("New Game");
@@ -78,12 +79,12 @@ pub fn menu_interaction_system(
                         println!("Create World");
                         if save_world.world_name.len() > 0 {
                             app_state.set(GameState::InGame);
+                        } else {
+                            *bg_color = Color::linear_rgba(1.0, 0.0, 0.0, 1.0).into();       
                         }
                     }
                     _ => {}
                 }
-
-                *bg_color = Color::linear_rgba(0.0, 1.0, 0.0, 1.0).into();
             }
             Interaction::Hovered => {
                 *bg_color = Color::linear_rgba(1.0, 1.0, 1.0, 1.0).into();
@@ -102,7 +103,8 @@ pub fn menu_interaction_system(
     edit_text_listener(events, save_world);
 }
 
-pub fn world_button_system(
+/// Load World button System
+pub fn load_world_button_system(
     mut world_button_query: Query<(&Interaction, &mut BackgroundColor, &WorldButton), (Changed<Interaction>, With<Button>)>,
     mut app_state: ResMut<NextState<GameState>>,
     
@@ -112,9 +114,9 @@ pub fn world_button_system(
     mut game_save: ResMut<SavedWorld>,
 ) {
     let mut loaded_world: Option<&str> = None;
-    
     for (interaction, mut bg_color, world_button) in world_button_query.iter_mut() {
         match *interaction {
+            
             Interaction::Pressed => {
                 match world_button.name.as_str() {
                     "empty" => {

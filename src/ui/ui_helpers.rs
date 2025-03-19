@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::prelude::*;
-use bevy_simple_text_input::{TextInput, TextInputSettings, TextInputSubmitEvent, TextInputTextColor, TextInputTextFont};
+use bevy_simple_text_input::{TextInput, TextInputAction, TextInputBinding, TextInputNavigationBindings, TextInputSettings, TextInputSubmitEvent, TextInputTextColor, TextInputTextFont};
 
 /// A generic helper that spawns a UI node with a given style and additional components.
 pub fn spawn_ui_node<B: Bundle>(commands: &mut Commands, style: Node, bundle: B) -> Entity {
@@ -78,7 +78,7 @@ pub fn spawn_sub_node(commands: &mut Commands, width: f32, height: f32, bottom: 
 /// Only used in the world creation screen at them moment
 pub fn create_editable_text(
     commands: &mut Commands,
-) -> Entity {
+) -> Entity {    
     let edit_text = commands
             .spawn((
                 Node {
@@ -90,10 +90,11 @@ pub fn create_editable_text(
                     justify_content: JustifyContent::Center,
                     ..default()
                 },
-                
+
                 BorderColor(Color::srgb(0.75, 0.52, 0.99)),
                 BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
                 TextInput,
+
                 TextInputTextFont(TextFont {
                     font_size: 34.,
                     ..default()
@@ -200,4 +201,33 @@ pub fn spawn_button(
     commands.entity(image_entity).set_parent(button_container);
 
     button_container
+}
+
+/// Creates the hotbar slot bundle with shadow and border.
+pub fn box_shadow_node_bundle(
+    size: Vec2,
+    offset: Vec2,
+    spread: f32,
+    blur: f32,
+    border_radius: BorderRadius,
+) -> impl Bundle {
+    (   
+        Node {
+            top: Val::Percent(90.0),
+            width: Val::Px(size.x),
+            height: Val::Px(size.y),
+            border: UiRect::all(Val::Px(6.0)),
+            ..default()
+        },
+        BorderColor(HOTBAR_BORDER_COLOR.into()),
+        border_radius,
+        BackgroundColor(Color::linear_rgba(0.2, 0.2, 0.2, 0.1)),
+        BoxShadow {
+            color: Color::BLACK.with_alpha(1.0),
+            x_offset: Val::Percent(offset.x),
+            y_offset: Val::Percent(offset.y),
+            spread_radius: Val::Percent(spread),
+            blur_radius: Val::Px(blur),
+        },
+    )
 }

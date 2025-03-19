@@ -104,11 +104,16 @@ pub fn update_game_window_visibility(
     mut query: Query<(&GameUIType, &mut Visibility)>,
     current_screen: Res<WhichUIShown>,
 ) {
+    //println!("current_ui: {:?}", current_screen.ui);
     for (ui, mut visibility) in query.iter_mut() {
         if ui.ui == current_screen.ui {
             *visibility = Visibility::Visible;
         } else {
             *visibility = Visibility::Hidden;
+        }
+        // Special case for allowing inventory and hotbar to be shown simultaneously
+        if ui.ui == WhichGameUI::Default && current_screen.ui == WhichGameUI::Inventory {
+            *visibility = Visibility::Visible;
         }
     }
 }
@@ -118,8 +123,6 @@ pub fn despawn_all(
     entities: Query<Entity, With<GameEntity>>,
     camera_query: Query<Entity, With<PlayerCamera>>,
 ) {
-    
-    
     for camera_entity in camera_query.iter() {
         commands.entity(camera_entity).despawn_recursive();
     }

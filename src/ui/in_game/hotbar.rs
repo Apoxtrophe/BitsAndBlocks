@@ -44,11 +44,12 @@ pub fn spawn_hotbar_slot(
     parent
         .spawn(shadow_box)
         .insert(HotbarSlot { index })
+        .insert(Visibility::Visible)
+        .insert(GameUIType { ui: WhichGameUI::Default },)
         .with_children(|child| {
             child.spawn(image_node);
         });
 }
-
 
 pub fn update_hotbar(
     player: ResMut<Player>,
@@ -56,6 +57,7 @@ pub fn update_hotbar(
     mut border_query: Query<(&HotbarSlot, &mut BorderColor)>,
     voxel_map: Res<VoxelMap>,
 ) {
+    
     // Update border colors based on the player's selected slot.
     for (slot, mut border_color) in border_query.iter_mut() {
         *border_color = if slot.index == player.hotbar_selector {
