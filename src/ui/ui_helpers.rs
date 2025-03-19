@@ -114,8 +114,21 @@ pub fn edit_text_listener(
     mut save_world: ResMut<SavedWorld>,
 ) {
     for event in events.read() {
-        save_world.world_name = event.value.clone();
+        let unclean_name = event.value.clone();
+        let sanitary_name = sanitize_filename(&unclean_name);
+        save_world.world_name = sanitary_name;
     }
+}
+
+fn sanitize_filename(input: &str) -> String {
+    // Define characters that are not allowed in file names
+    let invalid_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
+
+    // Filter out invalid characters and control characters
+    input
+        .chars()
+        .filter(|&c| !invalid_chars.contains(&c) && !c.is_control())
+        .collect()
 }
 
 pub fn spawn_text_button(
