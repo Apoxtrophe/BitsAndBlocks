@@ -46,6 +46,7 @@ pub fn exit_menu_interaction(
     mut event_writer: EventWriter<GameEvent>,
     mut app_state: ResMut<NextState<GameState>>,
     save_game: Res<SavedWorld>,
+    mut exit: EventWriter<AppExit>,
 ) {
     let saved_world = save_game.clone();
     for (interaction, mut bg_color, button_number) in query.iter_mut() {
@@ -71,6 +72,7 @@ pub fn exit_menu_interaction(
                     10 => {
                         println!("Save & Quit");
                         event_writer.send(GameEvent::SaveWorld { world: saved_world.clone() });
+                        exit.send(AppExit::Success);
                     }
                     11 => {
                         println!("Placeholder");

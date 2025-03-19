@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use bevy::prelude::*;
+use bincode::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use crate::prelude::*;
 

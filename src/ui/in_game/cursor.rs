@@ -6,7 +6,7 @@ pub fn spawn_cursor_node(
     image: Handle<Image>,
 ) -> Entity {
 
-    let image_node = ImageNode::new(image);
+    let image_node = ImageNode::new(image).with_color(Color::linear_rgba(1.0, 1.0, 1.0, 0.8));
     let cursor_node = (Node {
         width: Val::VMin(2.0),
         height: Val::VMin(2.0),

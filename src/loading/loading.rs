@@ -81,7 +81,7 @@ fn load_saved_names() -> LoadedSaves {
         for entry in entries.flatten() {
             let path = entry.path();
             // Check if the file has a ".json" extension.
-            if path.extension().and_then(|s| s.to_str()) == Some("json") {
+            if path.extension().and_then(|s| s.to_str()) == Some("bin") {
                 // Extract the file stem (name without extension).
                 if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
                     file_names.push(stem.to_string());

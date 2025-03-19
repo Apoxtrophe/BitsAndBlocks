@@ -95,7 +95,7 @@ pub fn event_handler(
             }
             GameEvent::SaveWorld { world } => {
                 println!("{:.3}      GAME EVENT: SAVE WORLD", event_time);
-                save_world(&save_query, world).expect("Couldn't Save");
+                save_world(&save_query, &world).expect("Couldn't Save");
             }
         }
     }
