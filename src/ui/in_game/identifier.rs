@@ -5,34 +5,36 @@ pub fn create_identifier_timer () -> FadeTimer{
     let timer = FadeTimer {
         timer: Timer::from_seconds(FADE_TIME, TimerMode::Once),
     };
-    
     timer
 }
 
 pub fn spawn_identifier(
-    parent: &mut ChildBuilder,
-) {
-    let main_node = (Node {
+    commands: &mut Commands,
+) -> Entity {
+    
+    let identifier_node = ((Node {
         width: Val::Percent(50.0),
         height: Val::Percent(5.0),
         bottom: Val::Percent(15.0),
         position_type: PositionType::Absolute,
         ..default()
     },
-    );
+    ));
     
     let text_settings = TextFont {
         font_size: 32.0,
         ..default()
     };
     
-    parent.spawn((
+    let voxel_identifier = commands.spawn((
         Text::new("Voxel Identifier"),
         text_settings,
         TextColor(Color::BLACK),
         TextLayout::new_with_justify(JustifyText::Center),
-        main_node,
-        )).insert(VoxelIdentifierText);
+        identifier_node,
+    )).insert(VoxelIdentifierText).id();
+    
+    voxel_identifier
 }
 
 pub fn update_identifier(

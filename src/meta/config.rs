@@ -22,6 +22,8 @@ pub const SUBSET_SIZES: [usize; 9] = [8, 16, 1, 1, 1, 1, 1, 1, 1];
 pub const HOTBAR_BORDER_COLOR: Srgba = Srgba::GREEN;
 pub const FADE_TIME: f32 = 1.0; // Fade time of Voxel Identifier text
 pub const CURSOR_TEXTURE_PATH: &str = "textures/cursor.png";
+pub const HOTBAR_SIZE: usize = 9; // Changing this will probably break shit
+pub const INVENTORY_SIZE: usize = 16; // 
 
 // PLAYER
 pub const PLAYER_HEIGHT: f32 = 1.9;

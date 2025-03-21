@@ -2,30 +2,74 @@ use crate::prelude::*;
 
 /// Defines the style for hotbar slots.
 pub struct HotbarSlotStyle {
-    pub size: Vec2,
+    pub vmin_size: f32,
     pub offset: Vec2,
     pub spread: f32,
     pub blur: f32,
     pub border_radius: BorderRadius,
 }
 
+pub fn spawn_hotbar (
+    commands: &mut Commands, 
+    texture_handle: &Handle<Image>,
+    texture_atlas_handle: &Handle<TextureAtlasLayout>,
+) -> Entity {
+
+    
+    let hotbar_node = commands.spawn((Node{
+        width: Val::Percent(100.0),
+        height: Val::Percent(10.0),
+        top: Val::Percent(90.0),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        column_gap: Val::Px(10.0),
+        //position_type: PositionType::Absolute,
+        ..default()
+    },
+    )).id();
+    
+    // Define a common style for hotbar slots.
+    let hotbar_style = HotbarSlotStyle {
+        vmin_size: 10.0,
+        offset: Vec2::ZERO,
+        spread: 4.0,
+        blur: 20.0,
+        border_radius: BorderRadius::all(Val::Percent(0.1)),
+    };
+    
+    for i in 0..HOTBAR_SIZE {
+        let slot = spawn_hotbar_slot(
+            commands,
+            i,
+            &hotbar_style,
+            texture_handle,
+            texture_atlas_handle,
+        );
+        commands.entity(slot).set_parent(hotbar_node);
+    }
+    hotbar_node
+}
+
 /// Spawns an individual hotbar slot and its child image node.
 pub fn spawn_hotbar_slot(
-    parent: &mut ChildBuilder,
+    commands: &mut Commands,
     index: usize,
     style: &HotbarSlotStyle,
     texture_handle: &Handle<Image>,
     texture_atlas_handle: &Handle<TextureAtlasLayout>,
-) {
-    let shadow_box = box_shadow_node_bundle(
-        style.size, 
+) -> Entity {
+    
+    let shadow_box = hotslot_bundle(
+        style.vmin_size, 
         style.offset, 
         style.spread, 
         style.blur, 
         style.border_radius
     );
+
+    let shadow_box = commands.spawn(shadow_box).id();
     
-    let image_node = (Node {
+    let image_node = commands.spawn((Node {
         width: Val::Percent(100.0),
         height: Val::Percent(100.0),
         justify_content: JustifyContent::Center,
@@ -37,16 +81,45 @@ pub fn spawn_hotbar_slot(
         texture_handle.clone(),
         TextureAtlas::from(texture_atlas_handle.clone()),
     ),
-    );
+    )).id();
     
-    parent
-        .spawn(shadow_box)
-        .insert(HotbarSlot { index })
+    commands.entity(shadow_box)
+        .insert(HotbarSlot {index})
         .insert(Visibility::Visible)
-        .insert(GameUIType { ui: WhichGameUI::Default },)
-        .with_children(|child| {
-            child.spawn(image_node);
-        });
+        .insert(GameUIType { ui: WhichGameUI::Default },);
+        
+    
+    commands.entity(image_node).set_parent(shadow_box);
+    
+    shadow_box
+}
+
+/// Creates the hotbar slot bundle with shadow and border.
+pub fn hotslot_bundle(
+    vmin_size: f32,
+    offset: Vec2,
+    spread: f32,
+    blur: f32,
+    border_radius: BorderRadius,
+) -> impl Bundle {
+    (   
+        Node {
+            width: Val::VMin(vmin_size),
+            height: Val::VMin(vmin_size),
+            border: UiRect::all(Val::Px(6.0)),
+            ..default()
+        },
+        BorderColor(HOTBAR_BORDER_COLOR.into()),
+        border_radius,
+        BackgroundColor(Color::linear_rgba(0.2, 0.2, 0.2, 0.1)),
+        BoxShadow {
+            color: Color::BLACK.with_alpha(1.0),
+            x_offset: Val::Percent(offset.x),
+            y_offset: Val::Percent(offset.y),
+            spread_radius: Val::Percent(spread),
+            blur_radius: Val::Px(blur),
+        },
+    )
 }
 
 pub fn update_hotbar(

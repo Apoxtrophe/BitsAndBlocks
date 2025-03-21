@@ -217,31 +217,3 @@ pub fn spawn_button(
     button_container
 }
 
-/// Creates the hotbar slot bundle with shadow and border.
-pub fn box_shadow_node_bundle(
-    size: Vec2,
-    offset: Vec2,
-    spread: f32,
-    blur: f32,
-    border_radius: BorderRadius,
-) -> impl Bundle {
-    (   
-        Node {
-            top: Val::Percent(90.0),
-            width: Val::Px(size.x),
-            height: Val::Px(size.y),
-            border: UiRect::all(Val::Px(6.0)),
-            ..default()
-        },
-        BorderColor(HOTBAR_BORDER_COLOR.into()),
-        border_radius,
-        BackgroundColor(Color::linear_rgba(0.2, 0.2, 0.2, 0.1)),
-        BoxShadow {
-            color: Color::BLACK.with_alpha(1.0),
-            x_offset: Val::Percent(offset.x),
-            y_offset: Val::Percent(offset.y),
-            spread_radius: Val::Percent(spread),
-            blur_radius: Val::Px(blur),
-        },
-    )
-}

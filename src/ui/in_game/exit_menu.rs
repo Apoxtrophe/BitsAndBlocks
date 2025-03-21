@@ -4,9 +4,26 @@ use crate::prelude::*;
 
 pub fn spawn_exit_menu (
     commands: &mut Commands,
+    button_texture: Handle<Image>,
+    button_atlas_handle: Handle<TextureAtlasLayout>,
 ) -> Entity {
-    let box_shadow = commands.spawn(exit_menu_bundle()).id();
-    box_shadow
+    let exit_menu = commands.spawn(exit_menu_bundle()).id();
+    
+    let sub_exit_menu =  spawn_sub_node(commands, 30.0, 70.0, 15.0);
+    commands.entity(sub_exit_menu).set_parent(exit_menu);
+    
+    for i in 0..4 {
+    spawn_button (
+        commands,
+        sub_exit_menu,
+        button_texture.clone(),
+        button_atlas_handle.clone(),
+        i + 8,
+        24.0,
+    );
+    }
+    
+    exit_menu
 }
 
 fn exit_menu_bundle(
@@ -14,8 +31,8 @@ fn exit_menu_bundle(
 ) -> impl Bundle {
     (
         Node {
-            width: Val::Percent(50.0),
-            height: Val::Percent(90.0),
+            width: Val::Percent(40.0),
+            height: Val::Percent(80.0),
             border: UiRect::all(Val::Px(16.)),
             position_type: PositionType::Absolute,
             justify_content: JustifyContent::Center,
@@ -23,7 +40,7 @@ fn exit_menu_bundle(
             ..default()
         },
         BorderColor(Color::WHITE),
-        BorderRadius::all(Val::Percent(0.01)),
+        BorderRadius::all(Val::Percent(0.0)),
         BackgroundColor(Color::linear_rgba(0.1, 0.1, 0.1, 0.5)),
         BoxShadow {
             color: Color::BLACK.with_alpha(0.8),

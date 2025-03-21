@@ -2,11 +2,11 @@ use crate::prelude::*;
 
 
 pub fn spawn_inventory(
-    parent: &mut ChildBuilder,
+    commands: &mut Commands,
     texture_handle: &Handle<Image>,
     texture_atlas_handle: &Handle<TextureAtlasLayout>,
-) {  
-    let grid_node = (Node {
+) -> Entity {  
+    let inventory_node = commands.spawn((Node {
         width: Val::Px(400.0),
         height: Val::Px(400.0),
         margin: UiRect::all(Val::Auto),
@@ -19,9 +19,9 @@ pub fn spawn_inventory(
     Visibility::Hidden,
     InventoryGrid,
     GameUIType { ui: WhichGameUI::Inventory },
-    );
+    )).id();
     
-    let button_node = (Node {
+    let button_node = ((Node {
         width: Val::Percent(25.0),
         height: Val::Percent(25.0),
         margin: UiRect::all(Val::Auto),
@@ -29,7 +29,7 @@ pub fn spawn_inventory(
     }, 
     Visibility::Inherited,
     BackgroundColor(Color::WHITE),
-    );
+    ));
 
     let image_node = (Node {
         left: Val::Percent(5.0),
@@ -44,10 +44,9 @@ pub fn spawn_inventory(
     ImageNode::from_atlas_image(texture_handle.clone(), TextureAtlas::from(texture_atlas_handle.clone())),
     );
     
-    parent.spawn(grid_node)
-    .with_children(|grid_parent| {
-        for i in 0..16 {
-            grid_parent.spawn((Button, button_node.clone()))
+    commands.entity(inventory_node).with_children(|inventory_parent| {
+        for i in 0..INVENTORY_SIZE {
+            inventory_parent.spawn((Button, button_node.clone()))
                 .insert(InventorySlot { index: i })
             .with_children(|child| {
                 child.spawn(image_node.clone())
@@ -55,6 +54,8 @@ pub fn spawn_inventory(
             });
         }
     });
+    
+    inventory_node
 }
 
 pub fn update_inventory_ui(

@@ -30,41 +30,46 @@ pub enum GameEvent {
     }
 }
 
+/// Returns true if the voxel is one of the cable types.
+/// Consider replacing magic numbers with named constants or an enum variant.
+fn is_cable_voxel(voxel: &Voxel) -> bool {
+    voxel.voxel_id.0 == 1 || voxel.voxel_id.0 == 2
+}
+
 pub fn event_handler(
     time: Res<Time>,
     mut event_reader: EventReader<GameEvent>,
-    mut evr_scroll: EventReader<MouseWheel>,
+    mut mouse_wheel_reader: EventReader<MouseWheel>,
     mut commands: Commands,
     mut voxel_map: ResMut<VoxelMap>,
     mut player: ResMut<Player>,
     mut controller_query: Query<&mut FpsController>,
     mut window_query: Query<&mut Window>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut query: Query<(Entity, &Voxel)>,
+    mut voxel_query : Query<(Entity, &Voxel)>,
     mut fade_timer: ResMut<FadeTimer>,
     save_query: Query<(Entity, &Voxel)>,
     mut app_state: ResMut<NextState<GameState>>,
 ) {
     for event in event_reader.read() {
-        let event_time = time.elapsed_secs();
+        let event_time = time.elapsed_secs(); // Keeps track of when events happen
         match event {
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
                 println!("{:.3}      GAME EVENT: PLACE BLOCK", event_time);
-                let mut voxel_assets = voxel_asset.clone();
-
-                if voxel.voxel_id.0 == 1 || voxel.voxel_id.0 == 2 { // Figures out the mesh for cable type voxels 
+                let mut voxel_asset_data = voxel_asset.clone();
+                if is_cable_voxel(voxel) {
+                    // Determine cable connections from neighboring voxels
                     let connections = count_neighbors(*voxel, &voxel_map);
-                    let image_row = voxel_map.asset_map[&voxel.voxel_id].texture_row;
+                    let texture_row = voxel_map
+                        .asset_map
+                        .get(&voxel.voxel_id)
+                        .map(|asset| asset.texture_row)
+                        .unwrap_or_default();
 
-                    voxel_assets.mesh_handle =
-                        meshes.add(create_cable_mesh(image_row, connections));
+                    voxel_asset_data.mesh_handle =
+                        meshes.add(create_cable_mesh(texture_row, connections));
                 }
-                add_voxel(
-                    &mut commands,
-                    &mut voxel_map,
-                    voxel_assets.clone(),
-                    voxel.clone(),
-                );
+                add_voxel(&mut commands, &mut voxel_map, voxel_asset_data, voxel.clone());
             }
             GameEvent::RemoveBlock { position } => {
                 println!("{:.3}      GAME EVENT: REMOVE BLOCK", event_time);
@@ -88,13 +93,7 @@ pub fn event_handler(
             }
             GameEvent::UpdateMesh { updates } => {
                 println!("{:.3}      GAME EVENT: UPDATE MESH", event_time);
-                update_meshes(
-                    *updates,
-                    &mut voxel_map,
-                    &mut commands,
-                    &mut meshes,
-                    &mut query,
-                );
+                update_meshes(*updates, &mut voxel_map, &mut commands, &mut meshes, &mut voxel_query);
             }
             GameEvent::SaveWorld { world } => {
                 println!("{:.3}      GAME EVENT: SAVE WORLD", event_time);
@@ -108,19 +107,15 @@ pub fn event_handler(
     }
 
     // Mouse Scroll Events for scrolling hotbar
-    for event in evr_scroll.read() {
-        match event.y.partial_cmp(&0.0) {
-            Some(Ordering::Greater) => {
-                // When subtracting 1, add 8 instead (because (x - 1) mod 9 == (x + 8) mod 9)
-                player.hotbar_selector = (player.hotbar_selector + 8) % 9;
-                fade_timer.timer.reset();
-            }
-            Some(Ordering::Less) => {
-                // Increment and wrap-around automatically
-                player.hotbar_selector = (player.hotbar_selector + 1) % 9;
-                fade_timer.timer.reset();
-            }
-            _ => (),
+    for event in mouse_wheel_reader.read() {
+        if event.y > 0.0 {
+            // Decrement hotbar selector with wrap-around
+            player.hotbar_selector = (player.hotbar_selector + (HOTBAR_SIZE - 1)) % HOTBAR_SIZE;
+            fade_timer.timer.reset();
+        } else if event.y < 0.0 {
+            // Increment hotbar selector with wrap-around
+            player.hotbar_selector = (player.hotbar_selector + 1) % HOTBAR_SIZE;
+            fade_timer.timer.reset();
         }
     }
 }
