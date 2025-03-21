@@ -24,8 +24,10 @@ pub enum GameEvent {
     },
     SaveWorld {
         world: SavedWorld,
+    },
+    StateChange {
+        new_state: GameState,
     }
-    
 }
 
 pub fn event_handler(
@@ -41,6 +43,7 @@ pub fn event_handler(
     mut query: Query<(Entity, &Voxel)>,
     mut fade_timer: ResMut<FadeTimer>,
     save_query: Query<(Entity, &Voxel)>,
+    mut app_state: ResMut<NextState<GameState>>,
 ) {
     for event in event_reader.read() {
         let event_time = time.elapsed_secs();
@@ -96,6 +99,10 @@ pub fn event_handler(
             GameEvent::SaveWorld { world } => {
                 println!("{:.3}      GAME EVENT: SAVE WORLD", event_time);
                 save_world(&save_query, &world).expect("Couldn't Save");
+                return; // Saving world skips other event handling. This is to prevent world state from changing before saving.
+            }
+            GameEvent::StateChange { new_state } => {
+                app_state.set(*new_state);
             }
         }
     }

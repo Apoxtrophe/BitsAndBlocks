@@ -1,7 +1,5 @@
 use crate::prelude::*;
 
-
-
 /// Defines the style for hotbar slots.
 pub struct HotbarSlotStyle {
     pub size: Vec2,
