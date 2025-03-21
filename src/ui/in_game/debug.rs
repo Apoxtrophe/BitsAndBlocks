@@ -1,49 +1,71 @@
 use crate::prelude::*;
 
 /// Spawns the debug text node.
-pub fn spawn_debug_text(commands: &mut Commands) {
-    let text_node = (Node {
-        position_type: PositionType::Absolute,
-        bottom: Val::Percent(60.0),
-        right: Val::Percent(5.0),
-        ..default()
-    },
-    DebugText,
-    GameEntity);
+pub fn spawn_debug_text(commands: &mut Commands) -> Entity {
+    let text_node = (
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Percent(10.0),
+            left: Val::Percent(5.0),
+            ..default()
+        },
+        DebugText,
+        GameEntity,
+    );
     
     let text_settings = TextFont {
-        font_size: 16.0,
+        font_size: 24.0,
         ..default()
     };
     
-    commands.spawn((
-        Text::new("hello\nbevy!"),
+    let debug_text = commands.spawn((
+        Text::new("Initializing debug info..."),
         text_settings,
         TextColor(Color::BLACK),
         TextLayout::new_with_justify(JustifyText::Left),
         text_node,
-    ));
+    )).insert(GameUIType{ui: WhichGameUI::Debug}).id();
+    
+    debug_text
 }
 
+/// Updates the debug text with additional runtime and world info.
 pub fn update_debug_text(
     mut text_query: Query<&mut Text, With<DebugText>>,
     entity_query: Query<Entity>,
     player: Res<Player>,
+    time: Res<Time>,
 ) {
+    // Count entities for debugging purposes.
     let entity_count = entity_query.iter().count();
-
-    // Create the debug text string.
+    
+    // Compute FPS (avoid division by zero by clamping delta_seconds).
+    let delta = time.delta_secs().max(0.0001);
+    let fps = (1.0 / delta).round();
+    
+    
+    // Build the multi-line debug string.
     let debug_text = format!(
         "\
+FPS: {:.1}
+Delta Time: {:.3}s
+Elapsed Time: {:.1}s
+
 Camera Pos: {:.1}
 Camera Direction: {:.1}
-Ray Hit: {:.1}
+
+Ray Hit Pos: {:.1}
 Hit Voxel: {:?}
-Selected Voxel.: {:?}
+
+Selected Voxel: {:?}
 Selected Definition: {:?}
 Voxel ID: {:?}
+
 Hotbar: {:?}
 Entity Count: {}",
+        fps,
+        delta,
+        time.elapsed_secs().round(),
         player.camera_pos,
         player.camera_dir,
         player.ray_hit_pos,
@@ -54,7 +76,7 @@ Entity Count: {}",
         player.hotbar_ids,
         entity_count,
     );
-
+    
     // Update all debug text entities.
     for mut text in text_query.iter_mut() {
         text.0 = debug_text.clone();

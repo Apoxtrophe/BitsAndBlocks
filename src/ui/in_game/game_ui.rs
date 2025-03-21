@@ -8,8 +8,6 @@ pub fn setup_ui(
     commands.insert_resource(WhichUIShown {
         ui: WhichGameUI::Default,
     });
-    
-    //spawn_debug_text(&mut commands); // This sucks and needs to be removed / improved
 
     // ###
     // Load texture and create a texture atlas.
@@ -63,6 +61,10 @@ pub fn setup_ui(
     // Spawn the voxel_identifier above the hotbar
     let voxel_identifier = spawn_identifier(&mut commands);
     commands.entity(voxel_identifier).set_parent(main_node);
+    
+    // Spawn the debug_text
+    let debug_text = spawn_debug_text(&mut commands);
+    commands.entity(debug_text).set_parent(main_node);
 }
 
 

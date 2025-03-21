@@ -1,4 +1,3 @@
-use std::{cmp::Ordering, fmt::Pointer};
 
 use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
@@ -27,7 +26,8 @@ pub enum GameEvent {
     },
     StateChange {
         new_state: GameState,
-    }
+    },
+    ToggleDebug {} // Toggles the debug information on / off
 }
 
 /// Returns true if the voxel is one of the cable types.
@@ -50,6 +50,7 @@ pub fn event_handler(
     mut fade_timer: ResMut<FadeTimer>,
     save_query: Query<(Entity, &Voxel)>,
     mut app_state: ResMut<NextState<GameState>>,
+    mut which_game_ui: ResMut<WhichUIShown>,
 ) {
     for event in event_reader.read() {
         let event_time = time.elapsed_secs(); // Keeps track of when events happen
@@ -102,6 +103,17 @@ pub fn event_handler(
             }
             GameEvent::StateChange { new_state } => {
                 app_state.set(*new_state);
+            }
+            GameEvent::ToggleDebug {  } => {
+                match which_game_ui.ui {
+                    WhichGameUI::Default => {
+                        which_game_ui.ui = WhichGameUI::Debug;
+                    }
+                    WhichGameUI::Debug => {
+                        which_game_ui.ui = WhichGameUI::Default;
+                    }
+                    _ => {}
+                }
             }
         }
     }

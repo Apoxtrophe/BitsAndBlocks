@@ -54,6 +54,7 @@ pub enum WhichGameUI {
     Inventory,
     HotbarHidden,
     ExitMenu,
+    Debug,
 }
 
 #[derive(Debug, PartialEq, Eq)]

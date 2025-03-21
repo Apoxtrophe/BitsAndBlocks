@@ -1,7 +1,6 @@
 use bevy::prelude::*;
-use bevy_rapier3d::rapier::crossbeam::epoch::Pointable;
 use crate::prelude::*;
-use bevy_simple_text_input::{TextInput, TextInputAction, TextInputBinding, TextInputNavigationBindings, TextInputSettings, TextInputSubmitEvent, TextInputTextColor, TextInputTextFont};
+use bevy_simple_text_input::{TextInput, TextInputSettings, TextInputSubmitEvent, TextInputTextColor, TextInputTextFont};
 
 /// A generic helper that spawns a UI node with a given style and additional components.
 pub fn spawn_ui_node<B: Bundle>(commands: &mut Commands, style: Node, bundle: B) -> Entity {

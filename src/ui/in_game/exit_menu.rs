@@ -1,4 +1,4 @@
-use bevy::{color::palettes::css::*, window::CursorGrabMode};
+use bevy::window::CursorGrabMode;
 
 use crate::prelude::*;
 
@@ -22,7 +22,6 @@ pub fn spawn_exit_menu (
         24.0,
     );
     }
-    
     exit_menu
 }
 
@@ -33,21 +32,22 @@ fn exit_menu_bundle(
         Node {
             width: Val::Percent(40.0),
             height: Val::Percent(80.0),
-            border: UiRect::all(Val::Px(16.)),
+            top: Val::Percent(10.0),
+            border: UiRect::all(Val::Percent(0.2)),
             position_type: PositionType::Absolute,
             justify_content: JustifyContent::Center,
             flex_wrap: FlexWrap::Wrap,
             ..default()
         },
         BorderColor(Color::WHITE),
-        BorderRadius::all(Val::Percent(0.0)),
+        BorderRadius::all(Val::Percent(0.1)),
         BackgroundColor(Color::linear_rgba(0.1, 0.1, 0.1, 0.5)),
         BoxShadow {
             color: Color::BLACK.with_alpha(0.8),
             x_offset: Val::Percent(0.0),
             y_offset: Val::Percent(0.0),
-            spread_radius: Val::Percent(5.0),
-            blur_radius: Val::Px(2.0),
+            spread_radius: Val::Percent(1.0),
+            blur_radius: Val::Px(1.0),
         },
         GameUIType { ui: WhichGameUI::ExitMenu },
         Visibility::Hidden,
@@ -58,7 +58,6 @@ pub fn exit_menu_interaction(
     mut query: Query<(&Interaction, &mut BackgroundColor, &ButtonNumber), (Changed<Interaction>, With<Button>)>,
     mut which_ui: ResMut<WhichUIShown>,
     mut event_writer: EventWriter<GameEvent>,
-    mut app_state: ResMut<NextState<GameState>>,
     save_game: Res<SavedWorld>,
     mut exit: EventWriter<AppExit>,
 ) {

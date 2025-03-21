@@ -1,7 +1,7 @@
 use std::{
     error::Error,
     fs::File,
-    io::{BufReader, Write}, str::Bytes,
+    io::{BufReader, Write},
 };
 use bincode;
 use bevy::prelude::*;

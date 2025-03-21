@@ -21,7 +21,7 @@ pub fn spawn_inventory(
     GameUIType { ui: WhichGameUI::Inventory },
     )).id();
     
-    let button_node = ((Node {
+    let button_node = (Node {
         width: Val::Percent(25.0),
         height: Val::Percent(25.0),
         margin: UiRect::all(Val::Auto),
@@ -29,7 +29,7 @@ pub fn spawn_inventory(
     }, 
     Visibility::Inherited,
     BackgroundColor(Color::WHITE),
-    ));
+    );
 
     let image_node = (Node {
         left: Val::Percent(5.0),

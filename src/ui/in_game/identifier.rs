@@ -12,14 +12,14 @@ pub fn spawn_identifier(
     commands: &mut Commands,
 ) -> Entity {
     
-    let identifier_node = ((Node {
+    let identifier_node = (Node {
         width: Val::Percent(50.0),
         height: Val::Percent(5.0),
         bottom: Val::Percent(15.0),
         position_type: PositionType::Absolute,
         ..default()
     },
-    ));
+    );
     
     let text_settings = TextFont {
         font_size: 32.0,

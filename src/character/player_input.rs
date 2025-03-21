@@ -1,4 +1,3 @@
-use std::time::Duration;
 
 use bevy::{prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
@@ -46,7 +45,7 @@ pub fn input_event_system(
     time: Res<Time>,
 ) {
     // --- Cursor and UI Mode Updates ---
-    if let Ok(mut window) = window_query.get_single_mut() {
+    if let Ok(mut _window) = window_query.get_single_mut() {
         // Toggle Exit Menu on Escape key press.
         if keyboard_input.just_pressed(KeyCode::Escape) {
             if current_ui.ui != WhichGameUI::ExitMenu {
@@ -75,6 +74,9 @@ pub fn input_event_system(
                     enable_input: false,
                 });
             }
+        }
+        else if keyboard_input.just_pressed(KeyCode::F3) {
+        event_writer.send(GameEvent::ToggleDebug{});    
         }
         // Close Inventory on Tab release.
         else if keyboard_input.just_released(KeyCode::Tab) {
