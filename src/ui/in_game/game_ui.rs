@@ -5,9 +5,6 @@ pub fn setup_ui(
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     image_handles: Res<GameTextures>,
 ) {
-    commands.insert_resource(WhichUIShown {
-        ui: WhichGameUI::Default,
-    });
 
     // ###
     // Load texture and create a texture atlas.
@@ -71,18 +68,18 @@ pub fn setup_ui(
 
 pub fn update_game_window_visibility(
 
-    mut query: Query<(&GameUIType, &mut Visibility)>,
-    current_screen: Res<WhichUIShown>,
+    mut query: Query<(&GameUI, &mut Visibility)>,
+    current_screen: Res<GameUI>,
 ) {
     //println!("current_ui: {:?}", current_screen.ui);
     for (ui, mut visibility) in query.iter_mut() {
-        if ui.ui == current_screen.ui {
+        if *ui == *current_screen {
             *visibility = Visibility::Visible;
         } else {
             *visibility = Visibility::Hidden;
         }
         // Special case for allowing inventory and hotbar to be shown simultaneously
-        if ui.ui == WhichGameUI::Default && current_screen.ui == WhichGameUI::Inventory {
+        if *ui == GameUI::Default && *current_screen == GameUI::Inventory {
             *visibility = Visibility::Visible;
         }
     }

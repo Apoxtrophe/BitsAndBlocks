@@ -40,30 +40,6 @@ pub struct InventorySlot {
 #[derive(Component)]
 pub struct VoxelIdentifierText;
 
-/// Keeps track of which GameUI is being shown.
-#[derive(Component, PartialEq, Eq, Clone, Copy)]
-pub struct GameUIType {
-    pub ui: WhichGameUI,
-}
-
-// Local resource for InGame that keeps track of which toggleable ui is shown.
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum WhichGameUI {
-    Default,
-    Inventory,
-    HotbarHidden,
-    ExitMenu,
-    Debug,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum WhichMenuUI {
-    MainScreen,
-    NewGame,
-    LoadGame,
-    Options,
-}
-
 #[derive(Component)]
 pub struct MainMenuEntity;
 
@@ -85,14 +61,23 @@ pub enum ButtonIdentity {
     Placeholder,
 }
 
-#[derive(Component, Debug)]
-pub struct PopUp {
-    pub screen_type: WhichMenuUI,
-}
-
 /// Marking component for game_save buttons
 #[derive(Component)]
 pub struct WorldButton {
     pub index: usize,
     pub name: String,
+}
+
+#[derive(Resource, Component, PartialEq, Eq, Clone, Copy, Debug)]
+pub enum GameUI {
+    MainScreen,
+    NewGame,
+    LoadGame,
+    Options,
+    // Game UI,
+    Default,
+    Inventory,
+    Hidden, 
+    ExitMenu,
+    Debug, 
 }

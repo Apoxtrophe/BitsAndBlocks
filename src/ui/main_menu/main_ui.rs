@@ -8,7 +8,7 @@ pub fn spawn_main_ui (
     atlas_handle: &Handle<TextureAtlasLayout>,
 ) -> Entity {
     let root_ui = spawn_root_node(commands);
-    let main_ui = spawn_popup(commands, image_handles.home_screen_texture.clone(), WhichMenuUI::MainScreen);
+    let main_ui = spawn_popup(commands, image_handles.home_screen_texture.clone(), GameUI::MainScreen);
     commands.entity(main_ui).set_parent(root_ui);
     let main_menu_sub = spawn_sub_node(commands, 40.0, 60.0, 10.0);
     commands.entity(main_menu_sub).set_parent(main_ui);

@@ -18,7 +18,7 @@ pub fn spawn_inventory(
     },
     Visibility::Hidden,
     InventoryGrid,
-    GameUIType { ui: WhichGameUI::Inventory },
+    GameUI::Inventory,
     )).id();
     
     let button_node = (Node {

@@ -8,7 +8,7 @@ pub fn spawn_new_game_ui(
     atlas_handle: &Handle<TextureAtlasLayout>,
 ) -> Entity {
     let image_handlezzz = image_handles.new_game_screen_texture.clone();
-    let new_game_main = spawn_popup(&mut commands, image_handlezzz, WhichMenuUI::NewGame);
+    let new_game_main = spawn_popup(&mut commands, image_handlezzz, GameUI::NewGame);
     let new_game_sub = spawn_sub_node(&mut commands, 100.0, 15.0, 10.0);
     
     let button_options = [

@@ -2,6 +2,7 @@ use crate::prelude::*;
 use bevy::{
     input::mouse::{MouseScrollUnit, MouseWheel},
     picking::focus::HoverMap,
+    prelude::*,
 };
 
 pub fn spawn_load_game_ui(
@@ -13,7 +14,7 @@ pub fn spawn_load_game_ui(
     let load_game_window = spawn_popup(
         &mut commands,
         image_handles.load_game_screen_texture.clone(),
-        WhichMenuUI::LoadGame,
+        GameUI::LoadGame,
     );
     //let load_game_sub = spawn_sub_node(&mut commands, 50.0, 40.0, 20.0);
 

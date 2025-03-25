@@ -2,7 +2,7 @@ use bevy::window::CursorGrabMode;
 use bevy_fps_controller::controller::FpsController;
 use bevy_simple_text_input::TextInputSubmitEvent;
 
-use crate::{prelude::*, GameState};
+use crate::{prelude::*, ui::in_game::game_ui, GameState};
 
 pub fn setup_main_menu(
     mut commands: Commands,
@@ -11,10 +11,8 @@ pub fn setup_main_menu(
     saved_games: Res<LoadedSaves>,
 ) {
     println!("State: Main Menu");
-
-    commands.insert_resource(WhichScreen {
-        screen: WhichMenuUI::MainScreen,
-    });
+    
+    commands.insert_resource(GameUI::MainScreen);
 
     // Spawn the camera tagged for the main menu
     commands.spawn(Camera2d).insert(MainMenuEntity);
@@ -57,7 +55,7 @@ pub fn menu_interaction_system(
         (&Interaction, &mut BackgroundColor, &ButtonIdent),
         (Changed<Interaction>, With<Button>),
     >,
-    mut current_screen: ResMut<WhichScreen>,
+    mut game_ui: ResMut<GameUI>,
     mut exit: EventWriter<AppExit>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut app_state: ResMut<NextState<GameState>>,
@@ -71,15 +69,15 @@ pub fn menu_interaction_system(
                 match button_number.indentity {
                     ButtonIdentity::NewGame => {
                         println!("!!!{:?}", button_number.indentity);
-                        current_screen.screen = WhichMenuUI::NewGame;
+                        *game_ui = GameUI::NewGame;
                     }
                     ButtonIdentity::LoadGame => {
                         println!("Load Game");
-                        current_screen.screen = WhichMenuUI::LoadGame;
+                        *game_ui = GameUI::LoadGame;
                     }
                     ButtonIdentity::Options => {
                         println!("Options");
-                        current_screen.screen = WhichMenuUI::Options;
+                        *game_ui = GameUI::Options;
                     }
                     ButtonIdentity::QuitGame => {
                         println!("Quit Game");
@@ -107,7 +105,7 @@ pub fn menu_interaction_system(
 
     if keyboard_input.just_pressed(KeyCode::Escape) {
         println!("Main Menu");
-        current_screen.screen = WhichMenuUI::MainScreen;
+        *game_ui = GameUI::MainScreen;
     }
 
     edit_text_listener(events, save_world);
@@ -158,11 +156,11 @@ pub fn load_world_button_system(
 }
 
 pub fn update_pop_window_visibility(
-    mut query: Query<(&PopUp, &mut Visibility)>,
-    current_screen: Res<WhichScreen>,
+    mut query: Query<(&GameUI, &mut Visibility)>,
+    current_screen: Res<GameUI>,
 ) {
-    for (popup, mut visibility) in query.iter_mut() {
-        if popup.screen_type == current_screen.screen {
+    for (game_ui, mut visibility) in query.iter_mut() {
+        if *game_ui == *current_screen {
             *visibility = Visibility::Visible;
         } else {
             *visibility = Visibility::Hidden;
@@ -192,5 +190,4 @@ pub fn despawn_main_menu(
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }
-    commands.remove_resource::<WhichScreen>();
 }

@@ -19,7 +19,7 @@ pub struct Player {
 impl Default for Player {
     fn default() -> Self {
         let mut hotbar_ids = Vec::new();
-        for i in 0..9 {
+        for i in 0..HOTBAR_SIZE {
             hotbar_ids.push((i, 0));
         }
         Self {
@@ -34,19 +34,6 @@ impl Default for Player {
         }
     }
 }
-
-#[derive(Resource, PartialEq, Eq, Clone, Copy)]
-pub struct WhichUIShown {
-    pub ui: WhichGameUI,
-}
-
-/// Resource for keeping track of which main_menu ui is shown
-#[derive(Resource, Debug)]
-pub struct WhichScreen {
-    pub screen: WhichMenuUI,
-}
-
-
 #[derive(Resource, Clone)]
 pub struct VoxelMap {
     pub entity_map: HashMap<IVec3, Entity>, // Entity ids by location

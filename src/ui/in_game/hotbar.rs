@@ -86,8 +86,7 @@ pub fn spawn_hotbar_slot(
     commands.entity(shadow_box)
         .insert(HotbarSlot {index})
         .insert(Visibility::Visible)
-        .insert(GameUIType { ui: WhichGameUI::Default },);
-        
+        .insert(GameUI::Default);
     
     commands.entity(image_node).set_parent(shadow_box);
     

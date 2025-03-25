@@ -41,7 +41,7 @@ pub fn spawn_root_node(commands: &mut Commands) -> Entity {
 pub fn spawn_popup(
     commands: &mut Commands,
     image_handle: Handle<Image>,
-    screen_type: WhichMenuUI,
+    screen_type: GameUI,
 ) -> Entity {
     spawn_ui_node(
         commands,
@@ -57,7 +57,7 @@ pub fn spawn_popup(
         (
             ImageNode::new(image_handle),
             Visibility::Hidden,
-            PopUp { screen_type },
+            screen_type,
         ),
     )
 }
@@ -237,9 +237,7 @@ pub fn spawn_button(
     button_container
 }
 
-fn match_button_ident_atlas_index(
-    identity: ButtonIdentity,
-) -> usize {
+fn match_button_ident_atlas_index(identity: ButtonIdentity) -> usize {
     let mut atlas_index = 0;
     match identity {
         ButtonIdentity::NewGame => atlas_index = 0,
@@ -251,8 +249,10 @@ fn match_button_ident_atlas_index(
         ButtonIdentity::MainMenu => atlas_index = 9,
         ButtonIdentity::SaveAndQuit => atlas_index = 10,
         ButtonIdentity::Placeholder => atlas_index = 11,
-        _ => {println!("Error: Unhandled Button Identity")}
+        _ => {
+            println!("Error: Unhandled Button Identity")
+        }
     }
-    
+
     atlas_index
 }

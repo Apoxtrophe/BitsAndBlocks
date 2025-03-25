@@ -1,3 +1,4 @@
+
 use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
 
@@ -26,7 +27,9 @@ pub enum GameEvent {
     StateChange {
         new_state: GameState,
     },
-    ToggleUI {}, // Toggles the debug information on / off
+    ToggleUI {
+        new_ui: GameUI,
+    } // Toggles the debug information on / off
 }
 
 /// Returns true if the voxel is one of the cable types.
@@ -45,11 +48,11 @@ pub fn event_handler(
     mut controller_query: Query<&mut FpsController>,
     mut window_query: Query<&mut Window>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut voxel_query: Query<(Entity, &Voxel)>,
+    mut voxel_query : Query<(Entity, &Voxel)>,
     mut fade_timer: ResMut<FadeTimer>,
     save_query: Query<(Entity, &Voxel)>,
     mut app_state: ResMut<NextState<GameState>>,
-    mut which_game_ui: ResMut<WhichUIShown>,
+    mut which_ui: ResMut<GameUI>,
 ) {
     for event in event_reader.read() {
         let event_time = time.elapsed_secs(); // Keeps track of when events happen
@@ -69,12 +72,7 @@ pub fn event_handler(
                     voxel_asset_data.mesh_handle =
                         meshes.add(create_cable_mesh(texture_row, connections));
                 }
-                add_voxel(
-                    &mut commands,
-                    &mut voxel_map,
-                    voxel_asset_data,
-                    voxel.clone(),
-                );
+                add_voxel(&mut commands, &mut voxel_map, voxel_asset_data, voxel.clone());
             }
             GameEvent::RemoveBlock { position } => {
                 println!("{:.3}      GAME EVENT: REMOVE BLOCK", event_time);
@@ -98,13 +96,7 @@ pub fn event_handler(
             }
             GameEvent::UpdateMesh { updates } => {
                 println!("{:.3}      GAME EVENT: UPDATE MESH", event_time);
-                update_meshes(
-                    *updates,
-                    &mut voxel_map,
-                    &mut commands,
-                    &mut meshes,
-                    &mut voxel_query,
-                );
+                update_meshes(*updates, &mut voxel_map, &mut commands, &mut meshes, &mut voxel_query);
             }
             GameEvent::SaveWorld { world } => {
                 println!("{:.3}      GAME EVENT: SAVE WORLD", event_time);
@@ -115,15 +107,9 @@ pub fn event_handler(
                 println!("{:.3}      GAME EVENT: STATE CHANGE", event_time);
                 app_state.set(*new_state);
             }
-            GameEvent::ToggleUI {} => match which_game_ui.ui {
-                WhichGameUI::Default => {
-                    which_game_ui.ui = WhichGameUI::Debug;
-                }
-                WhichGameUI::Debug => {
-                    which_game_ui.ui = WhichGameUI::Default;
-                }
-                _ => {}
-            },
+            GameEvent::ToggleUI { new_ui } => {
+                *which_ui = *new_ui;
+            }
         }
     }
 

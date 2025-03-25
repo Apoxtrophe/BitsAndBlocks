@@ -24,7 +24,7 @@ pub fn spawn_debug_text(commands: &mut Commands) -> Entity {
         TextColor(Color::BLACK),
         TextLayout::new_with_justify(JustifyText::Left),
         text_node,
-    )).insert(GameUIType{ui: WhichGameUI::Debug}).id();
+    )).insert(GameUI::Debug).id();
     
     debug_text
 }

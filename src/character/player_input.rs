@@ -39,7 +39,7 @@ pub fn input_event_system(
     voxel_assets: Res<VoxelMap>,
     mut window_query: Query<&mut Window>,
     mut event_writer: EventWriter<GameEvent>,
-    mut current_ui: ResMut<WhichUIShown>,
+    mut current_ui: ResMut<GameUI>,
     mut place_timer: Local<Timer>,
     mut remove_timer: Local<Timer>,
     time: Res<Time>,
@@ -48,26 +48,26 @@ pub fn input_event_system(
     if let Ok(mut _window) = window_query.get_single_mut() {
         // Toggle Exit Menu on Escape key press.
         if keyboard_input.just_pressed(KeyCode::Escape) {
-            if current_ui.ui != WhichGameUI::ExitMenu {
+            if *current_ui != GameUI::ExitMenu {
                 event_writer.send(GameEvent::UpdateCursor {
                     mode: CursorGrabMode::None,
                     show_cursor: true,
                     enable_input: false,
                 });
-                current_ui.ui = WhichGameUI::ExitMenu;
+                *current_ui = GameUI::ExitMenu;
             } else {
                 event_writer.send(GameEvent::UpdateCursor {
                     mode: CursorGrabMode::Locked,
                     show_cursor: false,
                     enable_input: true,
                 });
-                current_ui.ui = WhichGameUI::Default;
+                *current_ui = GameUI::Default;
             }
         }
         // Open Inventory on Tab press, if not in the Exit Menu.
         else if keyboard_input.pressed(KeyCode::Tab) {
-            if current_ui.ui != WhichGameUI::ExitMenu {
-                current_ui.ui = WhichGameUI::Inventory;
+            if *current_ui != GameUI::ExitMenu {
+                *current_ui = GameUI::Inventory;
                 event_writer.send(GameEvent::UpdateCursor {
                     mode: CursorGrabMode::Locked,
                     show_cursor: true,
@@ -76,12 +76,12 @@ pub fn input_event_system(
             }
         }
         else if keyboard_input.just_pressed(KeyCode::F3) {
-        event_writer.send(GameEvent::ToggleUI{});    
+        event_writer.send(GameEvent::ToggleUI{new_ui: GameUI::Debug});    
         }
         // Close Inventory on Tab release.
         else if keyboard_input.just_released(KeyCode::Tab) {
-            if current_ui.ui != WhichGameUI::ExitMenu {
-                current_ui.ui = WhichGameUI::Default;
+            if *current_ui != GameUI::ExitMenu {
+                *current_ui = GameUI::Default;
                 event_writer.send(GameEvent::UpdateCursor {
                     mode: CursorGrabMode::Locked,
                     show_cursor: false,
@@ -92,7 +92,7 @@ pub fn input_event_system(
     }
 
     // Disable block interactions if certain menus are active.
-    if keyboard_input.pressed(KeyCode::Tab) || current_ui.ui == WhichGameUI::ExitMenu {
+    if keyboard_input.pressed(KeyCode::Tab) || *current_ui == GameUI::ExitMenu {
         return;
     }
 

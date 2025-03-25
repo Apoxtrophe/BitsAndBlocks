@@ -54,9 +54,7 @@ fn exit_menu_bundle() -> impl Bundle {
             spread_radius: Val::Percent(1.0),
             blur_radius: Val::Px(1.0),
         },
-        GameUIType {
-            ui: WhichGameUI::ExitMenu,
-        },
+        GameUI::ExitMenu,
         Visibility::Hidden,
     )
 }
@@ -66,7 +64,7 @@ pub fn exit_menu_interaction(
         (&Interaction, &mut BackgroundColor, &ButtonIdent),
         (Changed<Interaction>, With<Button>),
     >,
-    mut which_ui: ResMut<WhichUIShown>,
+    mut which_ui: ResMut<GameUI>,
     mut event_writer: EventWriter<GameEvent>,
     save_game: Res<SavedWorld>,
     mut exit: EventWriter<AppExit>,
@@ -78,7 +76,7 @@ pub fn exit_menu_interaction(
                 match button_number.indentity {
                     ButtonIdentity::BackToGame => {
                         println!("Back To Game");
-                        which_ui.ui = WhichGameUI::Default;
+                        *which_ui = GameUI::Default;
                         event_writer.send(GameEvent::UpdateCursor {
                             mode: CursorGrabMode::Locked,
                             show_cursor: false,

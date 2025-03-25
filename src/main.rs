@@ -58,8 +58,8 @@ fn main() {
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(TextInputPlugin)
         //.add_plugins(RapierDebugRenderPlugin::default())
-        .add_plugins(FpsControllerPlugin) 
-        .add_plugins(WorldInspectorPlugin::new()) // Debug
+        .add_plugins(FpsControllerPlugin)
+        .add_plugins(WorldInspectorPlugin::new())
         // Startup Systems
         
         //States
