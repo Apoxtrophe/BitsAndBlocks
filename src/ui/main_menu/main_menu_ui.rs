@@ -2,7 +2,6 @@ use bevy::window::CursorGrabMode;
 use bevy_fps_controller::controller::FpsController;
 use bevy_simple_text_input::TextInputSubmitEvent;
 
-
 use crate::{prelude::*, GameState};
 
 pub fn setup_main_menu(
@@ -19,24 +18,34 @@ pub fn setup_main_menu(
 
     // Spawn the camera tagged for the main menu
     commands.spawn(Camera2d).insert(MainMenuEntity);
-    
+
     // Prepare button texture atlas
     let buttons_texture = image_handles.menu_button_texture.clone();
     let button_atlas = TextureAtlasLayout::from_grid(UVec2::new(144, 32), 1, 16, None, None);
     let button_atlas_handle = texture_atlases.add(button_atlas);
-    
+
     // Spawn the main ui Window (The root node of the rest)
-    let main_ui = spawn_main_ui(&mut commands, &image_handles, &buttons_texture, &button_atlas_handle, (0,4));
-    
+    let main_ui = spawn_main_ui(
+        &mut commands,
+        &image_handles,
+        &buttons_texture,
+        &button_atlas_handle,
+    );
+
     // Spawn the New Game Window
-    let new_game_window = spawn_new_game_ui(&mut commands, &image_handles, &buttons_texture, &button_atlas_handle, (4,1));
+    let new_game_window = spawn_new_game_ui(
+        &mut commands,
+        &image_handles,
+        &buttons_texture,
+        &button_atlas_handle,
+    );
     commands.entity(new_game_window).set_parent(main_ui);
-    
+
     // Spawn the Load Game Window
-    let load_game_window = spawn_load_game_ui(&mut commands, &image_handles, (0,6), &saved_games.saves);
+    let load_game_window =
+        spawn_load_game_ui(&mut commands, &image_handles, (0, 6), &saved_games.saves);
     commands.entity(load_game_window).set_parent(main_ui);
 
-    
     let options_window = spawn_options_ui(&mut commands, &image_handles);
     commands.entity(options_window).set_parent(main_ui);
 }
@@ -44,7 +53,10 @@ pub fn setup_main_menu(
 /// System to update button colors based on user interaction.
 /// Add this system to your Update schedule.
 pub fn menu_interaction_system(
-    mut query: Query<(&Interaction, &mut BackgroundColor, &ButtonNumber), (Changed<Interaction>, With<Button>)>,
+    mut query: Query<
+        (&Interaction, &mut BackgroundColor, &ButtonIdent),
+        (Changed<Interaction>, With<Button>),
+    >,
     mut current_screen: ResMut<WhichScreen>,
     mut exit: EventWriter<AppExit>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -52,35 +64,33 @@ pub fn menu_interaction_system(
     save_world: ResMut<SavedWorld>,
     events: EventReader<TextInputSubmitEvent>,
 ) {
-
     for (interaction, mut bg_color, button_number) in query.iter_mut() {
         match *interaction {
-            
-            Interaction::Pressed => {         
-                *bg_color = Color::linear_rgba(0.0, 1.0, 0.0, 1.0).into();       
-                match button_number.index {
-                    0 => {
-                        println!("New Game");
+            Interaction::Pressed => {
+                *bg_color = Color::linear_rgba(0.0, 1.0, 0.0, 1.0).into();
+                match button_number.indentity {
+                    ButtonIdentity::NewGame => {
+                        println!("!!!{:?}", button_number.indentity);
                         current_screen.screen = WhichMenuUI::NewGame;
                     }
-                    1 => {
+                    ButtonIdentity::LoadGame => {
                         println!("Load Game");
                         current_screen.screen = WhichMenuUI::LoadGame;
                     }
-                    2 => {
+                    ButtonIdentity::Options => {
                         println!("Options");
                         current_screen.screen = WhichMenuUI::Options;
                     }
-                    3 => {
+                    ButtonIdentity::QuitGame => {
                         println!("Quit Game");
                         exit.send(AppExit::Success);
                     }
-                    4 => {
+                    ButtonIdentity::CreateWorld => {
                         println!("Create World");
                         if save_world.world_name.len() > 0 {
                             app_state.set(GameState::InGame);
                         } else {
-                            *bg_color = Color::linear_rgba(1.0, 0.0, 0.0, 1.0).into();       
+                            *bg_color = Color::linear_rgba(1.0, 0.0, 0.0, 1.0).into();
                         }
                     }
                     _ => {}
@@ -94,20 +104,23 @@ pub fn menu_interaction_system(
             }
         }
     }
-    
+
     if keyboard_input.just_pressed(KeyCode::Escape) {
         println!("Main Menu");
         current_screen.screen = WhichMenuUI::MainScreen;
     }
-    
+
     edit_text_listener(events, save_world);
 }
 
 /// Load World button System
 pub fn load_world_button_system(
-    mut world_button_query: Query<(&Interaction, &mut BackgroundColor, &WorldButton), (Changed<Interaction>, With<Button>)>,
+    mut world_button_query: Query<
+        (&Interaction, &mut BackgroundColor, &WorldButton),
+        (Changed<Interaction>, With<Button>),
+    >,
     mut app_state: ResMut<NextState<GameState>>,
-    
+
     commands: Commands,
     voxel_map: ResMut<VoxelMap>,
     meshes: ResMut<Assets<Mesh>>,
@@ -116,7 +129,6 @@ pub fn load_world_button_system(
     let mut loaded_world: Option<&str> = None;
     for (interaction, mut bg_color, world_button) in world_button_query.iter_mut() {
         match *interaction {
-            
             Interaction::Pressed => {
                 match world_button.name.as_str() {
                     "" => {
@@ -137,7 +149,7 @@ pub fn load_world_button_system(
             }
         }
     }
-    
+
     if loaded_world.is_some() {
         load_world(loaded_world.unwrap(), commands, voxel_map, meshes);
         game_save.world_name = loaded_world.unwrap().to_string();
@@ -146,7 +158,6 @@ pub fn load_world_button_system(
 }
 
 pub fn update_pop_window_visibility(
-
     mut query: Query<(&PopUp, &mut Visibility)>,
     current_screen: Res<WhichScreen>,
 ) {
@@ -169,18 +180,17 @@ pub fn despawn_main_menu(
     twindow.cursor_options = bevy::window::CursorOptions {
         visible: false,
         grab_mode: CursorGrabMode::Locked,
-        
+
         ..Default::default()
     };
-    
+
     for mut controller in controller_query.iter_mut() {
         controller.enable_input = true;
     }
-    
+
     println!("Exiting Main Menu, Moving to In Game");
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }
     commands.remove_resource::<WhichScreen>();
 }
-

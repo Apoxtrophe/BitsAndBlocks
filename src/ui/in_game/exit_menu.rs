@@ -2,32 +2,37 @@ use bevy::window::CursorGrabMode;
 
 use crate::prelude::*;
 
-pub fn spawn_exit_menu (
+pub fn spawn_exit_menu(
     commands: &mut Commands,
     button_texture: Handle<Image>,
     button_atlas_handle: Handle<TextureAtlasLayout>,
 ) -> Entity {
     let exit_menu = commands.spawn(exit_menu_bundle()).id();
-    
-    let sub_exit_menu =  spawn_sub_node(commands, 30.0, 70.0, 15.0);
+
+    let sub_exit_menu = spawn_sub_node(commands, 30.0, 70.0, 15.0);
     commands.entity(sub_exit_menu).set_parent(exit_menu);
     
-    for i in 0..4 {
-    spawn_button (
-        commands,
-        sub_exit_menu,
-        button_texture.clone(),
-        button_atlas_handle.clone(),
-        i + 8,
-        24.0,
-    );
+    let button_options = [
+        ButtonIdentity::BackToGame, 
+        ButtonIdentity::MainMenu, 
+        ButtonIdentity::SaveAndQuit,
+        ButtonIdentity::Placeholder,
+    ].to_vec();
+    
+    for i in 0..button_options.len() {
+        spawn_button(
+            commands,
+            sub_exit_menu,
+            button_texture.clone(),
+            button_atlas_handle.clone(),
+            button_options[i],
+            24.0,
+        );
     }
     exit_menu
 }
 
-fn exit_menu_bundle(
-
-) -> impl Bundle {
+fn exit_menu_bundle() -> impl Bundle {
     (
         Node {
             width: Val::Percent(40.0),
@@ -49,13 +54,18 @@ fn exit_menu_bundle(
             spread_radius: Val::Percent(1.0),
             blur_radius: Val::Px(1.0),
         },
-        GameUIType { ui: WhichGameUI::ExitMenu },
+        GameUIType {
+            ui: WhichGameUI::ExitMenu,
+        },
         Visibility::Hidden,
     )
 }
 
 pub fn exit_menu_interaction(
-    mut query: Query<(&Interaction, &mut BackgroundColor, &ButtonNumber), (Changed<Interaction>, With<Button>)>,
+    mut query: Query<
+        (&Interaction, &mut BackgroundColor, &ButtonIdent),
+        (Changed<Interaction>, With<Button>),
+    >,
     mut which_ui: ResMut<WhichUIShown>,
     mut event_writer: EventWriter<GameEvent>,
     save_game: Res<SavedWorld>,
@@ -64,10 +74,9 @@ pub fn exit_menu_interaction(
     let saved_world = save_game.clone();
     for (interaction, mut bg_color, button_number) in query.iter_mut() {
         match *interaction {
-            
-            Interaction::Pressed => {                
-                match button_number.index {
-                    8 => {
+            Interaction::Pressed => {
+                match button_number.indentity {
+                    ButtonIdentity::BackToGame => {
                         println!("Back To Game");
                         which_ui.ui = WhichGameUI::Default;
                         event_writer.send(GameEvent::UpdateCursor {
@@ -76,18 +85,24 @@ pub fn exit_menu_interaction(
                             enable_input: true,
                         });
                     }
-                    9 => {
+                    ButtonIdentity::MainMenu => {
                         println!("Main Menu");
-                        event_writer.send(GameEvent::SaveWorld { world: saved_world.clone() });
-                        
-                        event_writer.send(GameEvent::StateChange { new_state: GameState::Loading });
+                        event_writer.send(GameEvent::SaveWorld {
+                            world: saved_world.clone(),
+                        });
+
+                        event_writer.send(GameEvent::StateChange {
+                            new_state: GameState::Loading,
+                        });
                     }
-                    10 => {
+                    ButtonIdentity::SaveAndQuit => {
                         println!("Save & Quit");
-                        event_writer.send(GameEvent::SaveWorld { world: saved_world.clone() });
+                        event_writer.send(GameEvent::SaveWorld {
+                            world: saved_world.clone(),
+                        });
                         exit.send(AppExit::Success);
                     }
-                    11 => {
+                    ButtonIdentity::Placeholder => {
                         println!("Placeholder");
                     }
                     _ => {}

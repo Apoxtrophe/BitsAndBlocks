@@ -6,22 +6,22 @@ pub fn spawn_new_game_ui(
     image_handles: &Res<GameTextures>,
     button_handle: &Handle<Image>,
     atlas_handle: &Handle<TextureAtlasLayout>,
-    button_pointer: (usize, usize), // Starting index and number of buttons
 ) -> Entity {
     let image_handlezzz = image_handles.new_game_screen_texture.clone();
     let new_game_main = spawn_popup(&mut commands, image_handlezzz, WhichMenuUI::NewGame);
     let new_game_sub = spawn_sub_node(&mut commands, 100.0, 15.0, 10.0);
     
+    let button_options = [
+      ButtonIdentity::CreateWorld,
+      ].to_vec();
     
-    let (start, end) = (button_pointer.0, button_pointer.0 + button_pointer.1);
-    // New Game Buttons
-    for i in start..end {
+    for i in 0..button_options.len() {
         spawn_button(
             &mut commands,
             new_game_sub,
             button_handle.clone(),
             atlas_handle.clone(),
-            i,
+            button_options[i],
             100.0,
         );
     }

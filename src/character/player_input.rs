@@ -76,7 +76,7 @@ pub fn input_event_system(
             }
         }
         else if keyboard_input.just_pressed(KeyCode::F3) {
-        event_writer.send(GameEvent::ToggleDebug{});    
+        event_writer.send(GameEvent::ToggleUI{});    
         }
         // Close Inventory on Tab release.
         else if keyboard_input.just_released(KeyCode::Tab) {

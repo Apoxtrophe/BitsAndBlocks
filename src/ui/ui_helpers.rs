@@ -1,6 +1,8 @@
-use bevy::prelude::*;
 use crate::prelude::*;
-use bevy_simple_text_input::{TextInput, TextInputSettings, TextInputSubmitEvent, TextInputTextColor, TextInputTextFont};
+use bevy::prelude::*;
+use bevy_simple_text_input::{
+    TextInput, TextInputSettings, TextInputSubmitEvent, TextInputTextColor, TextInputTextFont,
+};
 
 /// A generic helper that spawns a UI node with a given style and additional components.
 pub fn spawn_ui_node<B: Bundle>(commands: &mut Commands, style: Node, bundle: B) -> Entity {
@@ -13,7 +15,8 @@ pub fn create_atlas_image(
     button_atlas_handle: Handle<TextureAtlasLayout>,
     index: usize,
 ) -> ImageNode {
-    let mut image_node = ImageNode::from_atlas_image(texture_handle, TextureAtlas::from(button_atlas_handle));
+    let mut image_node =
+        ImageNode::from_atlas_image(texture_handle, TextureAtlas::from(button_atlas_handle));
     if let Some(ref mut atlas) = image_node.texture_atlas {
         atlas.index = index;
     }
@@ -51,7 +54,11 @@ pub fn spawn_popup(
             justify_content: JustifyContent::Center,
             ..default()
         },
-        (ImageNode::new(image_handle), Visibility::Hidden, PopUp { screen_type }),
+        (
+            ImageNode::new(image_handle),
+            Visibility::Hidden,
+            PopUp { screen_type },
+        ),
     )
 }
 
@@ -76,35 +83,33 @@ pub fn spawn_sub_node(commands: &mut Commands, width: f32, height: f32, bottom: 
 
 /// Create an editable text window
 /// Only used in the world creation screen at them moment
-pub fn create_editable_text(
-    commands: &mut Commands,
-) -> Entity {    
+pub fn create_editable_text(commands: &mut Commands) -> Entity {
     let edit_text = commands
-            .spawn((
-                Node {
-                    width: Val::Percent(25.0),
-                    height: Val::Percent(10.0),
-                    top: Val::Percent(50.0),
-                    border: UiRect::all(Val::Px(5.0)),
-                    padding: UiRect::all(Val::Px(5.0)),
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-                Interaction::None,
-
-                BorderColor(Color::srgb(0.75, 0.52, 0.99)),
-                BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
-                TextInput,
-                TextInputTextFont(TextFont {
-                    font_size: 34.,
-                    ..default()
-                }),
-                TextInputTextColor(TextColor(Color::srgb(0.9, 0.9, 0.9))),
-                TextInputSettings {
-                    retain_on_submit: true,
-                    ..default()
-                }
-            )).id();
+        .spawn((
+            Node {
+                width: Val::Percent(25.0),
+                height: Val::Percent(10.0),
+                top: Val::Percent(50.0),
+                border: UiRect::all(Val::Px(5.0)),
+                padding: UiRect::all(Val::Px(5.0)),
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            Interaction::None,
+            BorderColor(Color::srgb(0.75, 0.52, 0.99)),
+            BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
+            TextInput,
+            TextInputTextFont(TextFont {
+                font_size: 34.,
+                ..default()
+            }),
+            TextInputTextColor(TextColor(Color::srgb(0.9, 0.9, 0.9))),
+            TextInputSettings {
+                retain_on_submit: true,
+                ..default()
+            },
+        ))
+        .id();
 
     edit_text
 }
@@ -150,26 +155,35 @@ pub fn spawn_text_button(
             margin: UiRect::all(Val::Px(4.0)),
             ..default()
         },
-        (Button, BackgroundColor(Color::WHITE), WorldButton { index: button_index, name: text.clone() }),
+        (
+            Button,
+            BackgroundColor(Color::WHITE),
+            WorldButton {
+                index: button_index,
+                name: text.clone(),
+            },
+        ),
     );
-    
+
     commands.entity(button_container).set_parent(parent);
-    
-    let text_node = commands.spawn((
-        Text::new(text),
-        TextFont {
-            font_size: 32.0, 
-            ..Default::default()
-        },
-        TextLayout::new_with_justify(JustifyText::Center),
-        Node {
-            justify_content: JustifyContent::Center,
-            justify_self: JustifySelf::Center,
-            align_self: AlignSelf::Center,
-            ..Default::default()
-        },
-    )).id();
-    
+
+    let text_node = commands
+        .spawn((
+            Text::new(text),
+            TextFont {
+                font_size: 32.0,
+                ..Default::default()
+            },
+            TextLayout::new_with_justify(JustifyText::Center),
+            Node {
+                justify_content: JustifyContent::Center,
+                justify_self: JustifySelf::Center,
+                align_self: AlignSelf::Center,
+                ..Default::default()
+            },
+        ))
+        .id();
+
     commands.entity(text_node).set_parent(button_container);
 }
 
@@ -182,7 +196,7 @@ pub fn spawn_button(
     parent: Entity,
     texture_handle: Handle<Image>,
     button_atlas_handle: Handle<TextureAtlasLayout>,
-    index: usize,
+    indentity: ButtonIdentity,
     height_percent: f32,
 ) -> Entity {
     // Spawn the button container with a white background.
@@ -194,11 +208,18 @@ pub fn spawn_button(
             justify_content: JustifyContent::Center,
             ..default()
         },
-        (Button, BackgroundColor(Color::WHITE), ButtonNumber { index }),
+        (
+            Button,
+            BackgroundColor(Color::WHITE),
+            ButtonIdent {
+                indentity: indentity,
+            },
+        ),
     );
     commands.entity(button_container).set_parent(parent);
 
     // Spawn the child image node with a margin so the container's border shows.
+    let atlas_index = match_button_ident_atlas_index(indentity);
     let image_entity = spawn_ui_node(
         commands,
         Node {
@@ -209,10 +230,29 @@ pub fn spawn_button(
             margin: UiRect::all(Val::Px(4.0)),
             ..default()
         },
-        create_atlas_image(texture_handle, button_atlas_handle, index),
+        create_atlas_image(texture_handle, button_atlas_handle, atlas_index),
     );
     commands.entity(image_entity).set_parent(button_container);
 
     button_container
 }
 
+fn match_button_ident_atlas_index(
+    identity: ButtonIdentity,
+) -> usize {
+    let mut atlas_index = 0;
+    match identity {
+        ButtonIdentity::NewGame => atlas_index = 0,
+        ButtonIdentity::LoadGame => atlas_index = 1,
+        ButtonIdentity::Options => atlas_index = 2,
+        ButtonIdentity::QuitGame => atlas_index = 3,
+        ButtonIdentity::CreateWorld => atlas_index = 4,
+        ButtonIdentity::BackToGame => atlas_index = 8,
+        ButtonIdentity::MainMenu => atlas_index = 9,
+        ButtonIdentity::SaveAndQuit => atlas_index = 10,
+        ButtonIdentity::Placeholder => atlas_index = 11,
+        _ => {println!("Error: Unhandled Button Identity")}
+    }
+    
+    atlas_index
+}
