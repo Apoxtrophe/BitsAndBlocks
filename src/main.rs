@@ -13,7 +13,7 @@ mod meta;
 // External Crate Imports
 // ======================================================================
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
-
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_atmosphere::plugin::AtmospherePlugin;
 use bevy_rapier3d::prelude::*;
 use bevy_fps_controller::controller::*;
@@ -58,7 +58,8 @@ fn main() {
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(TextInputPlugin)
         //.add_plugins(RapierDebugRenderPlugin::default())
-        .add_plugins(FpsControllerPlugin)
+        .add_plugins(FpsControllerPlugin) 
+        .add_plugins(WorldInspectorPlugin::new()) // Debug
         // Startup Systems
         
         //States

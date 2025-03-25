@@ -12,6 +12,6 @@ serde_json = "1.0.139"
 bevy_atmosphere = "0.12.2"
 bevy_simple_text_input = "0.10.2"
 bincode = {version = "2.0.1", features = ["serde"]}
- 
+bevy-inspector-egui = "0.30.0"
 [profile.release]
 incremental = true
