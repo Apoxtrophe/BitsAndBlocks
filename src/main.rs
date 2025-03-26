@@ -59,7 +59,7 @@ fn main() {
         .add_plugins(TextInputPlugin)
         //.add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(FpsControllerPlugin)
-        .add_plugins(WorldInspectorPlugin::new())
+        //.add_plugins(WorldInspectorPlugin::new())
         // Startup Systems
         
         //States

@@ -11,8 +11,6 @@ pub fn setup_main_menu(
     saved_games: Res<LoadedSaves>,
 ) {
     println!("State: Main Menu");
-    
-    commands.insert_resource(GameUI::MainScreen);
 
     // Spawn the camera tagged for the main menu
     commands.spawn(Camera2d).insert(MainMenuEntity);
@@ -52,7 +50,7 @@ pub fn setup_main_menu(
 /// Add this system to your Update schedule.
 pub fn menu_interaction_system(
     mut query: Query<
-        (&Interaction, &mut BackgroundColor, &ButtonIdent),
+        (&Interaction, &mut BackgroundColor, &ButtonIdentity),
         (Changed<Interaction>, With<Button>),
     >,
     mut game_ui: ResMut<GameUI>,
@@ -66,9 +64,9 @@ pub fn menu_interaction_system(
         match *interaction {
             Interaction::Pressed => {
                 *bg_color = Color::linear_rgba(0.0, 1.0, 0.0, 1.0).into();
-                match button_number.indentity {
+                match button_number {
                     ButtonIdentity::NewGame => {
-                        println!("!!!{:?}", button_number.indentity);
+                        println!("!!!{:?}", button_number);
                         *game_ui = GameUI::NewGame;
                     }
                     ButtonIdentity::LoadGame => {
@@ -118,7 +116,7 @@ pub fn load_world_button_system(
         (Changed<Interaction>, With<Button>),
     >,
     mut app_state: ResMut<NextState<GameState>>,
-
+    mut game_ui: ResMut<GameUI>,
     commands: Commands,
     voxel_map: ResMut<VoxelMap>,
     meshes: ResMut<Assets<Mesh>>,
@@ -151,7 +149,9 @@ pub fn load_world_button_system(
     if loaded_world.is_some() {
         load_world(loaded_world.unwrap(), commands, voxel_map, meshes);
         game_save.world_name = loaded_world.unwrap().to_string();
+        *game_ui = GameUI::Default;
         app_state.set(GameState::InGame);
+        
     }
 }
 

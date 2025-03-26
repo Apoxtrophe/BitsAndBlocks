@@ -76,7 +76,12 @@ pub fn input_event_system(
             }
         }
         else if keyboard_input.just_pressed(KeyCode::F3) {
-        event_writer.send(GameEvent::ToggleUI{new_ui: GameUI::Debug});    
+            if *current_ui == GameUI::Debug {
+                event_writer.send(GameEvent::ToggleUI{new_ui: GameUI::Default});   
+            } else {
+                event_writer.send(GameEvent::ToggleUI{new_ui: GameUI::Debug});   
+            }
+ 
         }
         // Close Inventory on Tab release.
         else if keyboard_input.just_released(KeyCode::Tab) {

@@ -63,6 +63,9 @@ pub fn loading(
         game_texture_handles.voxel_textures,
     ));
 
+    // Resource which handles which UI is currently being displayed
+    commands.insert_resource(GameUI::MainScreen);
+    
     // Create Voxel definition text timer
     commands.insert_resource(create_identifier_timer());
 

@@ -40,15 +40,11 @@ pub struct InventorySlot {
 #[derive(Component)]
 pub struct VoxelIdentifierText;
 
+/// Marking component for all game entities in the main scene 
 #[derive(Component)]
 pub struct MainMenuEntity;
 
-#[derive(Component)]
-pub struct ButtonIdent {
-    pub indentity: ButtonIdentity,
-}
-
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Component)]
 pub enum ButtonIdentity {
     NewGame,
     LoadGame,

@@ -196,7 +196,7 @@ pub fn spawn_button(
     parent: Entity,
     texture_handle: Handle<Image>,
     button_atlas_handle: Handle<TextureAtlasLayout>,
-    indentity: ButtonIdentity,
+    button_identity: ButtonIdentity,
     height_percent: f32,
 ) -> Entity {
     // Spawn the button container with a white background.
@@ -211,15 +211,13 @@ pub fn spawn_button(
         (
             Button,
             BackgroundColor(Color::WHITE),
-            ButtonIdent {
-                indentity: indentity,
-            },
+            button_identity,
         ),
     );
     commands.entity(button_container).set_parent(parent);
 
     // Spawn the child image node with a margin so the container's border shows.
-    let atlas_index = match_button_ident_atlas_index(indentity);
+    let atlas_index = match_button_ident_atlas_index(button_identity);
     let image_entity = spawn_ui_node(
         commands,
         Node {

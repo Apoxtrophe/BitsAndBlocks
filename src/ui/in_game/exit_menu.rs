@@ -61,7 +61,7 @@ fn exit_menu_bundle() -> impl Bundle {
 
 pub fn exit_menu_interaction(
     mut query: Query<
-        (&Interaction, &mut BackgroundColor, &ButtonIdent),
+        (&Interaction, &mut BackgroundColor, &ButtonIdentity),
         (Changed<Interaction>, With<Button>),
     >,
     mut which_ui: ResMut<GameUI>,
@@ -73,7 +73,7 @@ pub fn exit_menu_interaction(
     for (interaction, mut bg_color, button_number) in query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
-                match button_number.indentity {
+                match button_number {
                     ButtonIdentity::BackToGame => {
                         println!("Back To Game");
                         *which_ui = GameUI::Default;
