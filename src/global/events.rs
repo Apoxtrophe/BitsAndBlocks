@@ -1,10 +1,10 @@
-
-use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
+use std::fmt;
+use bevy::{input::mouse::MouseWheel, prelude::*, utils::info, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
 
 use crate::prelude::*;
 
-#[derive(Event)]
+#[derive(Event, Debug)]
 pub enum GameEvent {
     PlaceBlock {
         voxel: Voxel,
@@ -56,9 +56,9 @@ pub fn event_handler(
 ) {
     for event in event_reader.read() {
         let event_time = time.elapsed_secs(); // Keeps track of when events happen
+        println!("Event: {}", event);
         match event {
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
-                println!("{:.3}      GAME EVENT: PLACE BLOCK", event_time);
                 let mut voxel_asset_data = voxel_asset.clone();
                 if is_cable_voxel(voxel) {
                     // Determine cable connections from neighboring voxels
@@ -75,7 +75,7 @@ pub fn event_handler(
                 add_voxel(&mut commands, &mut voxel_map, voxel_asset_data, voxel.clone());
             }
             GameEvent::RemoveBlock { position } => {
-                println!("{:.3}      GAME EVENT: REMOVE BLOCK", event_time);
+               
                 remove_voxel(&mut commands, &mut voxel_map, position.clone());
             }
             GameEvent::UpdateCursor {
@@ -83,7 +83,7 @@ pub fn event_handler(
                 show_cursor,
                 enable_input,
             } => {
-                println!("{:.3}      GAME EVENT: UPDATE CURSOR", event_time);
+                
                 if let Ok(mut window) = window_query.get_single_mut() {
                     update_cursor_and_input(
                         &mut window,
@@ -95,16 +95,16 @@ pub fn event_handler(
                 }
             }
             GameEvent::UpdateMesh { updates } => {
-                println!("{:.3}      GAME EVENT: UPDATE MESH", event_time);
+                
                 update_meshes(*updates, &mut voxel_map, &mut commands, &mut meshes, &mut voxel_query);
             }
             GameEvent::SaveWorld { world } => {
-                println!("{:.3}      GAME EVENT: SAVE WORLD", event_time);
+                
                 save_world(&save_query, &world).expect("Couldn't Save");
                 return; // Saving world skips other event handling. This is to prevent world state from changing before saving.
             }
             GameEvent::StateChange { new_state } => {
-                println!("{:.3}      GAME EVENT: STATE CHANGE", event_time);
+               
                 app_state.set(*new_state);
             }
             GameEvent::ToggleUI { new_ui } => {
@@ -123,6 +123,34 @@ pub fn event_handler(
             // Increment hotbar selector with wrap-around
             player.hotbar_selector = (player.hotbar_selector + 1) % HOTBAR_SIZE;
             fade_timer.timer.reset();
+        }
+    }
+}
+
+impl fmt::Display for GameEvent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            GameEvent::PlaceBlock { voxel, voxel_asset } => {
+                write!(f, "EVENT VOXEL PLACE: {:?}  {:?}", voxel.voxel_id, voxel.position)
+            }
+            GameEvent::RemoveBlock { position } => {
+                write!(f, "EVENT VOXEL REMOVE: {:?}", position)
+            }
+            GameEvent::UpdateMesh { updates } => {
+                write!(f, "EVENT MESH UPDATE: {:?}", updates)
+            }
+            GameEvent::UpdateCursor { mode, show_cursor, enable_input } => {
+                write!(f, "EVENT CURSOR: {:?}, show_cursor: {}, enable_input: {}", mode, show_cursor, enable_input)
+            }
+            GameEvent::SaveWorld { world } => {
+                write!(f, "EVENT SAVE WORLD: {:?}", world)
+            }
+            GameEvent::StateChange { new_state } => {
+                write!(f, "EVENT STATE CHANGE: {:?}", new_state)
+            }
+            GameEvent::ToggleUI { new_ui } => {
+                write!(f, "EVENT TOGGLE UI: {:?}", new_ui)
+            }
         }
     }
 }

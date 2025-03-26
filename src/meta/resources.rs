@@ -49,7 +49,7 @@ pub struct Voxel {
     pub state: bool,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct VoxelAsset {
     pub mesh_handle: Handle<Mesh>,
     pub material_handle: Handle<StandardMaterial>,

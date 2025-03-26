@@ -10,8 +10,6 @@ pub fn setup_main_menu(
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     saved_games: Res<LoadedSaves>,
 ) {
-    println!("State: Main Menu");
-
     // Spawn the camera tagged for the main menu
     commands.spawn(Camera2d).insert(MainMenuEntity);
 
@@ -46,116 +44,6 @@ pub fn setup_main_menu(
     commands.entity(options_window).set_parent(main_ui);
 }
 
-/// System to update button colors based on user interaction.
-/// Add this system to your Update schedule.
-pub fn menu_interaction_system(
-    mut query: Query<
-        (&Interaction, &mut BackgroundColor, &ButtonIdentity),
-        (Changed<Interaction>, With<Button>),
-    >,
-    mut game_ui: ResMut<GameUI>,
-    mut exit: EventWriter<AppExit>,
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut app_state: ResMut<NextState<GameState>>,
-    save_world: ResMut<SavedWorld>,
-    events: EventReader<TextInputSubmitEvent>,
-) {
-    for (interaction, mut bg_color, button_number) in query.iter_mut() {
-        match *interaction {
-            Interaction::Pressed => {
-                *bg_color = Color::linear_rgba(0.0, 1.0, 0.0, 1.0).into();
-                match button_number {
-                    ButtonIdentity::NewGame => {
-                        println!("!!!{:?}", button_number);
-                        *game_ui = GameUI::NewGame;
-                    }
-                    ButtonIdentity::LoadGame => {
-                        println!("Load Game");
-                        *game_ui = GameUI::LoadGame;
-                    }
-                    ButtonIdentity::Options => {
-                        println!("Options");
-                        *game_ui = GameUI::Options;
-                    }
-                    ButtonIdentity::QuitGame => {
-                        println!("Quit Game");
-                        exit.send(AppExit::Success);
-                    }
-                    ButtonIdentity::CreateWorld => {
-                        println!("Create World");
-                        if save_world.world_name.len() > 0 {
-                            *game_ui = GameUI::Default;
-                            app_state.set(GameState::InGame);
-                        } else {
-                            *bg_color = Color::linear_rgba(1.0, 0.0, 0.0, 1.0).into();
-                        }
-                    }
-                    _ => {}
-                }
-            }
-            Interaction::Hovered => {
-                *bg_color = Color::linear_rgba(1.0, 1.0, 1.0, 1.0).into();
-            }
-            Interaction::None => {
-                *bg_color = Color::linear_rgba(0.5, 0.5, 0.5, 0.25).into();
-            }
-        }
-    }
-
-    if keyboard_input.just_pressed(KeyCode::Escape) {
-        println!("Main Menu");
-        *game_ui = GameUI::MainScreen;
-    }
-
-    edit_text_listener(events, save_world);
-}
-
-/// Load World button System
-pub fn load_world_button_system(
-    mut world_button_query: Query<
-        (&Interaction, &mut BackgroundColor, &WorldButton),
-        (Changed<Interaction>, With<Button>),
-    >,
-    mut app_state: ResMut<NextState<GameState>>,
-    mut game_ui: ResMut<GameUI>,
-    commands: Commands,
-    voxel_map: ResMut<VoxelMap>,
-    meshes: ResMut<Assets<Mesh>>,
-    mut game_save: ResMut<SavedWorld>,
-) {
-    let mut loaded_world: Option<&str> = None;
-    for (interaction, mut bg_color, world_button) in world_button_query.iter_mut() {
-        match *interaction {
-            Interaction::Pressed => {
-                match world_button.name.as_str() {
-                    "" => {
-                        println!("Empty Slot");
-                    }
-                    _ => {
-                        println!("Load Game: {}", world_button.name);
-                        loaded_world = Some(world_button.name.as_str());
-                    }
-                }
-                *bg_color = Color::linear_rgba(0.0, 1.0, 0.0, 0.5).into();
-            }
-            Interaction::Hovered => {
-                *bg_color = Color::linear_rgba(1.0, 1.0, 1.0, 0.5).into();
-            }
-            Interaction::None => {
-                *bg_color = Color::linear_rgba(0.5, 0.5, 0.5, 0.25).into();
-            }
-        }
-    }
-
-    if loaded_world.is_some() {
-        load_world(loaded_world.unwrap(), commands, voxel_map, meshes);
-        game_save.world_name = loaded_world.unwrap().to_string();
-        *game_ui = GameUI::Default;
-        app_state.set(GameState::InGame);
-        
-    }
-}
-
 pub fn despawn_main_menu(
     mut commands: Commands,
     query: Query<Entity, With<MainMenuEntity>>,
@@ -174,8 +62,110 @@ pub fn despawn_main_menu(
         controller.enable_input = true;
     }
 
-    println!("Exiting Main Menu, Moving to In Game");
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }
 }
+
+pub fn menu_button_system(
+    mut query: Query<(&Interaction, &mut BackgroundColor, &MenuButton), Changed<Interaction>>,
+    mut app_state: ResMut<NextState<GameState>>,
+    mut game_ui: ResMut<GameUI>,
+    mut game_save: ResMut<SavedWorld>,
+    // other resources like Commands, VoxelMap, Meshes, etc.
+    mut exit: EventWriter<AppExit>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    events: EventReader<TextInputSubmitEvent>, // Should probably be moved into the Event Handler
+    mut event_writer: EventWriter<GameEvent>,
+    mut commands: Commands,
+    mut voxel_map: ResMut<VoxelMap>,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
+    for (interaction, mut bg_color, menu_button) in query.iter_mut() {
+        // Update button color with our helper.
+        update_bg_color(interaction, &mut bg_color);
+        if let Interaction::Pressed = *interaction {
+            match &menu_button.action {
+                MenuAction::LoadWorld(name) => {
+                    println!("WORLD NAME: {}", name);
+                    if name.is_empty() {
+                        println!("Empty Slot");
+                    } else {
+                        println!("Load Game: {}", name);
+                        load_world(name, &mut commands, &mut voxel_map, &mut meshes);
+                        game_save.world_name = name.clone();
+                        *game_ui = GameUI::Default;
+                        app_state.set(GameState::InGame);
+                    }
+                }
+                MenuAction::NewGame => {
+                    *game_ui = GameUI::NewGame;
+                }
+                MenuAction::LoadGame => {
+                    *game_ui = GameUI::LoadGame;
+                }
+                MenuAction::Options => {
+                    *game_ui = GameUI::Options;
+                }
+                MenuAction::QuitGame => {
+                    exit.send(AppExit::Success);
+                }
+                MenuAction::CreateWorld => {
+                    println!("Create World {}", game_save.world_name);
+                    if game_save.world_name.len() > 0 {
+                        *game_ui = GameUI::Default;
+                        app_state.set(GameState::InGame);
+                    } else {
+                        *bg_color = Color::linear_rgba(1.0, 0.0, 0.0, 1.0).into();
+                    }
+                }
+                MenuAction::BackToGame => {
+                    *game_ui = GameUI::Default;
+                    event_writer.send(GameEvent::UpdateCursor {
+                        mode: CursorGrabMode::Locked,
+                        show_cursor: false,
+                        enable_input: true,
+                    });
+                }
+                MenuAction::MainMenu => {
+                    event_writer.send(GameEvent::SaveWorld {
+                        world: game_save.clone(),
+                    });
+
+                    event_writer.send(GameEvent::StateChange {
+                        new_state: GameState::Loading,
+                    });
+                }
+                MenuAction::SaveAndQuit => {
+                    event_writer.send(GameEvent::SaveWorld {
+                        world: game_save.clone(),
+                    });
+                    exit.send(AppExit::Success);
+                }
+                MenuAction::Placeholder => {
+                }
+                // Handle other actions if needed.
+            }
+        }
+    }
+    
+    // Shitty code for handling escape in the main menu
+    if keyboard_input.just_pressed(KeyCode::Escape) 
+    && *game_ui != GameUI::Default
+    && *game_ui != GameUI::Inventory
+    && *game_ui != GameUI::ExitMenu
+    {
+        *game_ui = GameUI::MainScreen;
+    }
+    
+    edit_text_listener(events, game_save);
+}
+fn update_bg_color(interaction: &Interaction, bg_color: &mut BackgroundColor) {
+    *bg_color = match *interaction {
+        Interaction::Pressed => Color::linear_rgba(0.0, 1.0, 0.0, 1.0).into(),
+        Interaction::Hovered => Color::linear_rgba(1.0, 1.0, 1.0, 1.0).into(),
+        Interaction::None => Color::linear_rgba(0.5, 0.5, 0.5, 0.25).into(),
+    };
+}
+
+

@@ -158,9 +158,8 @@ pub fn spawn_text_button(
         (
             Button,
             BackgroundColor(Color::WHITE),
-            WorldButton {
-                index: button_index,
-                name: text.clone(),
+            MenuButton{
+                action: MenuAction::LoadWorld(text.clone())
             },
         ),
     );
@@ -196,7 +195,7 @@ pub fn spawn_button(
     parent: Entity,
     texture_handle: Handle<Image>,
     button_atlas_handle: Handle<TextureAtlasLayout>,
-    button_identity: ButtonIdentity,
+    button_identity: MenuAction,
     height_percent: f32,
 ) -> Entity {
     // Spawn the button container with a white background.
@@ -211,7 +210,7 @@ pub fn spawn_button(
         (
             Button,
             BackgroundColor(Color::WHITE),
-            button_identity,
+            MenuButton { action: button_identity.clone() },
         ),
     );
     commands.entity(button_container).set_parent(parent);
@@ -235,18 +234,18 @@ pub fn spawn_button(
     button_container
 }
 
-fn match_button_ident_atlas_index(identity: ButtonIdentity) -> usize {
+fn match_button_ident_atlas_index(identity: MenuAction) -> usize {
     let mut atlas_index = 0;
     match identity {
-        ButtonIdentity::NewGame => atlas_index = 0,
-        ButtonIdentity::LoadGame => atlas_index = 1,
-        ButtonIdentity::Options => atlas_index = 2,
-        ButtonIdentity::QuitGame => atlas_index = 3,
-        ButtonIdentity::CreateWorld => atlas_index = 4,
-        ButtonIdentity::BackToGame => atlas_index = 8,
-        ButtonIdentity::MainMenu => atlas_index = 9,
-        ButtonIdentity::SaveAndQuit => atlas_index = 10,
-        ButtonIdentity::Placeholder => atlas_index = 11,
+        MenuAction::NewGame => atlas_index = 0,
+        MenuAction::LoadGame => atlas_index = 1,
+        MenuAction::Options => atlas_index = 2,
+        MenuAction::QuitGame => atlas_index = 3,
+        MenuAction::CreateWorld => atlas_index = 4,
+        MenuAction::BackToGame => atlas_index = 8,
+        MenuAction::MainMenu => atlas_index = 9,
+        MenuAction::SaveAndQuit => atlas_index = 10,
+        MenuAction::Placeholder => atlas_index = 11,
         _ => {
             println!("Error: Unhandled Button Identity")
         }

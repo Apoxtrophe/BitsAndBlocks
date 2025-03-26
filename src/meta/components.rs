@@ -45,10 +45,11 @@ pub struct VoxelIdentifierText;
 pub struct MainMenuEntity;
 
 /// Marking component that identifies the function of each button in UI 
-#[derive(Clone, Copy, Debug, Component)]
-pub enum ButtonIdentity {
+#[derive(Clone, Debug)]
+pub enum MenuAction {
     NewGame,
     LoadGame,
+    LoadWorld(String),
     Options,
     QuitGame,
     CreateWorld,
@@ -58,29 +59,11 @@ pub enum ButtonIdentity {
     Placeholder,
 }
 
-#[derive(Component, Clone, Debug)]
-enum MenuAction {
-    NewGame,
-    Options,
-    QuitGame,
-    CreateWorld,
-    BackToGame,
-    MainMenu,
-    SaveAndQuit,
-    Placeholder,
-    LoadWorld(String),
-}
-
-#[derive(Component, Clone, Debug)]
-struct MenuButton {
-    action: MenuAction,
-}
 
 /// Marking component for game_save buttons
 #[derive(Component)]
-pub struct WorldButton {
-    pub index: usize,
-    pub name: String,
+pub struct MenuButton {
+    pub action: MenuAction,
 }
 
 #[derive(Resource, Component, PartialEq, Eq, Clone, Copy, Debug)]

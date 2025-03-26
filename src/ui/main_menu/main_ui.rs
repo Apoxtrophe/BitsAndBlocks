@@ -13,12 +13,11 @@ pub fn spawn_main_ui (
     let main_menu_sub = spawn_sub_node(commands, 40.0, 60.0, 10.0);
     commands.entity(main_menu_sub).set_parent(main_ui);
     
-    
     let button_options = [
-        ButtonIdentity::NewGame,
-        ButtonIdentity::LoadGame,
-        ButtonIdentity::Options,
-        ButtonIdentity::QuitGame,
+        MenuAction::NewGame,
+        MenuAction::LoadGame,
+        MenuAction::Options,
+        MenuAction::QuitGame,
     ].to_vec();
     
     // Spawn four buttons
@@ -28,7 +27,7 @@ pub fn spawn_main_ui (
             main_menu_sub,
             button_handle.clone(),
             atlas_handle.clone(),
-            button_options[i],
+            button_options[i].clone(),
             24.0,
         );
     }

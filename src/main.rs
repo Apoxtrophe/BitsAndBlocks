@@ -58,9 +58,7 @@ fn main() {
         .add_plugins(TextInputPlugin)
         //.add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(FpsControllerPlugin)
-        //.add_plugins(WorldInspectorPlugin::new())
-        // Startup Systems
-        //States
+
         .init_state::<GameState>()
         
         
@@ -69,6 +67,7 @@ fn main() {
         // ======================================================================
         .add_systems(Update,( 
             update_ui_visibility,
+            menu_button_system,
             event_handler,
         ))
          
@@ -83,8 +82,6 @@ fn main() {
         .add_systems(
             Update,
             (
-                menu_interaction_system,
-                load_world_button_system,
                 update_scroll_position,
             ).run_if(in_state(GameState::MainMenu)),
         )
@@ -109,7 +106,7 @@ fn main() {
                 update_hotbar,
                 update_inventory_ui,
                 update_identifier,
-                exit_menu_interaction,
+                //exit_menu_interaction,
             )
                 .run_if(in_state(GameState::InGame)),
         )

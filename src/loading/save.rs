@@ -49,9 +49,9 @@ pub fn autosave_system(
 
 pub fn load_world(
     world_name: &str,
-    mut commands: Commands,
-    mut voxel_map: ResMut<VoxelMap>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    mut commands: &mut Commands,
+    mut voxel_map:&mut  ResMut<VoxelMap>,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
 ) {
     println!("Loaded: {}", world_name);
     let file_path = format!("assets/saves/{}.bin", world_name);

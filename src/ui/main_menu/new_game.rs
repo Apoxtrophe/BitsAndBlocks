@@ -12,7 +12,7 @@ pub fn spawn_new_game_ui(
     let new_game_sub = spawn_sub_node(&mut commands, 100.0, 15.0, 10.0);
     
     let button_options = [
-      ButtonIdentity::CreateWorld,
+      MenuAction::CreateWorld,
       ].to_vec();
     
     for i in 0..button_options.len() {
@@ -21,7 +21,7 @@ pub fn spawn_new_game_ui(
             new_game_sub,
             button_handle.clone(),
             atlas_handle.clone(),
-            button_options[i],
+            button_options[i].clone(),
             100.0,
         );
     }
