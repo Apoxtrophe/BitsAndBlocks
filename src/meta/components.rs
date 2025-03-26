@@ -58,6 +58,24 @@ pub enum ButtonIdentity {
     Placeholder,
 }
 
+#[derive(Component, Clone, Debug)]
+enum MenuAction {
+    NewGame,
+    Options,
+    QuitGame,
+    CreateWorld,
+    BackToGame,
+    MainMenu,
+    SaveAndQuit,
+    Placeholder,
+    LoadWorld(String),
+}
+
+#[derive(Component, Clone, Debug)]
+struct MenuButton {
+    action: MenuAction,
+}
+
 /// Marking component for game_save buttons
 #[derive(Component)]
 pub struct WorldButton {

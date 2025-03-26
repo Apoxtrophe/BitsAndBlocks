@@ -1,12 +1,12 @@
 use crate::prelude::*;
 use bevy::prelude::*;
 
+// OPERATES GLOBALLY REGARDLESS OF GAME STATE
+
 pub fn update_ui_visibility(
     mut query: Query<(&GameUI, &mut Visibility)>,
     current_screen: Res<GameUI>,
 ) {
-    println!("{:?}", current_screen);
-    //println!("current_ui: {:?}", current_screen.ui);
     for (ui, mut visibility) in query.iter_mut() {
         if *ui == *current_screen {
             *visibility = Visibility::Visible;

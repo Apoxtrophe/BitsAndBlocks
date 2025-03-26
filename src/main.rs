@@ -2,7 +2,7 @@
 // Module Declarations
 // ======================================================================
 mod character;
-mod event_handling;
+mod global;
 mod loading;
 mod meta;
 pub mod prelude;
@@ -62,10 +62,15 @@ fn main() {
         // Startup Systems
         //States
         .init_state::<GameState>()
+        
+        
         // ======================================================================
         // GLOBAL SYSTEMS (always running regardless of state)
         // ======================================================================
-        .add_systems(Update, update_ui_visibility)
+        .add_systems(Update,( 
+            update_ui_visibility,
+            event_handler,
+        ))
          
         // ======================================================================
         // LOADING STATE SYSTEMS
@@ -80,10 +85,8 @@ fn main() {
             (
                 menu_interaction_system,
                 load_world_button_system,
-                //update_pop_window_visibility,
                 update_scroll_position,
-            )
-                .run_if(in_state(GameState::MainMenu)),
+            ).run_if(in_state(GameState::MainMenu)),
         )
         .add_systems(OnExit(GameState::MainMenu), despawn_main_menu)
         // ======================================================================
@@ -107,7 +110,6 @@ fn main() {
                 update_inventory_ui,
                 update_identifier,
                 exit_menu_interaction,
-                event_handler,
             )
                 .run_if(in_state(GameState::InGame)),
         )

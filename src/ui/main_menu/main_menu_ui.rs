@@ -2,7 +2,7 @@ use bevy::window::CursorGrabMode;
 use bevy_fps_controller::controller::FpsController;
 use bevy_simple_text_input::TextInputSubmitEvent;
 
-use crate::{prelude::*, ui::in_game::game_ui, GameState};
+use crate::{prelude::*, GameState};
 
 pub fn setup_main_menu(
     mut commands: Commands,
@@ -84,6 +84,7 @@ pub fn menu_interaction_system(
                     ButtonIdentity::CreateWorld => {
                         println!("Create World");
                         if save_world.world_name.len() > 0 {
+                            *game_ui = GameUI::Default;
                             app_state.set(GameState::InGame);
                         } else {
                             *bg_color = Color::linear_rgba(1.0, 0.0, 0.0, 1.0).into();
@@ -153,7 +154,7 @@ pub fn load_world_button_system(
         app_state.set(GameState::InGame);
         
     }
-}`
+}
 
 pub fn despawn_main_menu(
     mut commands: Commands,
