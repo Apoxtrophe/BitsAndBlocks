@@ -1,22 +1,22 @@
 // ======================================================================
 // Module Declarations
 // ======================================================================
-pub mod prelude;
 mod character;
 mod event_handling;
+mod loading;
+mod meta;
+pub mod prelude;
 mod ui;
 mod voxel;
-mod loading; 
-mod meta; 
 
 // ======================================================================
 // External Crate Imports
 // ======================================================================
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_atmosphere::plugin::AtmospherePlugin;
-use bevy_rapier3d::prelude::*;
 use bevy_fps_controller::controller::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_rapier3d::prelude::*;
 
 use bevy_simple_text_input::TextInputPlugin;
 // ======================================================================
@@ -40,7 +40,6 @@ fn main() {
         // Events
         .add_event::<GameEvent>()
         // Plugins
-
         .add_plugins(DefaultPlugins.set(ImagePlugin {
             default_sampler: ImageSamplerDescriptor {
                 address_mode_u: ImageAddressMode::Repeat,
@@ -61,9 +60,13 @@ fn main() {
         .add_plugins(FpsControllerPlugin)
         //.add_plugins(WorldInspectorPlugin::new())
         // Startup Systems
-        
         //States
         .init_state::<GameState>()
+        // ======================================================================
+        // GLOBAL SYSTEMS (always running regardless of state)
+        // ======================================================================
+        .add_systems(Update, update_ui_visibility)
+         
         // ======================================================================
         // LOADING STATE SYSTEMS
         // ======================================================================
@@ -72,29 +75,25 @@ fn main() {
         // MAINMENU STATE SYSTEMS
         // ======================================================================
         .add_systems(OnEnter(GameState::MainMenu), setup_main_menu)
-        
         .add_systems(
             Update,
             (
                 menu_interaction_system,
-                load_world_button_system, 
-                update_pop_window_visibility,
+                load_world_button_system,
+                //update_pop_window_visibility,
                 update_scroll_position,
-            ).run_if(in_state(GameState::MainMenu))
+            )
+                .run_if(in_state(GameState::MainMenu)),
         )
-        
         .add_systems(OnExit(GameState::MainMenu), despawn_main_menu)
-        
-     // ======================================================================
+        // ======================================================================
         // INGAME STATE SYSTEMS
         // ======================================================================
         // Setup Systems
-        .add_systems(OnEnter(GameState::InGame),
-            (
-                setup_player, 
-                setup_world, 
-                setup_ui, 
-            ))
+        .add_systems(
+            OnEnter(GameState::InGame),
+            (setup_player, setup_world, setup_ui),
+        )
         // Update Systems
         .add_systems(
             Update,
@@ -107,10 +106,10 @@ fn main() {
                 update_hotbar,
                 update_inventory_ui,
                 update_identifier,
-                update_game_window_visibility,
                 exit_menu_interaction,
                 event_handler,
-            ).run_if(in_state(GameState::InGame))
+            )
+                .run_if(in_state(GameState::InGame)),
         )
         .add_systems(OnExit(GameState::InGame), despawn_all)
         .run();
@@ -126,16 +125,17 @@ pub fn setup_world(
     mut materials: ResMut<Assets<StandardMaterial>>,
     image_handles: Res<GameTextures>,
 ) {
-
     // Spawn a directional light (Sun)
-    commands.spawn((
-        DirectionalLight {
-            illuminance: light_consts::lux::FULL_DAYLIGHT,
-            shadows_enabled: true,
-            ..default()
-        },
-        Transform::from_xyz(4.0, 7.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-    )).insert(GameEntity);
+    commands
+        .spawn((
+            DirectionalLight {
+                illuminance: light_consts::lux::FULL_DAYLIGHT,
+                shadows_enabled: true,
+                ..default()
+            },
+            Transform::from_xyz(4.0, 7.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        ))
+        .insert(GameEntity);
 
     // Create world mesh
     let mut mesh: Mesh = (Cuboid::new(WORLD_WIDTH, 1.0, WORLD_WIDTH)).into();
@@ -159,5 +159,6 @@ pub fn setup_world(
             MeshMaterial3d(material),
             WORLD_TRANSFORM,
         ))
-        .insert(Collider::cuboid(WORLD_WIDTH * 0.5, 0.5, WORLD_WIDTH * 0.5)).insert(GameEntity);
+        .insert(Collider::cuboid(WORLD_WIDTH * 0.5, 0.5, WORLD_WIDTH * 0.5))
+        .insert(GameEntity);
 }

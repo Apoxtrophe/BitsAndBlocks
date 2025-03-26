@@ -44,6 +44,7 @@ pub struct VoxelIdentifierText;
 #[derive(Component)]
 pub struct MainMenuEntity;
 
+/// Marking component that identifies the function of each button in UI 
 #[derive(Clone, Copy, Debug, Component)]
 pub enum ButtonIdentity {
     NewGame,

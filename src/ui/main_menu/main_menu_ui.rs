@@ -153,20 +153,7 @@ pub fn load_world_button_system(
         app_state.set(GameState::InGame);
         
     }
-}
-
-pub fn update_pop_window_visibility(
-    mut query: Query<(&GameUI, &mut Visibility)>,
-    current_screen: Res<GameUI>,
-) {
-    for (game_ui, mut visibility) in query.iter_mut() {
-        if *game_ui == *current_screen {
-            *visibility = Visibility::Visible;
-        } else {
-            *visibility = Visibility::Hidden;
-        }
-    }
-}
+}`
 
 pub fn despawn_main_menu(
     mut commands: Commands,

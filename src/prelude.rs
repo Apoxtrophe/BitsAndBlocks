@@ -16,6 +16,7 @@ pub use crate::ui::main_menu::load_game::*;
 pub use crate::ui::main_menu::options::*;
 pub use crate::ui::main_menu::main_ui::*;
 pub use crate::ui::ui_helpers::*;
+pub use crate::ui::ui_visibility::*;
 pub use crate::voxel::voxel::*;
 pub use crate::voxel::graphics::*;
 pub use crate::voxel::helpers::*;
