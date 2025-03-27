@@ -25,6 +25,12 @@ pub const CURSOR_TEXTURE_PATH: &str = "textures/cursor.png";
 pub const HOTBAR_SIZE: usize = 9; // Changing this will probably break shit
 pub const INVENTORY_SIZE: usize = 16; // 
 
+pub const PRESSED_COLOR: Color = Color::srgb(0.15, 0.90, 0.15);
+pub const HOVER_COLOR: Color = Color::srgb(0.5, 0.5, 0.5);
+pub const DEFAULT_COLOR: Color = Color::srgb(0.15, 0.15, 0.15);
+pub const BORDER_SELECTED: Color = Color::WHITE;
+pub const BORDER_UNSELECTED: Color = Color::BLACK;
+
 // PLAYER
 pub const PLAYER_HEIGHT: f32 = 1.9;
 pub const PLAYER_CROUCHED_HEIGHT: f32 = 1.5;

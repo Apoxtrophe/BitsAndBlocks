@@ -121,27 +121,26 @@ pub fn hotslot_bundle(
     )
 }
 
+/// Updates the hotbar visuals based on player selection.
 pub fn update_hotbar(
-    player: ResMut<Player>,
+    player: Res<Player>,
     mut image_query: Query<(&HotbarSlot, &mut ImageNode)>,
     mut border_query: Query<(&HotbarSlot, &mut BorderColor)>,
     voxel_map: Res<VoxelMap>,
 ) {
-    
-    // Update border colors based on the player's selected slot.
+    // Update border colors: selected slot gets highlighted.
     for (slot, mut border_color) in border_query.iter_mut() {
         *border_color = if slot.index == player.hotbar_selector {
-            Color::WHITE.into() // Highlighted
+            BORDER_SELECTED.into()
         } else {
-            Color::BLACK.into()
+            BORDER_UNSELECTED.into()
         };
     }
 
-    // Update image atlas indices based on the hotbar selections.
+    // Update image atlas indices.
     for (slot, mut image_node) in image_query.iter_mut() {
         let (_, sub_index) = player.hotbar_ids[slot.index];
         if let Some(atlas) = &mut image_node.texture_atlas {
-            //atlas.index = texture_row((slot.index,sub_index));
             let id = (slot.index, sub_index);
             atlas.index = voxel_map.asset_map[&id].texture_row;
         }

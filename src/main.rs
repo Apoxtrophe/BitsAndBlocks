@@ -4,11 +4,10 @@
 mod character;
 mod global;
 mod loading;
-mod meta;
 pub mod prelude;
 mod ui;
 mod voxel;
-
+pub mod meta;
 // ======================================================================
 // External Crate Imports
 // ======================================================================

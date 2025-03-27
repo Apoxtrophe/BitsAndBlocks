@@ -59,6 +59,7 @@ pub fn event_handler(
     save_query: Query<(Entity, &Voxel)>,
     mut app_state: ResMut<NextState<GameState>>,
     mut this_ui: ResMut<GameUI>,
+    mut game_save: ResMut<SavedWorld>,
 ) {
     for event in event_reader.read() {
         let event_time = time.elapsed_secs(); // Keeps track of when events happen
@@ -110,7 +111,6 @@ pub fn event_handler(
                 return; // Saving world skips other event handling. This is to prevent world state from changing before saving.
             }
             GameEvent::LoadWorld { world_name } => {
-                game_save.world_name = world_name.clone();
                 load_world(world_name, &mut commands, &mut voxel_map, &mut meshes);
                 return; // Loading world skips other event handling. This is to prevent world state from changing before loading.
             }

@@ -14,7 +14,7 @@ pub fn spawn_debug_text(commands: &mut Commands) -> Entity {
     );
     
     let text_settings = TextFont {
-        font_size: 24.0,
+        font_size: 18.0,
         ..default()
     };
     
@@ -29,7 +29,7 @@ pub fn spawn_debug_text(commands: &mut Commands) -> Entity {
     debug_text
 }
 
-/// Updates the debug text with additional runtime and world info.
+/// Updates the debug text with runtime info.
 pub fn update_debug_text(
     mut text_query: Query<&mut Text, With<DebugText>>,
     entity_query: Query<Entity>,
@@ -39,12 +39,10 @@ pub fn update_debug_text(
     // Count entities for debugging purposes.
     let entity_count = entity_query.iter().count();
     
-    // Compute FPS (avoid division by zero by clamping delta_seconds).
+    // Compute FPS while avoiding division by zero.
     let delta = time.delta_secs().max(0.0001);
     let fps = (1.0 / delta).round();
     
-    
-    // Build the multi-line debug string.
     let debug_text = format!(
         "\
 FPS: {:.1}

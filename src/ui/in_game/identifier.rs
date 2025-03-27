@@ -37,21 +37,26 @@ pub fn spawn_identifier(
     voxel_identifier
 }
 
+/// Updates the voxel identifier text with a fade effect.
 pub fn update_identifier(
-    mut query: Query<(&mut Text, &mut TextColor,  &mut VoxelIdentifierText)>,
+    mut query: Query<(&mut Text, &mut TextColor, &mut VoxelIdentifierText)>,
     player: Res<Player>,
     mut fade_timer: ResMut<FadeTimer>,
     time: Res<Time>,
 ) {
     fade_timer.timer.tick(time.delta());
     
-    if let Some(voxel_identifier) = player.selected_descriptor.clone() {
-        for (mut text, mut color, _) in query.iter_mut() {
-            text.0 = voxel_identifier.name.clone();
-            let alpha = fade_timer.timer.fraction_remaining();
-            color.0 = Color::linear_rgba(1.0, 1.0, 1.0, alpha);
-        }
-    } else {
-        return;
+    // Return early if no identifier is selected.
+    let descriptor = match &player.selected_descriptor {
+        Some(descriptor) => descriptor,
+        None => return,
+    };
+
+    let alpha = fade_timer.timer.fraction_remaining() + 0.25; // Remove the 0.25 if the text should fade entirely. 
+    let new_color = Color::linear_rgba(0.75, 0.75, 0.75, alpha);
+    
+    for (mut text, mut text_color, _) in query.iter_mut() {
+        text.0 = descriptor.name.clone();
+        text_color.0 = new_color;
     }
 }

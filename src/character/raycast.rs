@@ -10,13 +10,14 @@ pub fn raycast_system(
     mut player: ResMut<Player>,
     voxel_map: Res<VoxelMap>,
 ) {
-    // Retrieve the camera's transform; exit early if not found.
-    let camera_transform = match query.get_single() {
-        Ok(transform) => transform,
-        Err(_) => return,
+    // Retrieve the camera transform or exit early.
+    let camera_transform = if let Ok(transform) = query.get_single() {
+        transform
+    } else {
+        return;
     };
 
-    // Compute camera position and its forward direction (default facing -Z).
+    // Compute the camera's position and forward direction (-Z axis by default).
     let camera_position = camera_transform.translation();
     let camera_forward = camera_transform.rotation() * Vec3::new(0.0, 0.0, -1.0);
 
@@ -33,22 +34,20 @@ pub fn raycast_system(
         let avg = (triangle[0] + triangle[1] + triangle[2]) / 3.0;
         let selected_voxel_pos = (avg - normal * 0.5).round();
         let mut adjacent_voxel_pos = selected_voxel_pos + normal;
-
         let hit_voxel = voxel_map.voxel_map.get(&selected_voxel_pos.as_ivec3());
         let hit_point = intersection.point;
 
-        // Adjust adjacent voxel if the hit point is low.
-        // Fixes wonky shit with ground collisions
+        // Adjust adjacent voxel position for ground collisions.
         if hit_point.y < 0.51 {
             adjacent_voxel_pos = (hit_point + Vec3::Y * 0.5).round();
         }
 
-        // Only select the voxel if within maximum ray distance.
+        // Determine if we should select the voxel (within maximum distance).
         let selected_voxel = if intersection.distance <= RAY_MAX_DIST {
             Some(Voxel {
                 voxel_id: player.hotbar_ids[player.hotbar_selector],
                 position: adjacent_voxel_pos.as_ivec3(),
-                direction: 0, // Set elsewhere in the player interaction system.
+                direction: 0, // Updated elsewhere.
                 state: false,
             })
         } else {
@@ -58,19 +57,18 @@ pub fn raycast_system(
         // Draw a debug cuboid at the adjusted voxel location.
         gizmos.cuboid(Transform::from_translation(adjacent_voxel_pos - normal), Color::BLACK);
 
-        // Update player data with the ray hit information.
+        // Update player data with the ray hit details.
         player.ray_hit_pos = hit_point;
         player.hit_voxel = hit_voxel.cloned();
         player.selected_voxel = selected_voxel;
     }
 
-    if let Some(voxel_asset_descriptor) = voxel_map.asset_map.get(&player.hotbar_ids[player.hotbar_selector]) {
-        let definition = voxel_asset_descriptor.clone().definition;
-        player.selected_descriptor = Some(definition);
-    } else {
-        player.selected_descriptor = None;
-    };
-    
+    // Update the player's selected voxel descriptor using a more concise mapping.
+    player.selected_descriptor = voxel_map
+        .asset_map
+        .get(&player.hotbar_ids[player.hotbar_selector])
+        .map(|descriptor| descriptor.clone().definition);
+
     // Always update the camera position and direction.
     player.camera_pos = camera_position;
     player.camera_dir = camera_forward;

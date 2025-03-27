@@ -58,43 +58,40 @@ pub fn spawn_inventory(
     inventory_node
 }
 
+/// Updates inventory UI elements based on interactions and selected inventory slots.
 pub fn update_inventory_ui(
-    mut interaction_query: Query<
-        (
-            &Interaction,
-            &mut BackgroundColor,
-            &InventorySlot,
-        ),
-        (Changed<Interaction>, With<Button>),
-    >,
+    mut interaction_query: Query<(
+        &Interaction,
+        &mut BackgroundColor,
+        &InventorySlot,
+    ), (Changed<Interaction>, With<Button>)>,
     mut image_query: Query<(&InventorySlot, &mut ImageNode)>,
     mut player: ResMut<Player>,
     voxel_map: Res<VoxelMap>,
 ) {   
-    for (interaction, mut color, inventory_slot) in &mut interaction_query {
+    // Update button colors and adjust hotbar selection.
+    for (interaction, mut bg_color, slot) in interaction_query.iter_mut() {
         match *interaction {
             Interaction::Pressed => {
-                *color = Color::srgb(0.15, 0.90, 0.15).into();
-                let selector = player.hotbar_selector.clone();
-                let index = (inventory_slot.index).clamp(0, SUBSET_SIZES[selector] - 1);
+                *bg_color = PRESSED_COLOR.into();
+                let selector = player.hotbar_selector;
+                // Clamp index based on a subset size; extracted clamping logic can be a helper.
+                let index = slot.index.clamp(0, SUBSET_SIZES[selector] - 1);
                 player.hotbar_ids[selector].1 = index;
             }
             Interaction::Hovered => {
-                *color = Color::srgb(0.5, 0.5, 0.5).into();
+                *bg_color = HOVER_COLOR.into();
             }
             Interaction::None => {
-                *color = Color::srgb(0.15, 0.15, 0.15).into();
+                *bg_color = DEFAULT_COLOR.into();
             }
         }
     }
 
+    // Update inventory images.
     for (slot, mut image_node) in image_query.iter_mut() {
         let set = player.hotbar_selector;
-        let mut subset = slot.index;
-        
-        if subset >= SUBSET_SIZES[set] {
-            subset = 0;
-        }
+        let subset = if slot.index >= SUBSET_SIZES[set] { 0 } else { slot.index };
         if let Some(atlas) = &mut image_node.texture_atlas {
             let id = (set, subset);
             atlas.index = voxel_map.asset_map[&id].texture_row;
