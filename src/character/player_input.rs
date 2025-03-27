@@ -44,6 +44,30 @@ pub fn player_input_system(
     mut remove_timer: Local<Timer>,
     time: Res<Time>,
 ) {
+    if *current_ui == GameUI::Default{ // Make it so that you cannot place/destroy when not in default mode ui
+        // Process block interactions.
+        handle_block_placement(
+            &mouse_input,
+            &mut player,
+            &voxel_assets,
+            &mut event_writer,
+            &mut place_timer,
+            &time,
+        );
+        handle_block_removal(
+            &mouse_input,
+            &player,
+            &mut event_writer,
+            &mut remove_timer,
+            &time,
+        );
+        handle_hotbar_copy(
+            &mouse_input,
+            &mut player,
+            &voxel_assets,
+            &mut event_writer,
+        );
+    }
     // UI inputs require a valid window (if applicable).
     if window_query.get_single_mut().is_ok() {
         process_ui_input(&keyboard_input, current_ui, &mut event_writer);
@@ -51,28 +75,7 @@ pub fn player_input_system(
         return;
     }
 
-    // Process block interactions.
-    handle_block_placement(
-        &mouse_input,
-        &mut player,
-        &voxel_assets,
-        &mut event_writer,
-        &mut place_timer,
-        &time,
-    );
-    handle_block_removal(
-        &mouse_input,
-        &player,
-        &mut event_writer,
-        &mut remove_timer,
-        &time,
-    );
-    handle_hotbar_copy(
-        &mouse_input,
-        &mut player,
-        &voxel_assets,
-        &mut event_writer,
-    );
+
 }
 
 /// Handles key events for toggling UI modes.
@@ -98,7 +101,7 @@ fn process_ui_input(
             });
             *current_ui = GameUI::Default;
         }
-    } else if keyboard_input.pressed(KeyCode::Tab) {
+    } else if keyboard_input.just_pressed(KeyCode::Tab) {
         // Open Inventory, if not in the Exit Menu.
         if *current_ui != GameUI::ExitMenu {
             *current_ui = GameUI::Inventory;
