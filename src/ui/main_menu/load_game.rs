@@ -8,7 +8,6 @@ use bevy::prelude::*;
 pub fn spawn_load_game_ui(
     mut commands: &mut Commands,
     image_handles: &Res<GameTextures>,
-    button_pointer: (usize, usize), // Starting index and number of buttons
     names_list: &Vec<String>,
 ) -> Entity {
     let load_game_window = spawn_popup(
@@ -25,10 +24,11 @@ pub fn spawn_load_game_ui(
                 align_self: AlignSelf::Stretch,
                 height: Val::Percent(60.),
                 top: Val::Percent(30.0),
-                width: Val::Percent(60.),
+                width: Val::Percent(70.),
                 row_gap: Val::Px(8.0),
                 padding: UiRect::all(Val::Percent(1.5)),
                 justify_self: JustifySelf::Center,
+                justify_content: JustifyContent::Center,
                 overflow: Overflow::scroll_y(), // n.b.
                 ..default()
             },
@@ -37,18 +37,59 @@ pub fn spawn_load_game_ui(
         .id();
 
     // Load Game Buttons
-    let (start, end) = (button_pointer.0, button_pointer.0 + names_list.len());
 
-    for i in start..end {
-        spawn_text_button(
+    for i in 0..names_list.len() {
+        // Create an outer container for each row.
+        let row_container = spawn_ui_node(
             &mut commands,
-            scrollable_list,
-            50.0,
-            15.0,
-            i,
-            names_list[i - start].clone(),
+            Node {
+                width: Val::Percent(100.0),
+                // Arrange items horizontally.
+                flex_direction: FlexDirection::Row,
+                // Align items in the center vertically.
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                // You can also set a margin for the container itself if needed.
+                //margin: UiRect::all(Val::Px(4.0)),
+                ..default()
+            },
+            (),
         );
+    
+        // Spawn the world button and attach it to the row container.
+        let world_button = spawn_text_button(
+            &mut commands,
+            100.0,
+            100.0,
+            names_list[i].clone(),
+            MenuAction::LoadWorld(names_list[i].clone()),
+        );
+        commands.entity(world_button).set_parent(row_container);
+    
+        // Spawn the delete button.
+        let delete_button = spawn_text_button(
+            &mut commands,
+            30.0,
+            100.0,
+            " X ".to_string(),
+            MenuAction::DeleteWorld(names_list[i].clone()),
+        );
+        // Add a left margin to separate it from the world button.
+        commands.entity(delete_button).insert(Node {
+            margin: UiRect {
+                left: Val::Px(10.0),
+                ..Default::default()
+            },
+            ..default()
+        });
+        // Instead of setting the delete button as a child of world_button,
+        // set it as a sibling within the row container.
+        commands.entity(delete_button).set_parent(row_container);
+    
+        // Attach the entire row container to your scrollable list.
+        commands.entity(row_container).set_parent(scrollable_list);
     }
+
 
     commands
         .entity(scrollable_list)

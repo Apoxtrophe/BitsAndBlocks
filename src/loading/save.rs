@@ -80,3 +80,8 @@ pub fn load_world(
         }
     }
 }
+
+pub fn delete_world(world_name: &str) {
+    let file_path = format!("assets/saves/{}.bin", world_name);
+    std::fs::remove_file(file_path).expect("Failed to delete file");
+}

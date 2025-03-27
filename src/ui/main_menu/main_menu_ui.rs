@@ -37,7 +37,7 @@ pub fn setup_main_menu(
 
     // Spawn the Load Game Window
     let load_game_window =
-        spawn_load_game_ui(&mut commands, &image_handles, (0, 6), &saved_games.saves);
+        spawn_load_game_ui(&mut commands, &image_handles, &saved_games.saves);
     commands.entity(load_game_window).set_parent(main_ui);
 
     let options_window = spawn_options_ui(&mut commands, &image_handles);

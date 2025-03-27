@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use bevy::prelude::*;
+use bevy_rapier3d::parry::either::Either::Right;
 use bevy_simple_text_input::{
     TextInput, TextInputSettings, TextInputSubmitEvent, TextInputTextColor, TextInputTextFont,
 };
@@ -138,19 +139,17 @@ fn sanitize_filename(input: &str) -> String {
 
 pub fn spawn_text_button(
     commands: &mut Commands,
-    parent: Entity,
-    weight: f32,
+    width: f32,
     height: f32,
-    button_index: usize,
     text: String,
-) {
+    menu_action: MenuAction,
+) -> Entity {
     let button_container = spawn_ui_node(
         commands,
         Node {
-            width: Val::Percent(weight),
+            width: Val::Percent(width),
             height: Val::Percent(height),
             justify_content: JustifyContent::Center,
-            justify_self: JustifySelf::Center,
             align_self: AlignSelf::Center,
             margin: UiRect::all(Val::Px(4.0)),
             ..default()
@@ -158,13 +157,10 @@ pub fn spawn_text_button(
         (
             Button,
             BackgroundColor(Color::WHITE),
-            MenuButton{
-                action: MenuAction::LoadWorld(text.clone())
-            },
+            MenuButton { action: menu_action },
         ),
     );
 
-    commands.entity(button_container).set_parent(parent);
 
     let text_node = commands
         .spawn((
@@ -184,6 +180,8 @@ pub fn spawn_text_button(
         .id();
 
     commands.entity(text_node).set_parent(button_container);
+    
+    button_container
 }
 
 /// Spawns a button with a container (acting as the border) and an image child.

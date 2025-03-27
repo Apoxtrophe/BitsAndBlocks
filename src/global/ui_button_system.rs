@@ -27,6 +27,12 @@ pub fn menu_button_system(
                         event_writer.send(GameEvent::StateChange { new_state: GameState::InGame });
                     }
                 }
+                MenuAction::DeleteWorld(name) => {
+                    event_writer.send(GameEvent::DeleteWorld { world_name: name.clone() }); // Delete the world from the file system
+                    event_writer.send(GameEvent::StateChange { new_state: GameState::Loading }); // Send the user back to loading to reload the saves 
+                    event_writer.send(GameEvent::Skip {  });
+                    event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::LoadGame }); // Send the user back to the load game screen
+                }
                 MenuAction::NewGame => {
                     event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::NewGame });
                 }
@@ -74,6 +80,7 @@ pub fn menu_button_system(
                 }
                 MenuAction::Placeholder => {
                 }
+                
                 // Handle other actions if needed.
             }
         }
@@ -92,8 +99,8 @@ pub fn menu_button_system(
 }
 fn update_bg_color(interaction: &Interaction, bg_color: &mut BackgroundColor) {
     *bg_color = match *interaction {
-        Interaction::Pressed => Color::linear_rgba(0.0, 1.0, 0.0, 1.0).into(),
-        Interaction::Hovered => Color::linear_rgba(1.0, 1.0, 1.0, 1.0).into(),
-        Interaction::None => Color::linear_rgba(0.5, 0.5, 0.5, 0.25).into(),
+        Interaction::Pressed => PRESSED_COLOR.into(),
+        Interaction::Hovered => HOVER_COLOR.into(),
+        Interaction::None => DEFAULT_COLOR.into(),
     };
 }

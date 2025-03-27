@@ -50,6 +50,7 @@ pub enum MenuAction {
     NewGame,
     LoadGame,
     LoadWorld(String),
+    DeleteWorld(String),
     Options,
     QuitGame,
     CreateWorld,

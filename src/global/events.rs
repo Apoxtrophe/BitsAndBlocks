@@ -6,6 +6,7 @@ use crate::prelude::*;
 
 #[derive(Event, Debug)]
 pub enum GameEvent {
+    Skip{}, // Event flag that skips the current iteration of the event handler
     PlaceBlock {
         voxel: Voxel,
         voxel_asset: VoxelAsset,
@@ -31,6 +32,9 @@ pub enum GameEvent {
         new_ui: GameUI,
     },
     LoadWorld {
+        world_name: String,
+    },
+    DeleteWorld {
         world_name: String,
     },
     ChangeGameState {
@@ -63,8 +67,11 @@ pub fn event_handler(
 ) {
     for event in event_reader.read() {
         let event_time = time.elapsed_secs(); // Keeps track of when events happen
-        println!("{:.4}        Event: {}", event_time, event);
+        println!("{:.4}         {}", event_time, event);
         match event {
+            GameEvent::Skip {  } => {
+                return;
+            }
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
                 let mut voxel_asset_data = voxel_asset.clone();
                 if is_cable_voxel(voxel) {
@@ -106,13 +113,13 @@ pub fn event_handler(
                 update_meshes(*updates, &mut voxel_map, &mut commands, &mut meshes, &mut voxel_query);
             }
             GameEvent::SaveWorld { world } => {
-                
                 save_world(&save_query, &world).expect("Couldn't Save");
-                return; // Saving world skips other event handling. This is to prevent world state from changing before saving.
             }
             GameEvent::LoadWorld { world_name } => {
                 load_world(world_name, &mut commands, &mut voxel_map, &mut meshes);
-                return; // Loading world skips other event handling. This is to prevent world state from changing before loading.
+            }
+            GameEvent::DeleteWorld { world_name } => {
+                delete_world(world_name);
             }
             GameEvent::StateChange { new_state } => {
                 app_state.set(*new_state);
@@ -141,6 +148,9 @@ pub fn event_handler(
 impl fmt::Display for GameEvent { 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            GameEvent::Skip {  } => {
+                write!(f, "EVENT SKIP")
+            }
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
                 write!(f, "EVENT VOXEL PLACE: {:?}  {:?}", voxel.voxel_id, voxel.position)
             }
@@ -167,6 +177,9 @@ impl fmt::Display for GameEvent {
             }
             GameEvent::ChangeGameState { new_state } => {
                 write!(f, "EVENT CHANGE GAME STATE: {:?}", new_state)
+            }
+            GameEvent::DeleteWorld { world_name } => {
+                write!(f, "EVENT DELETE WORLD: {:?}", world_name)
             }
         }
     }
