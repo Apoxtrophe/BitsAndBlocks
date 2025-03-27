@@ -34,8 +34,6 @@ pub fn loading(
         controller.enable_input = false;
     }
 
-    println!("State: Loading");
-
     let game_texture_handles = GameTextures {
         ground_texture: asset_server.load(WORLD_TEXTURE_PATH),
         cursor_texture: asset_server.load(CURSOR_TEXTURE_PATH),
@@ -92,16 +90,5 @@ fn load_saved_names() -> LoadedSaves {
             }
         }
     }
-
-    // We want exactly 4 slots; if fewer files are found, fill remaining with None.
-    /*
-    const NUM_FILES: usize = 6;
-    let mut saves = Vec::with_capacity(NUM_FILES);
-    for i in 0..NUM_FILES {
-        saves.push(file_names.get(i).cloned());
-    }
-    */
-
-
     LoadedSaves { saves: file_names }
 }

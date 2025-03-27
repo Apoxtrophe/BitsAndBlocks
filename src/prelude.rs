@@ -4,6 +4,7 @@ pub use crate::character::raycast::*;
 pub use crate::character::player_input::*;
 pub use crate::global::events::*;
 pub use crate::global::ui_visibility::*;
+pub use crate::global::ui_button_system::*;
 pub use crate::ui::main_menu::main_menu_ui::*;
 pub use crate::ui::in_game::game_ui::*;
 pub use crate::ui::in_game::inventory::*;

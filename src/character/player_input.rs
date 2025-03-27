@@ -32,7 +32,7 @@ pub fn update_cursor_and_input(
 }
 
 /// Process input events for updating cursor mode and handling player actions.
-pub fn input_event_system(
+pub fn player_input_system(
     mouse_input: Res<ButtonInput<MouseButton>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut player: ResMut<Player>,

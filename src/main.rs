@@ -99,14 +99,13 @@ fn main() {
             Update,
             (
                 autosave_system,
-                input_event_system,
+                player_input_system,
                 respawn_system,
                 raycast_system,
                 update_debug_text,
                 update_hotbar,
                 update_inventory_ui,
                 update_identifier,
-                //exit_menu_interaction,
             )
                 .run_if(in_state(GameState::InGame)),
         )

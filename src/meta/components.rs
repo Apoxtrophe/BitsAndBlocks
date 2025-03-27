@@ -59,7 +59,6 @@ pub enum MenuAction {
     Placeholder,
 }
 
-
 /// Marking component for game_save buttons
 #[derive(Component)]
 pub struct MenuButton {

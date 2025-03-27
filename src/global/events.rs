@@ -29,7 +29,13 @@ pub enum GameEvent {
     },
     ToggleUI {
         new_ui: GameUI,
-    } // Toggles the debug information on / off
+    },
+    LoadWorld {
+        world_name: String,
+    },
+    ChangeGameState {
+        new_state: GameState,
+    }
 }
 
 /// Returns true if the voxel is one of the cable types.
@@ -52,11 +58,11 @@ pub fn event_handler(
     mut fade_timer: ResMut<FadeTimer>,
     save_query: Query<(Entity, &Voxel)>,
     mut app_state: ResMut<NextState<GameState>>,
-    mut which_ui: ResMut<GameUI>,
+    mut this_ui: ResMut<GameUI>,
 ) {
     for event in event_reader.read() {
         let event_time = time.elapsed_secs(); // Keeps track of when events happen
-        println!("Event: {}", event);
+        println!("{:.4}        Event: {}", event_time, event);
         match event {
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
                 let mut voxel_asset_data = voxel_asset.clone();
@@ -103,13 +109,18 @@ pub fn event_handler(
                 save_world(&save_query, &world).expect("Couldn't Save");
                 return; // Saving world skips other event handling. This is to prevent world state from changing before saving.
             }
+            GameEvent::LoadWorld { world_name } => {
+                game_save.world_name = world_name.clone();
+                load_world(world_name, &mut commands, &mut voxel_map, &mut meshes);
+                return; // Loading world skips other event handling. This is to prevent world state from changing before loading.
+            }
             GameEvent::StateChange { new_state } => {
-               
                 app_state.set(*new_state);
             }
             GameEvent::ToggleUI { new_ui } => {
-                *which_ui = *new_ui;
+                *this_ui = *new_ui;
             }
+            _ => {println!("!!!UN-HANDLED EVENT")}
         }
     }
 
@@ -127,7 +138,7 @@ pub fn event_handler(
     }
 }
 
-impl fmt::Display for GameEvent {
+impl fmt::Display for GameEvent { 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
@@ -150,6 +161,12 @@ impl fmt::Display for GameEvent {
             }
             GameEvent::ToggleUI { new_ui } => {
                 write!(f, "EVENT TOGGLE UI: {:?}", new_ui)
+            }
+            GameEvent::LoadWorld { world_name } => {
+                write!(f, "EVENT LOAD WORLD: {:?}", world_name)
+            }
+            GameEvent::ChangeGameState { new_state } => {
+                write!(f, "EVENT CHANGE GAME STATE: {:?}", new_state)
             }
         }
     }

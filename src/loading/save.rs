@@ -12,16 +12,12 @@ pub fn save_world(
     query: &Query<(Entity, &Voxel)>,
     save_game: &SavedWorld,
 ) -> Result<(), Box<dyn Error>> {
-    println!("Made it here");
     let world_data: Vec<_> = query.iter().map(|(_, voxel)| voxel.clone()).collect();
 
     let saved_world = SavedWorld {
         world_name: save_game.world_name.clone(),
         voxels: world_data,
     };
-
-    // Serialize the saved world using bincode for a compact binary format
-    //let serialized = bincode::serialize(&saved_world)?;
     let serialized = bincode::serde::encode_to_vec(&saved_world, bincode::config::standard())?;
     let file_path = format!("assets/saves/{}.bin", save_game.world_name);
     let mut file = File::create(file_path)?;
@@ -53,7 +49,6 @@ pub fn load_world(
     mut voxel_map:&mut  ResMut<VoxelMap>,
     mut meshes: &mut ResMut<Assets<Mesh>>,
 ) {
-    println!("Loaded: {}", world_name);
     let file_path = format!("assets/saves/{}.bin", world_name);
     let file = File::open(file_path).expect("Failed to open file");
     let reader = BufReader::new(file);
