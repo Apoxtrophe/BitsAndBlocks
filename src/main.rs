@@ -1,3 +1,4 @@
+
 // ======================================================================
 // Module Declarations
 // ======================================================================
@@ -14,7 +15,6 @@ pub mod meta;
 use bevy::image::{ImageAddressMode, ImageFilterMode, ImageSamplerDescriptor};
 use bevy_atmosphere::plugin::AtmospherePlugin;
 use bevy_fps_controller::controller::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
 
 use bevy_simple_text_input::TextInputPlugin;
