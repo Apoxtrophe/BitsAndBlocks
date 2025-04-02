@@ -1,8 +1,10 @@
 
+use std::ops::Deref;
+
 use bevy::{prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
 use bevy_rapier3d::prelude::Velocity;
-use crate::{global::audio_events, prelude::*};
+use crate::prelude::*;
 
 /// Respawn entities whose vertical position falls below the threshold.
 pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
@@ -31,15 +33,16 @@ pub fn update_cursor_and_input(
     }
 }
 
+
 /// Main player input system.
 pub fn player_input_system(
     mouse_input: Res<ButtonInput<MouseButton>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut player: ResMut<Player>,
+    player: Res<Player>,
     voxel_assets: Res<VoxelMap>,
     mut window_query: Query<&mut Window>,
     mut event_writer: EventWriter<GameEvent>,
-    current_ui: ResMut<GameUI>,
+    current_ui: Res<GameUI>,
     mut place_timer: Local<Timer>,
     mut remove_timer: Local<Timer>,
     time: Res<Time>,
@@ -49,7 +52,7 @@ pub fn player_input_system(
         // Process block interactions.
         handle_block_placement(
             &mouse_input,
-            &mut player,
+            &player,
             &voxel_assets,
             &mut event_writer,
             &mut place_timer,
@@ -66,7 +69,7 @@ pub fn player_input_system(
         );
         handle_hotbar_copy(
             &mouse_input,
-            &mut player,
+            &player,
             &voxel_assets,
             &mut event_writer,
         );
@@ -81,16 +84,13 @@ pub fn player_input_system(
     } else if keyboard_input.pressed(KeyCode::Tab) || *current_ui == GameUI::ExitMenu {
         return;
     }
-
-
 }
 
 /// Handles key events for toggling UI modes.
 fn process_ui_input(
     keyboard_input: &Res<ButtonInput<KeyCode>>,
-    mut current_ui: ResMut<GameUI>,
+    current_ui: Res<GameUI>,
     event_writer: &mut EventWriter<GameEvent>,
-
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
         // Toggle Exit Menu.
@@ -100,19 +100,19 @@ fn process_ui_input(
                 show_cursor: true,
                 enable_input: false,
             });
-            *current_ui = GameUI::ExitMenu;
+            event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::ExitMenu });
         } else {
             event_writer.send(GameEvent::UpdateCursor {
                 mode: CursorGrabMode::Locked,
                 show_cursor: false,
                 enable_input: true,
             });
-            *current_ui = GameUI::Default;
+            event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Default });
         }
     } else if keyboard_input.just_pressed(KeyCode::Tab) {
         // Open Inventory, if not in the Exit Menu.
         if *current_ui != GameUI::ExitMenu {
-            *current_ui = GameUI::Inventory;
+            event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Inventory });
             event_writer.send(GameEvent::UpdateCursor {
                 mode: CursorGrabMode::Locked,
                 show_cursor: true,
@@ -122,7 +122,7 @@ fn process_ui_input(
     } else if keyboard_input.just_released(KeyCode::Tab) {
         // Close Inventory.
         if *current_ui != GameUI::ExitMenu {
-            *current_ui = GameUI::Default;
+            event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Default });
             event_writer.send(GameEvent::UpdateCursor {
                 mode: CursorGrabMode::Locked,
                 show_cursor: false,
@@ -143,7 +143,7 @@ fn process_ui_input(
 /// Handles block placement using left mouse input and a timer.
 fn handle_block_placement(
     mouse_input: &Res<ButtonInput<MouseButton>>,
-    player: &mut ResMut<Player>,
+    player: &Res<Player>,
     voxel_assets: &Res<VoxelMap>,
     event_writer: &mut EventWriter<GameEvent>,
     place_timer: &mut Timer,
@@ -183,7 +183,7 @@ fn handle_block_placement(
 /// Handles block removal using right mouse input and a timer.
 fn handle_block_removal(
     mouse_input: &Res<ButtonInput<MouseButton>>,
-    player: &ResMut<Player>,
+    player: &Res<Player>,
     event_writer: &mut EventWriter<GameEvent>,
     remove_timer: &mut Timer,
     time: &Res<Time>,
@@ -213,16 +213,19 @@ fn handle_block_removal(
 /// Handles copying voxel data to the hotbar with middle mouse input.
 fn handle_hotbar_copy(
     mouse_input: &Res<ButtonInput<MouseButton>>,
-    player: &mut ResMut<Player>,
+    player: &Res<Player>,
     voxel_assets: &Res<VoxelMap>,
-    _event_writer: &mut EventWriter<GameEvent>,
+    event_writer: &mut EventWriter<GameEvent>,
 ) {
     if mouse_input.just_pressed(MouseButton::Middle) {
         if let Some(hit_voxel) = player.hit_voxel {
             let voxel_def = voxel_assets.asset_map[&hit_voxel.voxel_id].definition.clone();
             let (set, sub) = voxel_def.voxel_id;
-            player.hotbar_selector = set;
-            player.hotbar_ids[set] = (set, sub);
+            let mut new_player = player.deref().clone();
+            new_player.hotbar_selector = set;
+            new_player.hotbar_ids[set] = (set, sub);
+
+            event_writer.send(GameEvent::ModifyPlayer { player_modified: new_player});
         }
     }
 }

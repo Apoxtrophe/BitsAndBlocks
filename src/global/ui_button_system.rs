@@ -4,9 +4,8 @@ use bevy_simple_text_input::TextInputSubmitEvent;
 
 pub fn menu_button_system(
     mut query: Query<(&Interaction, &mut BackgroundColor, &MenuButton), Changed<Interaction>>,
-    game_ui: ResMut<GameUI>,
-    mut game_save: ResMut<SavedWorld>,
-    // other resources like Commands, VoxelMap, Meshes, etc.
+    game_ui: Res<GameUI>,
+    game_save: Res<SavedWorld>,
     mut exit: EventWriter<AppExit>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     events: EventReader<TextInputSubmitEvent>, // Should probably be moved into the Event Handler
@@ -22,9 +21,9 @@ pub fn menu_button_system(
                     if name.is_empty() {
                         println!("!!!Empty file names should not be accessible!!!")
                     } else {
-                        game_save.world_name = name.clone();
+                        //game_save.world_name = name.clone();
                         event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Default });
-                        event_writer.send(GameEvent::LoadWorld { world_name: (game_save.world_name.clone()) });
+                        event_writer.send(GameEvent::LoadWorld { world_name: (name.clone()) });
                         event_writer.send(GameEvent::StateChange { new_state: GameState::InGame });
                     }
                 }
@@ -96,7 +95,7 @@ pub fn menu_button_system(
         event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::MainScreen });
     }
     
-    edit_text_listener(events, game_save);
+    edit_text_listener(events, event_writer);
 }
 fn update_color_audio(
     interaction: &Interaction, 
@@ -105,11 +104,11 @@ fn update_color_audio(
 ) {
     *bg_color = match *interaction {
         Interaction::Pressed =>{
-            audio_writer.send(AudioEvent::UI_Click {});
+            audio_writer.send(AudioEvent::UIClick {});
             PRESSED_COLOR.into()
         } 
         Interaction::Hovered => {
-            audio_writer.send(AudioEvent::UI_Hover {});
+            audio_writer.send(AudioEvent::UIHover {});
             HOVER_COLOR.into()
         }
         Interaction::None => {

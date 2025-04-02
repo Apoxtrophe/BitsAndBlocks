@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::prelude::*;
 
 
@@ -66,9 +68,11 @@ pub fn update_inventory_ui(
         &InventorySlot,
     ), (Changed<Interaction>, With<Button>)>,
     mut image_query: Query<(&InventorySlot, &mut ImageNode)>,
-    mut player: ResMut<Player>,
+    player: Res<Player>,
     voxel_map: Res<VoxelMap>,
+    mut event_writer: EventWriter<GameEvent>,
 ) {   
+    let mut old_player = player.deref().clone();
     // Update button colors and adjust hotbar selection.
     for (interaction, mut bg_color, slot) in interaction_query.iter_mut() {
         match *interaction {
@@ -77,7 +81,8 @@ pub fn update_inventory_ui(
                 let selector = player.hotbar_selector;
                 // Clamp index based on a subset size; extracted clamping logic can be a helper.
                 let index = slot.index.clamp(0, SUBSET_SIZES[selector] - 1);
-                player.hotbar_ids[selector].1 = index;
+                old_player.hotbar_ids[selector].1 = index;
+                event_writer.send(GameEvent::ModifyPlayer { player_modified: old_player.clone() });
             }
             Interaction::Hovered => {
                 *bg_color = HOVER_COLOR.into();

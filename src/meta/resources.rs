@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use crate::prelude::*;
 
-#[derive(Resource)] // I need to see how many of the fields are really necessary 
+#[derive(Resource, Debug, Clone)] // I need to see how many of the fields are really necessary 
 pub struct Player {
     pub camera_pos: Vec3,
     pub camera_dir: Vec3,
@@ -87,10 +87,4 @@ pub struct GameTextures {
     pub new_game_screen_texture: Handle<Image>,
     pub load_game_screen_texture: Handle<Image>,
     pub options_screen_texture: Handle<Image>,
-}
-
-// Fade timer resource for voxel definition text above the hotbar
-#[derive(Resource)]
-pub struct FadeTimer {
-    pub timer: Timer,
 }

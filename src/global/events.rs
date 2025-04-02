@@ -1,5 +1,5 @@
 use std::fmt;
-use bevy::{input::mouse::MouseWheel, prelude::*, utils::info, window::CursorGrabMode};
+use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
 
 use crate::prelude::*;
@@ -37,8 +37,8 @@ pub enum GameEvent {
     DeleteWorld {
         world_name: String,
     },
-    ChangeGameState {
-        new_state: GameState,
+    ModifyPlayer {
+        player_modified: Player,
     }
 }
 
@@ -59,7 +59,6 @@ pub fn event_handler(
     mut window_query: Query<&mut Window>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut voxel_query : Query<(Entity, &Voxel)>,
-    mut fade_timer: ResMut<FadeTimer>,
     save_query: Query<(Entity, &Voxel)>,
     mut app_state: ResMut<NextState<GameState>>,
     mut this_ui: ResMut<GameUI>,
@@ -113,9 +112,11 @@ pub fn event_handler(
                 update_meshes(*updates, &mut voxel_map, &mut commands, &mut meshes, &mut voxel_query);
             }
             GameEvent::SaveWorld { world } => {
+                game_save.world_name = world.world_name.clone();
                 save_world(&save_query, &world).expect("Couldn't Save");
             }
             GameEvent::LoadWorld { world_name } => {
+                game_save.world_name = world_name.clone();
                 load_world(world_name, &mut commands, &mut voxel_map, &mut meshes);
             }
             GameEvent::DeleteWorld { world_name } => {
@@ -127,6 +128,9 @@ pub fn event_handler(
             GameEvent::ToggleUI { new_ui } => {
                 *this_ui = *new_ui;
             }
+            GameEvent::ModifyPlayer { player_modified: modified } => {
+                *player = modified.clone(); 
+            }
             _ => {println!("!!!UN-HANDLED EVENT")}
         }
     }
@@ -136,11 +140,9 @@ pub fn event_handler(
         if event.y > 0.0 {
             // Decrement hotbar selector with wrap-around
             player.hotbar_selector = (player.hotbar_selector + (HOTBAR_SIZE - 1)) % HOTBAR_SIZE;
-            fade_timer.timer.reset();
         } else if event.y < 0.0 {
             // Increment hotbar selector with wrap-around
             player.hotbar_selector = (player.hotbar_selector + 1) % HOTBAR_SIZE;
-            fade_timer.timer.reset();
         }
     }
 }
@@ -175,11 +177,11 @@ impl fmt::Display for GameEvent {
             GameEvent::LoadWorld { world_name } => {
                 write!(f, "EVENT LOAD WORLD: {:?}", world_name)
             }
-            GameEvent::ChangeGameState { new_state } => {
-                write!(f, "EVENT CHANGE GAME STATE: {:?}", new_state)
-            }
             GameEvent::DeleteWorld { world_name } => {
                 write!(f, "EVENT DELETE WORLD: {:?}", world_name)
+            }
+            GameEvent::ModifyPlayer { player_modified } => {
+                write!(f, "EVENT MODIFY PLAYER")
             }
         }
     }

@@ -1,12 +1,7 @@
+use std::time::Duration;
+
 use crate::prelude::*;
 
-pub fn create_identifier_timer () -> FadeTimer{
-    // Spawn the fading text timer resource
-    let timer = FadeTimer {
-        timer: Timer::from_seconds(FADE_TIME, TimerMode::Once),
-    };
-    timer
-}
 
 pub fn spawn_identifier(
     commands: &mut Commands,
@@ -41,10 +36,11 @@ pub fn spawn_identifier(
 pub fn update_identifier(
     mut query: Query<(&mut Text, &mut TextColor, &mut VoxelIdentifierText)>,
     player: Res<Player>,
-    mut fade_timer: ResMut<FadeTimer>,
     time: Res<Time>,
+    mut previous_selected: Local<usize>,
+    mut test_timer: Local<Timer>,
 ) {
-    fade_timer.timer.tick(time.delta());
+    test_timer.tick(time.delta());
     
     // Return early if no identifier is selected.
     let descriptor = match &player.selected_descriptor {
@@ -52,11 +48,17 @@ pub fn update_identifier(
         None => return,
     };
 
-    let alpha = fade_timer.timer.fraction_remaining() + 0.25; // Remove the 0.25 if the text should fade entirely. 
-    let new_color = Color::linear_rgba(0.75, 0.75, 0.75, alpha);
+    let alpha = test_timer.fraction_remaining() + 0.25; // Remove the 0.25 if the text should fade entirely. 
+    let new_color = Color::linear_rgba(0.85, 0.85, 0.85, alpha);
     
     for (mut text, mut text_color, _) in query.iter_mut() {
         text.0 = descriptor.name.clone();
         text_color.0 = new_color;
     }
+    
+    if player.hotbar_selector != *previous_selected {
+        test_timer.reset();
+        test_timer.set_duration(Duration::from_secs(FADE_TIME as u64));
+    }
+    *previous_selected = player.hotbar_selector;
 }

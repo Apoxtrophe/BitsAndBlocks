@@ -14,8 +14,8 @@ pub struct AudioHandles {
 pub enum AudioEvent {
     Place {},
     Destroy {}, 
-    UI_Hover {}, 
-    UI_Click {},
+    UIHover {}, 
+    UIClick {},
 }
 
 fn calculate_world_volume (player: &Res<Player>) -> f32 {
@@ -40,10 +40,10 @@ pub fn audio_event_handler (
                 let volume = calculate_world_volume(&player);
                 audio.play(audio_handles.destroy.clone()).with_volume(Volume::Amplitude(volume as f64));
             }
-            AudioEvent::UI_Hover {} => {
+            AudioEvent::UIHover {} => {
                 audio.play(audio_handles.ui_hover.clone()).with_volume(UI_VOLUME);
             }
-            AudioEvent::UI_Click {} => {
+            AudioEvent::UIClick {} => {
                 audio.play(audio_handles.ui_click.clone()).with_volume(UI_VOLUME);
             }
         }

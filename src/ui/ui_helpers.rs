@@ -117,12 +117,18 @@ pub fn create_editable_text(commands: &mut Commands) -> Entity {
 
 pub fn edit_text_listener(
     mut events: EventReader<TextInputSubmitEvent>,
-    mut save_world: ResMut<SavedWorld>,
+    //mut save_world: ResMut<SavedWorld>,
+    mut event_writer: EventWriter<GameEvent>,
 ) {
     for event in events.read() {
         let unclean_name = event.value.clone();
         let sanitary_name = sanitize_filename(&unclean_name);
-        save_world.world_name = sanitary_name;
+        //save_world.world_name = sanitary_name;
+        let world = SavedWorld {
+            world_name: sanitary_name,
+            voxels: Vec::new(),
+        };
+        event_writer.send(GameEvent::SaveWorld { world: (world) });
     }
 }
 

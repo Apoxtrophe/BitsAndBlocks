@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::prelude::*;
 
-
+// This directly modifies the player!
 pub fn raycast_system(
     query: Query<&GlobalTransform, With<PlayerCamera>>,
     mut ray_cast: MeshRayCast,

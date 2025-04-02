@@ -77,9 +77,6 @@ pub fn loading(
 
     // Resource which handles which UI is currently being displayed
     commands.insert_resource(GameUI::MainScreen);
-    
-    // Create Voxel definition text timer
-    commands.insert_resource(create_identifier_timer());
 
     println!("Assets Loaded, Moving to Main Menu");
 
