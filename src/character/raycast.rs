@@ -37,13 +37,14 @@ pub fn raycast_system(
         let hit_voxel = voxel_map.voxel_map.get(&selected_voxel_pos.as_ivec3());
         let hit_point = intersection.point;
 
+        let distance = intersection.distance;
         // Adjust adjacent voxel position for ground collisions.
         if hit_point.y < 0.51 {
             adjacent_voxel_pos = (hit_point + Vec3::Y * 0.5).round();
         }
 
         // Determine if we should select the voxel (within maximum distance).
-        let selected_voxel = if intersection.distance <= RAY_MAX_DIST {
+        let selected_voxel = if intersection.distance <= MAX_RAY_DIST {
             Some(Voxel {
                 voxel_id: player.hotbar_ids[player.hotbar_selector],
                 position: adjacent_voxel_pos.as_ivec3(),
@@ -61,6 +62,7 @@ pub fn raycast_system(
         player.ray_hit_pos = hit_point;
         player.hit_voxel = hit_voxel.cloned();
         player.selected_voxel = selected_voxel;
+        player.distance = distance;
     }
 
     // Update the player's selected voxel descriptor using a more concise mapping.

@@ -9,7 +9,7 @@ pub const WORLD_TRANSFORM: Transform = Transform::from_xyz(0.0, 0.0, 0.0);
 pub const AMBIENT_LIGHT: f32 = 10000.0;
 
 // RAY CASTING
-pub const RAY_MAX_DIST: f32 = 10.0;
+pub const MAX_RAY_DIST: f32 = 10.0;
 
 // TEXTURES
 pub const VOXEL_DEFINITITION_PATH: &str = "assets/voxels/voxel_definitions.json";
@@ -43,3 +43,13 @@ pub const RESPAWN_THERESHOLD: f32 = -10.0;
 pub const TEMP_SAVE_PATH: &str = "assets/saves/temp_save.json";
 pub const AUTOSAVE_TIME: Duration = Duration::from_secs(60);
 pub const SAVE_SLOTS: usize = 4;
+
+// AUDIO
+pub const AUDIO_PLACE: &str = "audio/place.wav"; 
+pub const AUDIO_DESTROY: &str = "audio/destroy.wav";
+pub const AUDIO_UI_HOVER: &str = "audio/ui_hover.wav";
+pub const AUDIO_UI_CLICK: &str = "audio/ui_click.wav";
+pub const MIN_AUDIO_VOLUME: f32 = 0.25; 
+pub const MAX_AUDIO_VOLUME: f32 = 1.0; 
+
+pub const UI_VOLUME: f64 = 0.5; 

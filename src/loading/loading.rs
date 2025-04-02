@@ -2,6 +2,7 @@ use std::fs;
 
 use bevy::{prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
+use bevy_kira_audio::AudioSource;
 
 use crate::{prelude::*, GameState};
 
@@ -34,6 +35,19 @@ pub fn loading(
         controller.enable_input = false;
     }
 
+    // AUDIO TIME
+    let place_audio: Handle<AudioSource> = asset_server.load(AUDIO_PLACE);
+    let destroy_audio: Handle<AudioSource> = asset_server.load(AUDIO_DESTROY);
+    let ui_hover_audio: Handle<AudioSource> = asset_server.load(AUDIO_UI_HOVER);
+    let ui_click_audio: Handle<AudioSource> = asset_server.load(AUDIO_UI_CLICK);
+    commands.insert_resource(AudioHandles{
+        place: place_audio,
+        destroy: destroy_audio,
+        ui_hover: ui_hover_audio,
+        ui_click: ui_click_audio,
+    });
+    
+    
     let game_texture_handles = GameTextures {
         ground_texture: asset_server.load(WORLD_TEXTURE_PATH),
         cursor_texture: asset_server.load(CURSOR_TEXTURE_PATH),

@@ -11,10 +11,11 @@ pub fn menu_button_system(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     events: EventReader<TextInputSubmitEvent>, // Should probably be moved into the Event Handler
     mut event_writer: EventWriter<GameEvent>,
+    mut audio_writer: EventWriter<AudioEvent>,
 ) {
     for (interaction, mut bg_color, menu_button) in query.iter_mut() {
         // Update button color with our helper.
-        update_bg_color(interaction, &mut bg_color);
+        update_color_audio(interaction, &mut bg_color, &mut audio_writer);
         if let Interaction::Pressed = *interaction {
             match &menu_button.action {
                 MenuAction::LoadWorld(name) => {
@@ -97,10 +98,22 @@ pub fn menu_button_system(
     
     edit_text_listener(events, game_save);
 }
-fn update_bg_color(interaction: &Interaction, bg_color: &mut BackgroundColor) {
+fn update_color_audio(
+    interaction: &Interaction, 
+    bg_color: &mut BackgroundColor,
+    audio_writer: &mut EventWriter<AudioEvent>,
+) {
     *bg_color = match *interaction {
-        Interaction::Pressed => PRESSED_COLOR.into(),
-        Interaction::Hovered => HOVER_COLOR.into(),
-        Interaction::None => DEFAULT_COLOR.into(),
+        Interaction::Pressed =>{
+            audio_writer.send(AudioEvent::UI_Click {});
+            PRESSED_COLOR.into()
+        } 
+        Interaction::Hovered => {
+            audio_writer.send(AudioEvent::UI_Hover {});
+            HOVER_COLOR.into()
+        }
+        Interaction::None => {
+            DEFAULT_COLOR.into()
+        }
     };
 }

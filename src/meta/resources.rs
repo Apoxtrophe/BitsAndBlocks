@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use crate::prelude::*;
 
-#[derive(Resource)]
+#[derive(Resource)] // I need to see how many of the fields are really necessary 
 pub struct Player {
     pub camera_pos: Vec3,
     pub camera_dir: Vec3,
@@ -14,6 +14,7 @@ pub struct Player {
     pub selected_descriptor: Option<VoxelDefinition>,
     pub hotbar_selector: usize,
     pub hotbar_ids: Vec<(usize, usize)>,
+    pub distance: f32, 
 }
 
 impl Default for Player {
@@ -31,6 +32,7 @@ impl Default for Player {
             selected_descriptor: None,
             hotbar_selector: 0,
             hotbar_ids,
+            distance: 0.0,
         }
     }
 }

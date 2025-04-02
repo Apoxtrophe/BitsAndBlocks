@@ -2,7 +2,7 @@
 use bevy::{prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
 use bevy_rapier3d::prelude::Velocity;
-use crate::prelude::*;
+use crate::{global::audio_events, prelude::*};
 
 /// Respawn entities whose vertical position falls below the threshold.
 pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
@@ -43,6 +43,7 @@ pub fn player_input_system(
     mut place_timer: Local<Timer>,
     mut remove_timer: Local<Timer>,
     time: Res<Time>,
+    mut audio_writer: EventWriter<AudioEvent>,
 ) {
     if *current_ui == GameUI::Default{ // Make it so that you cannot place/destroy when not in default mode ui
         // Process block interactions.
@@ -53,6 +54,7 @@ pub fn player_input_system(
             &mut event_writer,
             &mut place_timer,
             &time,
+            &mut audio_writer,
         );
         handle_block_removal(
             &mouse_input,
@@ -60,6 +62,7 @@ pub fn player_input_system(
             &mut event_writer,
             &mut remove_timer,
             &time,
+            &mut audio_writer,
         );
         handle_hotbar_copy(
             &mouse_input,
@@ -70,7 +73,11 @@ pub fn player_input_system(
     }
     // UI inputs require a valid window (if applicable).
     if window_query.get_single_mut().is_ok() {
-        process_ui_input(&keyboard_input, current_ui, &mut event_writer);
+        process_ui_input(
+            &keyboard_input, 
+            current_ui, 
+            &mut event_writer, 
+        );
     } else if keyboard_input.pressed(KeyCode::Tab) || *current_ui == GameUI::ExitMenu {
         return;
     }
@@ -83,6 +90,7 @@ fn process_ui_input(
     keyboard_input: &Res<ButtonInput<KeyCode>>,
     mut current_ui: ResMut<GameUI>,
     event_writer: &mut EventWriter<GameEvent>,
+
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
         // Toggle Exit Menu.
@@ -140,11 +148,16 @@ fn handle_block_placement(
     event_writer: &mut EventWriter<GameEvent>,
     place_timer: &mut Timer,
     time: &Res<Time>,
+    audio_writer: &mut EventWriter<AudioEvent>,
 ) {
     if mouse_input.just_pressed(MouseButton::Left)
         || (mouse_input.pressed(MouseButton::Left) && place_timer.tick(time.delta()).finished())
     {
         if let Some(mut selected_voxel) = player.selected_voxel {
+
+            // Play the place sound.
+            audio_writer.send(AudioEvent::Place {});
+            
             // Update voxel direction based on the camera.
             selected_voxel.direction = cardinalize(player.camera_dir);
 
@@ -174,11 +187,16 @@ fn handle_block_removal(
     event_writer: &mut EventWriter<GameEvent>,
     remove_timer: &mut Timer,
     time: &Res<Time>,
+    audio_writer: &mut EventWriter<AudioEvent>,
 ) {
     if mouse_input.just_pressed(MouseButton::Right)
         || (mouse_input.pressed(MouseButton::Right) && remove_timer.tick(time.delta()).finished())
     {
         if let Some(hit_voxel) = player.hit_voxel {
+            
+            // Play the removal sound
+            audio_writer.send(AudioEvent::Destroy {});
+            
             event_writer.send(GameEvent::RemoveBlock {
                 position: hit_voxel.position,
             });

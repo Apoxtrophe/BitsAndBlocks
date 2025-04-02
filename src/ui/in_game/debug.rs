@@ -54,6 +54,7 @@ Camera Direction: {:.1}
 
 Ray Hit Pos: {:.1}
 Hit Voxel: {:?}
+Ray Distance: {:.1}
 
 Selected Voxel: {:?}
 Selected Definition: {:?}
@@ -68,6 +69,7 @@ Entity Count: {}",
         player.camera_dir,
         player.ray_hit_pos,
         player.hit_voxel,
+        player.distance,
         player.selected_voxel,
         player.selected_descriptor,
         player.hotbar_selector,

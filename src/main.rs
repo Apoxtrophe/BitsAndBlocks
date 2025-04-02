@@ -38,6 +38,7 @@ fn main() {
         .insert_resource(Player::default())
         // Events
         .add_event::<GameEvent>()
+        .add_event::<AudioEvent>()
         // Plugins
         .add_plugins(DefaultPlugins.set(ImagePlugin {
             default_sampler: ImageSamplerDescriptor {
@@ -52,6 +53,7 @@ fn main() {
                 ..default()
             },
         }))
+        .add_plugins(AudioPlugin)
         .add_plugins(AtmospherePlugin)
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(TextInputPlugin)
@@ -68,6 +70,7 @@ fn main() {
             update_ui_visibility,
             menu_button_system,
             event_handler,
+            audio_event_handler,
         ))
          
         // ======================================================================
