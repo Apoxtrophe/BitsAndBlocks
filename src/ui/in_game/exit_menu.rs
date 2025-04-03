@@ -1,5 +1,3 @@
-use bevy::window::CursorGrabMode;
-
 use crate::prelude::*;
 
 pub fn spawn_exit_menu(

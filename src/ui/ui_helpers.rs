@@ -1,6 +1,4 @@
 use crate::prelude::*;
-use bevy::prelude::*;
-use bevy_rapier3d::parry::either::Either::Right;
 use bevy_simple_text_input::{
     TextInput, TextInputSettings, TextInputSubmitEvent, TextInputTextColor, TextInputTextFont,
 };
@@ -163,7 +161,7 @@ pub fn spawn_text_button(
         (
             Button,
             BackgroundColor(Color::WHITE),
-            MenuButton { action: menu_action },
+            menu_action
         ),
     );
 
@@ -214,7 +212,8 @@ pub fn spawn_button(
         (
             Button,
             BackgroundColor(Color::WHITE),
-            MenuButton { action: button_identity.clone() },
+            button_identity.clone(),
+
         ),
     );
     commands.entity(button_container).set_parent(parent);

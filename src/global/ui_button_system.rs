@@ -3,7 +3,7 @@ use bevy::{prelude::*, window::CursorGrabMode};
 use bevy_simple_text_input::TextInputSubmitEvent;
 
 pub fn menu_button_system(
-    mut query: Query<(&Interaction, &mut BackgroundColor, &MenuButton), Changed<Interaction>>,
+    mut query: Query<(&Interaction, &mut BackgroundColor, &MenuAction), Changed<Interaction>>,
     game_ui: Res<GameUI>,
     game_save: Res<SavedWorld>,
     mut exit: EventWriter<AppExit>,
@@ -11,12 +11,13 @@ pub fn menu_button_system(
     events: EventReader<TextInputSubmitEvent>, // Should probably be moved into the Event Handler
     mut event_writer: EventWriter<GameEvent>,
     mut audio_writer: EventWriter<AudioEvent>,
+    player: Res<Player>,
 ) {
     for (interaction, mut bg_color, menu_button) in query.iter_mut() {
         // Update button color with our helper.
         update_color_audio(interaction, &mut bg_color, &mut audio_writer);
         if let Interaction::Pressed = *interaction {
-            match &menu_button.action {
+            match &menu_button {
                 MenuAction::LoadWorld(name) => {
                     if name.is_empty() {
                         println!("!!!Empty file names should not be accessible!!!")
@@ -78,9 +79,16 @@ pub fn menu_button_system(
                     });
                     exit.send(AppExit::Success);
                 }
-                MenuAction::Placeholder => {
+                MenuAction::Placeholder => {}
+                MenuAction::InventorySlot(slot_id) => {
+                    let selector = player.hotbar_selector;
+                    // Clamp index based on a subset size; extracted clamping logic can be a helper.
+                    let mut index: usize = *slot_id;
+                    index = index.clamp(0, SUBSET_SIZES[selector] - 1);
+                    let mut old_player = player.clone();
+                    old_player.hotbar_ids[selector].1 = index;
+                    event_writer.send(GameEvent::ModifyPlayer { player_modified: old_player.clone() });
                 }
-                
                 // Handle other actions if needed.
             }
         }

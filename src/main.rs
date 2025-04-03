@@ -125,6 +125,7 @@ pub fn setup_world(
     mut materials: ResMut<Assets<StandardMaterial>>,
     image_handles: Res<GameTextures>,
 ) {
+    
     // Spawn a directional light (Sun)
     commands
         .spawn((

@@ -20,19 +20,9 @@ pub struct GameEntity; // Entities that are removed after leaving the game state
 #[derive(Component)]
 pub struct DebugText;
 
-/// MarkingComponent for the player inventory
-#[derive(Component)]
-pub struct InventoryGrid;
-
 /// Marking Component for each hotbar slot, that contains its index 0 - 8
 #[derive(Component)]
 pub struct HotbarSlot {
-    pub index: usize,
-}
-
-/// Marking Component for the inventory slot, that contains its index 0 - 15
-#[derive(Component)]
-pub struct InventorySlot {
     pub index: usize,
 }
 
@@ -45,7 +35,7 @@ pub struct VoxelIdentifierText;
 pub struct MainMenuEntity;
 
 /// Marking component that identifies the function of each button in UI 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Component)]
 pub enum MenuAction {
     NewGame,
     LoadGame,
@@ -57,15 +47,11 @@ pub enum MenuAction {
     BackToGame, // InGame 
     MainMenu, 
     SaveAndQuit,
+    InventorySlot(usize),
     Placeholder,
 }
 
-/// Marking component for game_save buttons
-#[derive(Component)]
-pub struct MenuButton {
-    pub action: MenuAction,
-}
-
+// Marking Component for every UI window
 #[derive(Resource, Component, PartialEq, Eq, Clone, Copy, Debug)]
 pub enum GameUI {
     MainScreen,

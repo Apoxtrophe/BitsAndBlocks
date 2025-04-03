@@ -1,8 +1,7 @@
 use bevy::window::CursorGrabMode;
 use bevy_fps_controller::controller::FpsController;
-use bevy_simple_text_input::TextInputSubmitEvent;
 
-use crate::{prelude::*};
+use crate::prelude::*;
 
 pub fn setup_main_menu(
     mut commands: Commands,
