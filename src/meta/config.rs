@@ -13,7 +13,7 @@ pub const MAX_RAY_DIST: f32 = 10.0;
 
 // TEXTURES
 pub const VOXEL_DEFINITITION_PATH: &str = "assets/voxels/voxel_definitions.json";
-pub const VOXEL_TEXTURE_PATH: &str = "textures/texturepack2.png";
+pub const VOXEL_TEXTURE_PATH: &str = "textures/Sprite-0001.png";
 pub const NUM_VOXELS: usize = 31;
 pub const ROTATION_LOCKED_SETS: usize = 2;
 pub const SUBSET_SIZES: [usize; 9] = [8, 16, 1, 1, 1, 1, 1, 1, 1];
