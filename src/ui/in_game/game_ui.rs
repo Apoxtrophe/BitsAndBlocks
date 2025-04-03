@@ -5,63 +5,55 @@ pub fn setup_ui(
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     image_handles: Res<GameTextures>,
 ) {
-
-    // ###
-    // Load texture and create a texture atlas.
-    let texture_handle: Handle<Image> = image_handles.voxel_textures.clone();
-    let texture_atlas = TextureAtlasLayout::from_grid(
+    // === Create Texture Atlases ===
+    // Voxel texture atlas
+    let voxel_texture_handle = image_handles.voxel_textures.clone();
+    let voxel_atlas = TextureAtlasLayout::from_grid(
         UVec2::splat(16),
         1,
         NUM_VOXELS as u32,
         None,
         None,
     );
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    let voxel_atlas_handle = texture_atlases.add(voxel_atlas);
 
-    // Prepare the cursor texture
-    let cursor_texture_handle = image_handles.cursor_texture.clone();
-    
-    // Prepare button's texture atlas
-    let buttons_texture = image_handles.menu_button_texture.clone();
+    // Button texture atlas
+    let button_texture = image_handles.menu_button_texture.clone();
     let button_atlas = TextureAtlasLayout::from_grid(UVec2::new(144, 32), 1, 16, None, None);
     let button_atlas_handle = texture_atlases.add(button_atlas);
-    // ###
-    
-    // Create the main UI node.
-    let main_node = commands.spawn((Node {
-        width: Val::Percent(100.0),
-        height: Val::Percent(100.0),
-        padding: UiRect::all(Val::Px(30.0)),
-        column_gap: Val::Px(30.0),
-        flex_wrap: FlexWrap::Wrap,
-        justify_content: JustifyContent::Center,
-        ..default()
-    },
-    GameEntity)).id();
-    
-    // Spawn the cursor node as a child of main
-    let cursor = spawn_cursor_node(&mut commands, cursor_texture_handle);
-    commands.entity(cursor).set_parent(main_node);
-    
-    // Spawn the exit menu as a child of main
-    let exit_menu = spawn_exit_menu(&mut commands, buttons_texture.clone(), button_atlas_handle.clone());
-    commands.entity(exit_menu).set_parent(main_node);
 
-    // Spawn the hotbar
-    let hotbar = spawn_hotbar(&mut commands, &texture_handle, &texture_atlas_handle);
-    commands.entity(hotbar).set_parent(main_node);
-    
-    // Spawn the inventory
-    let inventory = spawn_inventory(&mut commands, &texture_handle, &texture_atlas_handle);
-    commands.entity(inventory).set_parent(main_node);
+    // Cursor texture handle
+    let cursor_texture_handle = image_handles.cursor_texture.clone();
 
-    // Spawn the voxel_identifier above the hotbar
-    let voxel_identifier = spawn_identifier(&mut commands);
-    commands.entity(voxel_identifier).set_parent(main_node);
-    
-    // Spawn the debug_text
-    let debug_text = spawn_debug_text(&mut commands);
-    commands.entity(debug_text).set_parent(main_node);
+    // === Create Main UI Node ===
+    let main_node = commands
+        .spawn((
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                padding: UiRect::all(Val::Px(30.0)),
+                column_gap: Val::Px(30.0),
+                flex_wrap: FlexWrap::Wrap,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            GameEntity,
+        ))
+        .id();
+
+    // === Spawn and Attach Child UI Components ===
+    let children = vec![
+        spawn_cursor_node(&mut commands, cursor_texture_handle),
+        spawn_exit_menu(&mut commands, button_texture.clone(), button_atlas_handle.clone()),
+        spawn_hotbar(&mut commands, &voxel_texture_handle, &voxel_atlas_handle),
+        spawn_inventory(&mut commands, &voxel_texture_handle, &voxel_atlas_handle),
+        spawn_identifier(&mut commands),
+        spawn_debug_text(&mut commands),
+    ];
+
+    for child in children {
+        commands.entity(child).set_parent(main_node);
+    }
 }
 
 pub fn despawn_all(
@@ -69,13 +61,15 @@ pub fn despawn_all(
     entities: Query<Entity, With<GameEntity>>,
     camera_query: Query<Entity, With<PlayerCamera>>,
 ) {
+    // Despawn all camera entities first
     for camera_entity in camera_query.iter() {
         commands.entity(camera_entity).despawn_recursive();
     }
+    // Despawn all game entities
     for entity in entities.iter() {
         if commands.get_entity(entity).is_some() {
             commands.entity(entity).despawn_recursive();
         }
     }
-    println!("Entities Despawned");
+    println!("!!! GAME ENTITIES DESPAWNED");
 }

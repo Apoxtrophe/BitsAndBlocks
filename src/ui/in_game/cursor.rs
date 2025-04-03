@@ -5,19 +5,18 @@ pub fn spawn_cursor_node(
     commands: &mut Commands,
     image: Handle<Image>,
 ) -> Entity {
+    let image_node = ImageNode::new(image)
+        .with_color(Color::linear_rgba(1.0, 1.0, 1.0, 0.8));
 
-    let image_node = ImageNode::new(image).with_color(Color::linear_rgba(1.0, 1.0, 1.0, 0.8));
-    let cursor_node = (Node {
-        width: Val::VMin(2.0),
-        height: Val::VMin(2.0),
-        position_type: PositionType::Absolute,
-        justify_self: JustifySelf::Center,
-        align_self: AlignSelf::Center,
-        ..default()
-    },
-    
-    image_node,
-    );
-
-    commands.spawn(cursor_node).id()
+    commands.spawn((
+        Node {
+            width: Val::VMin(2.0),
+            height: Val::VMin(2.0),
+            position_type: PositionType::Absolute,
+            justify_self: JustifySelf::Center,
+            align_self: AlignSelf::Center,
+            ..default()
+        },
+        image_node,
+    )).id()
 }

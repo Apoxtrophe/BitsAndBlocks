@@ -30,6 +30,7 @@ pub fn spawn_exit_menu(
     exit_menu
 }
 
+/// Bundles the components for the exit menu.
 fn exit_menu_bundle() -> impl Bundle {
     (
         Node {

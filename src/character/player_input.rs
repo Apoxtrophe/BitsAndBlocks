@@ -48,8 +48,8 @@ pub fn player_input_system(
     time: Res<Time>,
     mut audio_writer: EventWriter<AudioEvent>,
 ) {
-    if *current_ui == GameUI::Default{ // Make it so that you cannot place/destroy when not in default mode ui
-        // Process block interactions.
+    // Only allow block interactions when in Default UI mode.
+    if *current_ui == GameUI::Default {
         handle_block_placement(
             &mouse_input,
             &player,
@@ -74,13 +74,10 @@ pub fn player_input_system(
             &mut event_writer,
         );
     }
-    // UI inputs require a valid window (if applicable).
+
+    // Process UI input only if there is a valid window.
     if window_query.get_single_mut().is_ok() {
-        process_ui_input(
-            &keyboard_input, 
-            current_ui, 
-            &mut event_writer, 
-        );
+        process_ui_input(&keyboard_input, current_ui, &mut event_writer);
     } else if keyboard_input.pressed(KeyCode::Tab) || *current_ui == GameUI::ExitMenu {
         return;
     }
@@ -110,7 +107,7 @@ fn process_ui_input(
             event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Default });
         }
     } else if keyboard_input.just_pressed(KeyCode::Tab) {
-        // Open Inventory, if not in the Exit Menu.
+        // Open Inventory if not in the Exit Menu.
         if *current_ui != GameUI::ExitMenu {
             event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Inventory });
             event_writer.send(GameEvent::UpdateCursor {
@@ -150,14 +147,14 @@ fn handle_block_placement(
     time: &Res<Time>,
     audio_writer: &mut EventWriter<AudioEvent>,
 ) {
-    if mouse_input.just_pressed(MouseButton::Left)
-        || (mouse_input.pressed(MouseButton::Left) && place_timer.tick(time.delta()).finished())
-    {
+    // Check if the left mouse button was just pressed or held long enough.
+    let trigger = mouse_input.just_pressed(MouseButton::Left)
+        || (mouse_input.pressed(MouseButton::Left) && place_timer.tick(time.delta()).finished());
+    if trigger {
         if let Some(mut selected_voxel) = player.selected_voxel {
-
-            // Play the place sound.
+            // Play placement sound.
             audio_writer.send(AudioEvent::Place {});
-            
+
             // Update voxel direction based on the camera.
             selected_voxel.direction = cardinalize(player.camera_dir);
 
@@ -170,10 +167,11 @@ fn handle_block_placement(
                 voxel_asset,
             });
 
-            // Also update neighboring meshes.
+            // Update neighboring meshes.
             let mesh_updates = get_neighboring_coords(selected_voxel.position);
             event_writer.send(GameEvent::UpdateMesh { updates: mesh_updates });
 
+            // Reset the placement timer.
             place_timer.reset();
             place_timer.set_duration(PLAYER_PLACE_DELAY);
         }
@@ -189,28 +187,31 @@ fn handle_block_removal(
     time: &Res<Time>,
     audio_writer: &mut EventWriter<AudioEvent>,
 ) {
-    if mouse_input.just_pressed(MouseButton::Right)
-        || (mouse_input.pressed(MouseButton::Right) && remove_timer.tick(time.delta()).finished())
-    {
+    // Check if the right mouse button was just pressed or held long enough.
+    let trigger = mouse_input.just_pressed(MouseButton::Right)
+        || (mouse_input.pressed(MouseButton::Right) && remove_timer.tick(time.delta()).finished());
+    if trigger {
         if let Some(hit_voxel) = player.hit_voxel {
-            
-            // Play the removal sound
+            // Play removal sound.
             audio_writer.send(AudioEvent::Destroy {});
-            
+
+            // Dispatch the block removal event.
             event_writer.send(GameEvent::RemoveBlock {
                 position: hit_voxel.position,
             });
 
+            // Update neighboring meshes.
             let mesh_updates = get_neighboring_coords(hit_voxel.position);
             event_writer.send(GameEvent::UpdateMesh { updates: mesh_updates });
 
+            // Reset the removal timer.
             remove_timer.reset();
             remove_timer.set_duration(PLAYER_BREAK_DELAY);
         }
     }
 }
 
-/// Handles copying voxel data to the hotbar with middle mouse input.
+/// Handles copying voxel data to the hotbar using middle mouse input.
 fn handle_hotbar_copy(
     mouse_input: &Res<ButtonInput<MouseButton>>,
     player: &Res<Player>,
@@ -221,11 +222,15 @@ fn handle_hotbar_copy(
         if let Some(hit_voxel) = player.hit_voxel {
             let voxel_def = voxel_assets.asset_map[&hit_voxel.voxel_id].definition.clone();
             let (set, sub) = voxel_def.voxel_id;
+
+            // Clone and update the player's hotbar selection.
             let mut new_player = player.deref().clone();
             new_player.hotbar_selector = set;
             new_player.hotbar_ids[set] = (set, sub);
 
-            event_writer.send(GameEvent::ModifyPlayer { player_modified: new_player});
+            event_writer.send(GameEvent::ModifyPlayer {
+                player_modified: new_player,
+            });
         }
     }
 }

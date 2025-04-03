@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use crate::prelude::*;
+use bevy_kira_audio::AudioSource;
 
 #[derive(Resource, Debug, Clone)] // I need to see how many of the fields are really necessary 
 pub struct Player {
@@ -76,7 +77,6 @@ pub struct SavedWorld {
     pub voxels: Vec<Voxel>,
 }
 
-
 #[derive(Resource, Clone)]
 pub struct GameTextures {
     pub ground_texture: Handle<Image>,
@@ -87,4 +87,12 @@ pub struct GameTextures {
     pub new_game_screen_texture: Handle<Image>,
     pub load_game_screen_texture: Handle<Image>,
     pub options_screen_texture: Handle<Image>,
+}
+
+#[derive(Resource)]
+pub struct AudioHandles {
+    pub place: Handle<AudioSource>,
+    pub destroy: Handle<AudioSource>,
+    pub ui_hover: Handle<AudioSource>,
+    pub ui_click: Handle<AudioSource>,
 }

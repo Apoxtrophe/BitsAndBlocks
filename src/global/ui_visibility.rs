@@ -1,19 +1,20 @@
 use crate::prelude::*;
 use bevy::prelude::*;
 
-// OPERATES GLOBALLY REGARDLESS OF GAME STATE
-
+/// Updates UI element visibility globally based on the current UI state.
 pub fn update_ui_visibility(
     mut query: Query<(&GameUI, &mut Visibility)>,
     current_screen: Res<GameUI>,
 ) {
     for (ui, mut visibility) in query.iter_mut() {
-        if *ui == *current_screen {
-            *visibility = Visibility::Visible;
+        // Set visibility based on whether the UI element matches the current screen.
+        *visibility = if *ui == *current_screen {
+            Visibility::Visible
         } else {
-            *visibility = Visibility::Hidden;
-        }
-        // Special case for allowing inventory and hotbar to be shown simultaneously
+            Visibility::Hidden
+        };
+
+        // Special case: Allow the Default UI (hotbar/inventory) to be visible when in Inventory mode.
         if *ui == GameUI::Default && *current_screen == GameUI::Inventory {
             *visibility = Visibility::Visible;
         }

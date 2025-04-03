@@ -9,25 +9,25 @@ pub struct HotbarSlotStyle {
     pub border_radius: BorderRadius,
 }
 
-pub fn spawn_hotbar (
+/// Spawns the hotbar UI container and its slots.
+pub fn spawn_hotbar(
     commands: &mut Commands, 
     texture_handle: &Handle<Image>,
     texture_atlas_handle: &Handle<TextureAtlasLayout>,
 ) -> Entity {
-
-    
-    let hotbar_node = commands.spawn((Node{
-        width: Val::Percent(100.0),
-        height: Val::Percent(10.0),
-        top: Val::Percent(90.0),
-        justify_content: JustifyContent::Center,
-        align_items: AlignItems::Center,
-        column_gap: Val::Px(10.0),
-        //position_type: PositionType::Absolute,
-        ..default()
-    },
+    // Create the hotbar container node.
+    let hotbar_node = commands.spawn((
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(10.0),
+            top: Val::Percent(90.0),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            column_gap: Val::Px(10.0),
+            ..default()
+        },
     )).id();
-    
+
     // Define a common style for hotbar slots.
     let hotbar_style = HotbarSlotStyle {
         vmin_size: 10.0,
@@ -36,7 +36,8 @@ pub fn spawn_hotbar (
         blur: 20.0,
         border_radius: BorderRadius::all(Val::Percent(0.1)),
     };
-    
+
+    // Spawn and attach each hotbar slot.
     for i in 0..HOTBAR_SIZE {
         let slot = spawn_hotbar_slot(
             commands,
@@ -50,7 +51,7 @@ pub fn spawn_hotbar (
     hotbar_node
 }
 
-/// Spawns an individual hotbar slot and its child image node.
+/// Spawns an individual hotbar slot with its container and image node.
 pub fn spawn_hotbar_slot(
     commands: &mut Commands,
     index: usize,
@@ -58,42 +59,48 @@ pub fn spawn_hotbar_slot(
     texture_handle: &Handle<Image>,
     texture_atlas_handle: &Handle<TextureAtlasLayout>,
 ) -> Entity {
-    
-    let shadow_box = hotslot_bundle(
-        style.vmin_size, 
-        style.offset, 
-        style.spread, 
-        style.blur, 
-        style.border_radius
-    );
+    // Create the slot container with shadow and border.
+    let slot_entity = commands
+        .spawn(hotslot_bundle(
+            style.vmin_size, 
+            style.offset, 
+            style.spread, 
+            style.blur, 
+            style.border_radius,
+        ))
+        .id();
 
-    let shadow_box = commands.spawn(shadow_box).id();
-    
-    let image_node = commands.spawn((Node {
-        width: Val::Percent(100.0),
-        height: Val::Percent(100.0),
-        justify_content: JustifyContent::Center,
-        align_items: AlignItems::Center,
-        ..default()
-    },
-    HotbarSlot { index },
-    ImageNode::from_atlas_image(
-        texture_handle.clone(),
-        TextureAtlas::from(texture_atlas_handle.clone()),
-    ),
-    )).id();
-    
-    commands.entity(shadow_box)
-        .insert(HotbarSlot {index})
+    // Spawn the image node that displays the slot's texture.
+    let image_entity = commands
+        .spawn((
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            HotbarSlot { index },
+            ImageNode::from_atlas_image(
+                texture_handle.clone(),
+                TextureAtlas::from(texture_atlas_handle.clone()),
+            ),
+        ))
+        .id();
+
+    // Attach components to the slot container.
+    commands.entity(slot_entity)
+        .insert(HotbarSlot { index })
         .insert(Visibility::Visible)
         .insert(GameUI::Default);
-    
-    commands.entity(image_node).set_parent(shadow_box);
-    
-    shadow_box
+
+    // Set the image node as a child of the slot container.
+    commands.entity(image_entity).set_parent(slot_entity);
+
+    slot_entity
 }
 
-/// Creates the hotbar slot bundle with shadow and border.
+/// Creates the bundle for a hotbar slot with its shadow and border.
 pub fn hotslot_bundle(
     vmin_size: f32,
     offset: Vec2,
@@ -101,7 +108,7 @@ pub fn hotslot_bundle(
     blur: f32,
     border_radius: BorderRadius,
 ) -> impl Bundle {
-    (   
+    (
         Node {
             width: Val::VMin(vmin_size),
             height: Val::VMin(vmin_size),
@@ -121,14 +128,14 @@ pub fn hotslot_bundle(
     )
 }
 
-/// Updates the hotbar visuals based on player selection.
+/// Updates the hotbar visuals based on the player's current selection.
 pub fn update_hotbar(
     player: Res<Player>,
     mut image_query: Query<(&HotbarSlot, &mut ImageNode)>,
     mut border_query: Query<(&HotbarSlot, &mut BorderColor)>,
     voxel_map: Res<VoxelMap>,
 ) {
-    // Update border colors: selected slot gets highlighted.
+    // Update border colors to highlight the selected slot.
     for (slot, mut border_color) in border_query.iter_mut() {
         *border_color = if slot.index == player.hotbar_selector {
             BORDER_SELECTED.into()
@@ -137,7 +144,7 @@ pub fn update_hotbar(
         };
     }
 
-    // Update image atlas indices.
+    // Update the image atlas indices for each hotbar slot.
     for (slot, mut image_node) in image_query.iter_mut() {
         let (_, sub_index) = player.hotbar_ids[slot.index];
         if let Some(atlas) = &mut image_node.texture_atlas {

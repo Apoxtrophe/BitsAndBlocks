@@ -42,19 +42,21 @@ pub fn get_voxel_rotation_factor(voxel: &Voxel) -> f32 {
     if voxel.voxel_id.0 <= ROTATION_LOCKED_SETS { 0.0 } else { 1.0 }
 }
 
-/// Converts a 3D direction into one of four cardinal directions as an index (1 through 4).
+/// Converts a 3D direction vector into one of four cardinal direction indices (1 through 4).
+/// Returns 1 by default if the horizontal component is negligible.
 pub fn cardinalize(dir: Vec3) -> usize {
     let horizontal = Vec2::new(dir.x, dir.z);
-
+    
     if horizontal.length_squared() < 1e-6 {
         return 1;
     }
-
+    
+    // Compute the angle in radians, ensuring it's within [0, 2π).
     let mut angle = horizontal.x.atan2(horizontal.y);
     angle = angle.rem_euclid(2.0 * std::f32::consts::PI);
-
+    
+    // Divide the circle into four sectors and round to the nearest sector.
     let sector = (angle / (std::f32::consts::PI / 2.0)).round() as i32 % 4;
-
     (sector + 1) as usize
 }
 

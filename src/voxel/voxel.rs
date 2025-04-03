@@ -108,25 +108,21 @@ pub fn create_voxel_map(
 /// Checks for neighboring voxels and returns an array of booleans.
 /// Used for cable connections, and ignores some types of voxel such as structural blocks or cables that do not match. 
 pub fn count_neighbors(voxel: Voxel, voxel_map: &VoxelMap) -> [bool; 6] {
-    let mut neighbors: [bool; 6] = [false; 6];
+    let mut neighbors = [false; 6];
+    let neighbor_positions = get_neighboring_coords(voxel.position);
 
-    let positions = get_neighboring_coords(voxel.position);
+    for (i, pos) in neighbor_positions.iter().enumerate() {
+        // Only consider positions that are occupied.
+        if voxel_map.entity_map.contains_key(pos) {
+            if let Some(neighbor_voxel) = voxel_map.voxel_map.get(pos) {
+                let home_id = voxel.voxel_id;
+                let neighbor_id = neighbor_voxel.voxel_id;
 
-    for i in 0..positions.len() {
-        if voxel_map.entity_map.contains_key(&positions[i]) {
-            let Some(neighbor_voxel) = voxel_map.voxel_map.get(&positions[i]) else {
-                continue;
-            };
-
-            let home_id = voxel.voxel_id;
-            let neighbor_id = neighbor_voxel.voxel_id;
-
-            if home_id == neighbor_id || neighbor_id.0 > 1{
-                neighbors[i] = true;
-            }
-            
-            if home_id.0 == 2 && neighbor_id.0 == 1 {
-                neighbors[i] = true;
+                // Valid connection if the types match, or the neighbor's id is greater than 1,
+                // or in the special case where home is type 2 and neighbor is type 1.
+                if home_id == neighbor_id || neighbor_id.0 > 1 || (home_id.0 == 2 && neighbor_id.0 == 1) {
+                    neighbors[i] = true;
+                }
             }
         }
     }
@@ -142,12 +138,12 @@ pub fn update_voxel_cable_mesh(
     commands: &mut Commands,
 ) {
     let connections = count_neighbors(*voxel, voxel_map);
-    let image_row = voxel_map.asset_map[&voxel.voxel_id].texture_row;
-    let new_mesh_handle = meshes.add(create_cable_mesh(image_row, connections));
+    let texture_row = voxel_map.asset_map[&voxel.voxel_id].texture_row;
+    let new_mesh_handle = meshes.add(create_cable_mesh(texture_row, connections));
     commands.entity(entity).insert(Mesh3d(new_mesh_handle));
 }
 
-/// Updates meshes, especially cables which need to change mesh to connect to those around it.
+/// Updates meshes, especially cables which need to change mesh to connect to those around them.
 pub fn update_meshes(
     voxel_positions: [IVec3; 6],
     voxel_map: &VoxelMap,
@@ -155,14 +151,22 @@ pub fn update_meshes(
     meshes: &mut ResMut<Assets<Mesh>>,
     query: &mut Query<(Entity, &Voxel)>,
 ) {
-    for pos in voxel_positions.iter() {
+    for pos in &voxel_positions {
         if let Some(entity) = voxel_map.entity_map.get(pos) {
             if let Ok((entity, voxel)) = query.get_mut(*entity) {
-                // If the voxel is a cable-type, update its mesh.
-                if voxel.voxel_id.0 == 1 || voxel.voxel_id.0 == 2 {
+                // Use the helper function for cable voxel checks.
+                if is_cable_voxel(voxel) {
                     update_voxel_cable_mesh(entity, voxel, voxel_map, meshes, commands);
                 }
             }
         }
     }
+}
+
+// Define named constants for cable voxel types.
+const CABLE_TYPE_IDS: [usize; 2] = [1, 2];
+
+/// Returns true if the voxel is one of the cable types.
+pub fn is_cable_voxel(voxel: &Voxel) -> bool {
+    CABLE_TYPE_IDS.contains(&voxel.voxel_id.0)
 }

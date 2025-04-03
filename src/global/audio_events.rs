@@ -2,13 +2,6 @@ use bevy::prelude::*;
 use crate::prelude::*;
 use bevy_kira_audio::AudioSource;
 
-#[derive(Resource)]
-pub struct AudioHandles {
-    pub place: Handle<AudioSource>,
-    pub destroy: Handle<AudioSource>,
-    pub ui_hover: Handle<AudioSource>,
-    pub ui_click: Handle<AudioSource>,
-}
 
 #[derive(Event, Debug)]
 pub enum AudioEvent {
