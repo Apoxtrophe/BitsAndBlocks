@@ -52,6 +52,7 @@ pub fn load_world(
     commands: &mut Commands,
     mut voxel_map: &mut ResMut<VoxelMap>,
     mut meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
 ) {
     let file_path = format!("assets/saves/{}.bin", world_name);
     let file = File::open(&file_path).expect("Failed to open file");
@@ -69,7 +70,7 @@ pub fn load_world(
             .get(&voxel_id)
             .expect("Failed to get voxel asset")
             .clone();
-        add_voxel(commands, &mut voxel_map, voxel_asset, voxel.clone());
+        add_voxel(commands, &mut voxel_map, voxel_asset, voxel.clone(), materials);
     }
 
     // Update cable meshes for voxels identified as cables.

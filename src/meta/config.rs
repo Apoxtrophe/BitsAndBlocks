@@ -13,7 +13,7 @@ pub const MAX_RAY_DIST: f32 = 10.0;
 
 // TEXTURES
 pub const VOXEL_DEFINITITION_PATH: &str = "assets/voxels/voxel_definitions.json";
-pub const VOXEL_TEXTURE_PATH: &str = "textures/Sprite-0001.png";
+pub const VOXEL_TEXTURE_PATH: &str = "textures/texture1.png";
 pub const NUM_VOXELS: usize = 31;
 pub const ROTATION_LOCKED_SETS: usize = 2;
 pub const SUBSET_SIZES: [usize; 9] = [8, 16, 1, 1, 1, 1, 1, 1, 1];
@@ -51,5 +51,7 @@ pub const AUDIO_UI_HOVER: &str = "audio/ui_hover.wav";
 pub const AUDIO_UI_CLICK: &str = "audio/ui_click.wav";
 pub const MIN_AUDIO_VOLUME: f32 = 0.25; 
 pub const MAX_AUDIO_VOLUME: f32 = 1.0; 
-
 pub const UI_VOLUME: f64 = 0.5; 
+
+// SIMULATION
+pub const TICK_RATE: u64 = 20;

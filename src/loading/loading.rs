@@ -1,4 +1,4 @@
-use std::fs;
+use std::{collections::HashSet, fs, time::Duration};
 
 use bevy::{prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
@@ -15,6 +15,14 @@ pub fn loading(
     materials: ResMut<Assets<StandardMaterial>>,
     mut controller_query: Query<&mut FpsController>,
 ) {
+    // === Simulation Configuration ===
+    let simulation_resouce = SimulationResource {
+        tick_timer: Timer::new(Duration::from_millis(TICK_RATE), TimerMode::Repeating),
+        dirty_voxels: HashSet::new(),
+    };
+    commands.insert_resource(simulation_resouce);
+    
+    
     // === Window Configuration ===
     let mut window = window_query.single_mut();
     window.title = "Bits And Blocks".to_string();

@@ -66,12 +66,13 @@ pub fn event_handler(
     mut app_state: ResMut<NextState<GameState>>,
     mut this_ui: ResMut<GameUI>,
     mut game_save: ResMut<SavedWorld>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut simulation_resource: ResMut<SimulationResource>,
 ) {
     // Process game events.
     for event in event_reader.read() {
         let event_time = time.elapsed_secs();
-        println!("{:.4}         {:?}", event_time, event);
-
+        //println!("{:.4}         {:?}", event_time, event);
         match event {
             GameEvent::Skip { .. } => {
                 return;
@@ -90,10 +91,14 @@ pub fn event_handler(
                     voxel_asset_data.mesh_handle =
                         meshes.add(create_cable_mesh(texture_row, connections));
                 }
-                add_voxel(&mut commands, &mut voxel_map, voxel_asset_data, voxel.clone());
+                add_voxel(&mut commands, &mut voxel_map, voxel_asset_data, voxel.clone(), &mut materials);
+                let neighbors = get_neighboring_coords(voxel.position);
+                simulation_resource.dirty_voxels.extend(neighbors.iter().cloned());
             }
             GameEvent::RemoveBlock { position } => {
                 remove_voxel(&mut commands, &mut voxel_map, position.clone());
+                let neighbors = get_neighboring_coords(*position);
+                simulation_resource.dirty_voxels.extend(neighbors.iter().cloned());
             }
             GameEvent::UpdateCursor {
                 mode,
@@ -119,7 +124,7 @@ pub fn event_handler(
             }
             GameEvent::LoadWorld { world_name } => {
                 game_save.world_name = world_name.clone();
-                load_world(world_name, &mut commands, &mut voxel_map, &mut meshes);
+                load_world(world_name, &mut commands, &mut voxel_map, &mut meshes, &mut materials);
             }
             GameEvent::DeleteWorld { world_name } => {
                 delete_world(world_name);

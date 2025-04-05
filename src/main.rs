@@ -9,6 +9,7 @@ pub mod prelude;
 mod ui;
 mod voxel;
 pub mod meta;
+mod simulation;
 // ======================================================================
 // External Crate Imports
 // ======================================================================
@@ -23,6 +24,7 @@ use bevy_simple_text_input::TextInputPlugin;
 // ======================================================================
 
 pub use prelude::*;
+use simulation::logic_handler;
 
 // ======================================================================
 // Main Application Setup
@@ -39,6 +41,7 @@ fn main() {
         // Events
         .add_event::<GameEvent>()
         .add_event::<AudioEvent>()
+        .add_event::<LogicEvent>()
         // Plugins
         .add_plugins(DefaultPlugins.set(ImagePlugin {
             default_sampler: ImageSamplerDescriptor {
@@ -108,6 +111,12 @@ fn main() {
                 update_hotbar,
                 update_inventory_ui,
                 update_identifier,
+                
+                // Simulation 
+                logic_event_handler,
+                logic_system,
+
+                update_emissive,
             )
                 .run_if(in_state(GameState::InGame)),
         )
@@ -125,7 +134,6 @@ pub fn setup_world(
     mut materials: ResMut<Assets<StandardMaterial>>,
     image_handles: Res<GameTextures>,
 ) {
-    
     // Spawn a directional light (Sun)
     commands
         .spawn((

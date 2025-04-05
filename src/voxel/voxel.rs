@@ -1,4 +1,3 @@
-
 use std::{collections::HashMap, fs};
 
 use bevy::prelude::*;
@@ -8,43 +7,59 @@ use crate::prelude::*;
 
 #[derive(Bundle)]
 pub struct VoxelBundle {
-    pub voxel: Voxel,
     pub mesh: Mesh3d,
     pub material: MeshMaterial3d<StandardMaterial>,
     pub transform: Transform,
     pub collider: Collider,
 }
 
-/// Spawns a voxel entity and returns its Entity id.
-fn spawn_voxel_entity(commands: &mut Commands, voxel: Voxel, asset: &VoxelAsset) -> Entity {
+fn spawn_voxel_entity(
+    commands: &mut Commands,
+    voxel: Voxel,
+    asset: &VoxelAsset,
+    materials: &mut Assets<StandardMaterial>,
+) -> Entity {
     let transform = compute_voxel_transform(&voxel);
+
+    // Isolate the borrow from `materials.get` so it ends before calling `materials.add`.
+    let new_material_handle = {
+        // Get an immutable reference to the template material.
+        let template_material = materials
+            .get(&asset.material_handle)
+            .expect("Failed to get template material");
+        // Clone it.
+        let cloned_material = template_material.clone();
+        // Now add the cloned material to get a new handle.
+        materials.add(cloned_material)
+    };
+
     commands
         .spawn(VoxelBundle {
-            voxel,
             mesh: Mesh3d(asset.mesh_handle.clone()),
-            material: MeshMaterial3d(asset.material_handle.clone()),
+            material: MeshMaterial3d(new_material_handle),
             transform,
             collider: Collider::cuboid(
                 VOXEL_COLLIDER_SIZE,
                 VOXEL_COLLIDER_SIZE,
                 VOXEL_COLLIDER_SIZE,
             ),
-        }).insert(GameEntity)
+        })
+        .insert(GameEntity)
+        .insert(voxel)
         .id()
 }
 
-
-/// Spawns a voxel entity if one is not already present at the specified position.
 pub fn add_voxel(
     commands: &mut Commands,
     voxel_map: &mut VoxelMap,
     asset: VoxelAsset,
     voxel: Voxel,
+    materials: &mut Assets<StandardMaterial>,
 ) {
     if voxel_exists(voxel_map, voxel.position) {
         return;
     }
-    let entity = spawn_voxel_entity(commands, voxel, &asset);
+    let entity = spawn_voxel_entity(commands, voxel, &asset, materials);
     voxel_map.entity_map.insert(voxel.position, entity);
     voxel_map.voxel_map.insert(voxel.position, voxel);
 }
@@ -114,6 +129,7 @@ pub fn count_neighbors(voxel: Voxel, voxel_map: &VoxelMap) -> [bool; 6] {
     for (i, pos) in neighbor_positions.iter().enumerate() {
         // Only consider positions that are occupied.
         if voxel_map.entity_map.contains_key(pos) {
+
             if let Some(neighbor_voxel) = voxel_map.voxel_map.get(pos) {
                 let home_id = voxel.voxel_id;
                 let neighbor_id = neighbor_voxel.voxel_id;
@@ -121,7 +137,14 @@ pub fn count_neighbors(voxel: Voxel, voxel_map: &VoxelMap) -> [bool; 6] {
                 // Valid connection if the types match, or the neighbor's id is greater than 1,
                 // or in the special case where home is type 2 and neighbor is type 1.
                 if home_id == neighbor_id || neighbor_id.0 > 1 || (home_id.0 == 2 && neighbor_id.0 == 1) {
-                    neighbors[i] = true;
+
+                    let (mut input_side, mut output_side)= voxel_directions(&neighbor_voxel);
+                    println!("output side: {}", output_side);
+                    if input_side.contains(&voxel.position) || output_side == voxel.position || home_id == neighbor_id {
+                        neighbors[i] = true; 
+                    } else {
+                        neighbors[i] = false;
+                    }
                 }
             }
         }
