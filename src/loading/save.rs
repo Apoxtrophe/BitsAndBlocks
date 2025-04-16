@@ -64,7 +64,7 @@ pub fn load_world(
 
     // Add each voxel from the saved world to the voxel map.
     for voxel in &saved_world.voxels {
-        let voxel_id = voxel.voxel_id;
+        let voxel_id = voxel.t;
         let voxel_asset = voxel_map
             .asset_map
             .get(&voxel_id)
@@ -75,7 +75,18 @@ pub fn load_world(
 
     // Update cable meshes for voxels identified as cables.
     for voxel in &saved_world.voxels {
-        if is_cable_voxel(voxel) {
+        let mut is_valid = false; 
+        
+        match voxel.t {
+            VoxelType::Wire(_) => {
+                is_valid = true; 
+            }
+            VoxelType::BundledWire => {
+                is_valid = true; 
+            }
+            _ => {}
+        }
+        if is_valid {
             let voxel_pos = voxel.position;
             let entity = voxel_map
                 .entity_map

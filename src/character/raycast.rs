@@ -5,73 +5,64 @@ use crate::prelude::*;
 // This directly modifies the player!
 pub fn raycast_system(
     query: Query<&GlobalTransform, With<PlayerCamera>>,
-    mut ray_cast: MeshRayCast,
+    mut raycast: MeshRayCast,
     mut gizmos: Gizmos,
     mut player: ResMut<Player>,
     voxel_map: Res<VoxelMap>,
 ) {
-    // Retrieve the camera transform or exit early.
-    let camera_transform = if let Ok(transform) = query.get_single() {
-        transform
-    } else {
-        return;
-    };
+    // 1. Fetch camera transform or early‑out.
+    let camera_tf = if let Ok(tf) = query.get_single() { tf } else { return };
 
-    // Compute the camera's position and forward direction (-Z axis by default).
-    let camera_position = camera_transform.translation();
-    let camera_forward = camera_transform.rotation() * Vec3::new(0.0, 0.0, -1.0);
+    // 2. Build the ray.
+    let cam_pos   = camera_tf.translation();
+    let cam_fwd   = camera_tf.rotation() * Vec3::new(0.0, 0.0, -1.0);
+    let ray       = Ray3d::new(cam_pos, Dir3::new(cam_fwd).expect("bad dir"));
 
-    // Create a ray from the camera's position along its forward vector.
-    let ray = Ray3d::new(
-        camera_position,
-        Dir3::new(camera_forward).expect("Invalid camera forward direction"),
-    );
+    // 3. Cast & process first hit.
+    if let Some((_, hit)) = raycast.cast_ray(ray, &RayCastSettings::default()).first() {
+        let normal     = hit.normal.round();
+        let tri_avg    = (hit.triangle.unwrap()[0] + hit.triangle.unwrap()[1] + hit.triangle.unwrap()[2]) / 3.0;
+        let sel_pos    = (tri_avg - normal * 0.5).round();
+        let mut adj_pos= sel_pos + normal;
+        let hit_voxel  = voxel_map.voxel_map.get(&sel_pos.as_ivec3());
+        let distance   = hit.distance;
 
-    // Cast the ray and process the first intersection, if any.
-    if let Some((_, intersection)) = ray_cast.cast_ray(ray, &RayCastSettings::default()).first() {
-        let normal = intersection.normal.round();
-        let triangle = intersection.triangle.expect("Missing triangle data");
-        let avg = (triangle[0] + triangle[1] + triangle[2]) / 3.0;
-        let selected_voxel_pos = (avg - normal * 0.5).round();
-        let mut adjacent_voxel_pos = selected_voxel_pos + normal;
-        let hit_voxel = voxel_map.voxel_map.get(&selected_voxel_pos.as_ivec3());
-        let hit_point = intersection.point;
-
-        let distance = intersection.distance;
-        // Adjust adjacent voxel position for ground collisions.
-        if hit_point.y < 0.51 {
-            adjacent_voxel_pos = (hit_point + Vec3::Y * 0.5).round();
+        // ground tweak
+        if hit.point.y < 0.51 {
+            adj_pos = (hit.point + Vec3::Y * 0.5).round();
         }
-
-        // Determine if we should select the voxel (within maximum distance).
-        let selected_voxel = if intersection.distance <= MAX_RAY_DIST {
+        
+        // 3‑a. Build *potential* placement voxel.
+        let sel_voxel = if distance <= MAX_RAY_DIST {
             Some(Voxel {
-                voxel_id: player.hotbar_ids[player.hotbar_selector],
-                position: adjacent_voxel_pos.as_ivec3(),
-                direction: 0, // Updated elsewhere.
+                t: player.hotbar[player.hotbar_selector],   // ← enum
+                position: adj_pos.as_ivec3(),
+                direction: 0,                                 // set elsewhere
                 state: false,
             })
-        } else {
-            None
-        };
+        } else { None };
+        
+        // 3‑b. Debug gizmo.
+        gizmos.cuboid(
+            Transform::from_translation(adj_pos - normal),
+            Color::BLACK,
+        );
 
-        // Draw a debug cuboid at the adjusted voxel location.
-        gizmos.cuboid(Transform::from_translation(adjacent_voxel_pos - normal), Color::BLACK);
-
-        // Update player data with the ray hit details.
-        player.ray_hit_pos = hit_point;
-        player.hit_voxel = hit_voxel.cloned();
-        player.selected_voxel = selected_voxel;
-        player.distance = distance;
+        // 3‑c. Write back to Player resource.
+        player.ray_hit_pos     = hit.point;
+        player.hit_voxel       = hit_voxel.cloned();
+        player.selected_voxel  = sel_voxel;
+        player.distance        = distance;
     }
 
-    // Update the player's selected voxel descriptor using a more concise mapping.
+
+    // 4. Update descriptor based on the *enum* hot‑bar entry.
     player.selected_descriptor = voxel_map
         .asset_map
-        .get(&player.hotbar_ids[player.hotbar_selector])
-        .map(|descriptor| descriptor.clone().definition);
+        .get(&player.hotbar[player.hotbar_selector])   // ← enum key
+        .map(|asset| asset.definition.clone());
 
-    // Always update the camera position and direction.
-    player.camera_pos = camera_position;
-    player.camera_dir = camera_forward;
+    // 5. Keep camera pose in the player resource.
+    player.camera_pos = cam_pos;
+    player.camera_dir = cam_fwd;
 }

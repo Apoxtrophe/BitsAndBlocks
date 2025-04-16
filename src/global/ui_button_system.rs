@@ -81,11 +81,20 @@ pub fn menu_button_system(
                 }
                 MenuAction::InventorySlot(slot_id) => {
                     let selector = player.hotbar_selector;
-                    // Clamp the index based on the available subset size.
-                    let clamped_index = *slot_id.clamp(&0, &(SUBSET_SIZES[selector] - 1));
-                    let mut updated_player = player.clone();
-                    updated_player.hotbar_ids[selector].1 = clamped_index;
-                    event_writer.send(GameEvent::ModifyPlayer { player_modified: updated_player });
+
+                    // Clamp the requested sub‑index to what is valid for this group.
+                    let subset_len   = SUBSET_SIZES[selector];
+                    let clamped_sub  = slot_id.clamp(&0, &(subset_len - 1)).clone();
+
+                    // Build a *new* VoxelType from (group, sub‑index).
+                    if let Ok(new_kind) = VoxelType::try_from((selector, clamped_sub)) {
+                        let mut updated_player         = player.clone();
+                        updated_player.hotbar[selector] = new_kind;
+
+                        event_writer.send(GameEvent::ModifyPlayer {
+                            player_modified: updated_player,
+                        });
+                    } /* else: invalid pair – silently ignore */
                 }
             }
         }

@@ -42,15 +42,6 @@ pub enum GameEvent {
     }
 }
 
-// Define named constants for cable voxel types.
-const CABLE_TYPE_IDS: [usize; 2] = [1, 2];
-
-/// Returns true if the voxel is one of the cable types.
-fn is_cable_voxel(voxel: &Voxel) -> bool {
-    CABLE_TYPE_IDS.contains(&voxel.voxel_id.0)
-}
-
-
 pub fn event_handler(
     time: Res<Time>,
     mut event_reader: EventReader<GameEvent>,
@@ -72,19 +63,30 @@ pub fn event_handler(
     // Process game events.
     for event in event_reader.read() {
         let event_time = time.elapsed_secs();
-        //println!("{:.4}         {:?}", event_time, event);
+        println!("{:.4}         {:?}", event_time, event);
         match event {
             GameEvent::Skip { .. } => {
                 return;
             }
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
                 let mut voxel_asset_data = voxel_asset.clone();
-                if is_cable_voxel(voxel) {
+                
+                let mut is_valid = false; 
+                match voxel.t {
+                    VoxelType::Wire(_) => {
+                        is_valid = true; 
+                    }
+                    VoxelType::BundledWire => {
+                        is_valid = true;
+                    }
+                    _ => {}
+                }
+                if is_valid {
                     // Determine cable connections from neighboring voxels.
                     let connections = count_neighbors(*voxel, &voxel_map);
                     let texture_row = voxel_map
                         .asset_map
-                        .get(&voxel.voxel_id)
+                        .get(&voxel.t)
                         .map(|asset| asset.texture_row)
                         .unwrap_or_default();
 
@@ -163,7 +165,7 @@ impl fmt::Display for GameEvent {
                 write!(f, "EVENT SKIP")
             }
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
-                write!(f, "EVENT VOXEL PLACE: {:?}  {:?}", voxel.voxel_id, voxel.position)
+                write!(f, "EVENT VOXEL PLACE: {:?}  {:?}", voxel.t, voxel.position)
             }
             GameEvent::RemoveBlock { position } => {
                 write!(f, "EVENT VOXEL REMOVE: {:?}", position)

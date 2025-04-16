@@ -70,7 +70,6 @@ pub fn player_input_system(
         handle_hotbar_copy(
             &mouse_input,
             &player,
-            &voxel_assets,
             &mut event_writer,
         );
     }
@@ -159,7 +158,7 @@ fn handle_block_placement(
             selected_voxel.direction = cardinalize(player.camera_dir);
 
             // Retrieve the voxel asset.
-            let voxel_asset = voxel_assets.asset_map[&selected_voxel.voxel_id].clone();
+            let voxel_asset = voxel_assets.asset_map[&selected_voxel.t].clone();
 
             // Dispatch the block placement event.
             event_writer.send(GameEvent::PlaceBlock {
@@ -211,26 +210,26 @@ fn handle_block_removal(
     }
 }
 
-/// Handles copying voxel data to the hotbar using middle mouse input.
 fn handle_hotbar_copy(
-    mouse_input: &Res<ButtonInput<MouseButton>>,
-    player: &Res<Player>,
-    voxel_assets: &Res<VoxelMap>,
-    event_writer: &mut EventWriter<GameEvent>,
+    mouse_input:   &Res<ButtonInput<MouseButton>>,
+    player:        &Res<Player>,
+    event_writer:  &mut EventWriter<GameEvent>,
 ) {
     if mouse_input.just_pressed(MouseButton::Middle) {
         if let Some(hit_voxel) = player.hit_voxel {
-            let voxel_def = voxel_assets.asset_map[&hit_voxel.voxel_id].definition.clone();
-            let (set, sub) = voxel_def.voxel_id;
+            let kind  = hit_voxel.t;          // enum VoxelType
+            let group = kind.group();            // helper → usize (0‑n)
 
-            // Clone and update the player's hotbar selection.
+            // Clone‑and‑patch the Player resource.
             let mut new_player = player.deref().clone();
-            new_player.hotbar_selector = set;
-            new_player.hotbar_ids[set] = (set, sub);
+            if group < new_player.hotbar.len() {
+                new_player.hotbar_selector = group;
+                new_player.hotbar[group]   = kind;
 
-            event_writer.send(GameEvent::ModifyPlayer {
-                player_modified: new_player,
-            });
+                event_writer.send(GameEvent::ModifyPlayer {
+                    player_modified: new_player,
+                });
+            }
         }
     }
 }

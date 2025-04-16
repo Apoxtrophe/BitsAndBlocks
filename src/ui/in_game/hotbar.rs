@@ -128,28 +128,33 @@ pub fn hotslot_bundle(
     )
 }
 
-/// Updates the hotbar visuals based on the player's current selection.
+/// Refreshes the hot‑bar UI so that
+///   • the selected slot is outlined, and  
+///   • each slot shows the sprite that corresponds to its `VoxelType`.
 pub fn update_hotbar(
-    player: Res<Player>,
-    mut image_query: Query<(&HotbarSlot, &mut ImageNode)>,
-    mut border_query: Query<(&HotbarSlot, &mut BorderColor)>,
-    voxel_map: Res<VoxelMap>,
+    player:       Res<Player>,
+    mut img_q:    Query<(&HotbarSlot, &mut ImageNode)>,
+    mut border_q: Query<(&HotbarSlot, &mut BorderColor)>,
+    voxel_map:    Res<VoxelMap>,
 ) {
-    // Update border colors to highlight the selected slot.
-    for (slot, mut border_color) in border_query.iter_mut() {
-        *border_color = if slot.index == player.hotbar_selector {
+    /* ── 1.  highlight current slot ───────────────────────────────────────── */
+    for (slot, mut border) in border_q.iter_mut() {
+        *border = if slot.index == player.hotbar_selector {
             BORDER_SELECTED.into()
         } else {
             BORDER_UNSELECTED.into()
         };
     }
 
-    // Update the image atlas indices for each hotbar slot.
-    for (slot, mut image_node) in image_query.iter_mut() {
-        let (_, sub_index) = player.hotbar_ids[slot.index];
-        if let Some(atlas) = &mut image_node.texture_atlas {
-            let id = (slot.index, sub_index);
-            atlas.index = voxel_map.asset_map[&id].texture_row;
+    /* ── 2.  update every slot’s sprite ───────────────────────────────────── */
+    for (slot, mut img_node) in img_q.iter_mut() {
+        // Kind that lives in this slot (enum VoxelType)
+        let kind = player.hotbar[slot.index];
+
+        if let Some(atlas) = &mut img_node.texture_atlas {
+            if let Some(asset) = voxel_map.asset_map.get(&kind) {
+                atlas.index = asset.texture_row;      // ← same data, new key
+            }
         }
     }
 }

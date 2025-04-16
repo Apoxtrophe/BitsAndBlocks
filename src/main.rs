@@ -24,7 +24,6 @@ use bevy_simple_text_input::TextInputPlugin;
 // ======================================================================
 
 pub use prelude::*;
-use simulation::logic_handler;
 
 // ======================================================================
 // Main Application Setup

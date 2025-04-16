@@ -70,22 +70,29 @@ pub fn spawn_inventory(
     inventory_node
 }
 
-
-/// Updates inventory UI elements based on player interaction.
+/// Refreshes every inventory‑slot icon so it shows the sprite that corresponds
+/// to the (group, sub‑index) pair under the new `VoxelType` enum scheme.
 pub fn update_inventory_ui(
     mut image_query: Query<(&MenuAction, &mut ImageNode)>,
-    player: Res<Player>,
-    voxel_map: Res<VoxelMap>,
+    player:       Res<Player>,
+    voxel_map:    Res<VoxelMap>,
 ) {
-    // Update each inventory slot image.
-    for (menu_action, mut image_node) in image_query.iter_mut() {
+    for (menu_action, mut img_node) in image_query.iter_mut() {
         if let MenuAction::InventorySlot(slot_id) = menu_action {
-            let set = player.hotbar_selector;
-            // Determine the subset index, defaulting to 0 if the slot exceeds the subset size.
-            let subset = if *slot_id >= SUBSET_SIZES[set] { 0 } else { *slot_id };
-            if let Some(atlas) = &mut image_node.texture_atlas {
-                let id = (set, subset);
-                atlas.index = voxel_map.asset_map[&id].texture_row;
+            let group   = player.hotbar_selector;               // current hot‑bar group
+            let subset  = if *slot_id >= SUBSET_SIZES[group] {   // clamp to valid range
+                0
+            } else {
+                *slot_id
+            };
+
+            // Build the enum variant that this slot represents.
+            if let Ok(kind) = VoxelType::try_from((group, subset)) {
+                if let (Some(atlas), Some(asset)) =
+                    (&mut img_node.texture_atlas, voxel_map.asset_map.get(&kind))
+                {
+                    atlas.index = asset.texture_row;             // set sprite
+                }
             }
         }
     }

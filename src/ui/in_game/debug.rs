@@ -73,7 +73,7 @@ Entity Count: {}",
         player.selected_voxel,
         player.selected_descriptor,
         player.hotbar_selector,
-        player.hotbar_ids,
+        player.hotbar,
         entity_count,
     );
     

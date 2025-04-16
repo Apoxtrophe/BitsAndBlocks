@@ -52,7 +52,7 @@ pub fn logic_event_handler(
 pub fn logic_system(
     time: Res<Time>,
     mut simulation_resource: ResMut<SimulationResource>,
-    mut voxel_map: ResMut<VoxelMap>,
+    voxel_map: ResMut<VoxelMap>,
     mut logic_writer: EventWriter<LogicEvent>,
 ) {
     simulation_resource.tick_timer.tick(time.delta());
@@ -79,11 +79,14 @@ pub fn logic_system(
                     // Mark the output voxel as dirty for the next tick.
                     let (_, output) = voxel_directions(voxel);
                     if let Some(output_voxel) = voxel_map.voxel_map.get(&output) {
-                        if output_voxel.voxel_id.0 == 1 {
-                            logic_writer.send(LogicEvent::UpdateVoxel {
-                                position: output,
-                                new_state,
-                            });
+                        match output_voxel.t {
+                            VoxelType::Wire(_) => {
+                                logic_writer.send(LogicEvent::UpdateVoxel {
+                                    position: output,
+                                    new_state,
+                                });
+                            }
+                            _ => {}
                         }
                     }
                     next_dirty.insert(output);
@@ -110,10 +113,15 @@ fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
     // compute its output position and add it to the set.
     let mut active_outputs: HashSet<IVec3> = HashSet::new();
     for (&pos, voxel) in voxel_map.voxel_map.iter() {
-        if voxel.voxel_id.0 != 1 && voxel.state {
-            // Compute the output position using your helper.
-            let (_, output) = voxel_directions(voxel);
-            active_outputs.insert(output);
+        match voxel.t {
+            VoxelType::Wire(_) => {continue;}
+            _ => {
+                if voxel.state {
+                    // Compute the output position using your helper.
+                    let (_, output) = voxel_directions(voxel);
+                    active_outputs.insert(output);
+                }
+            }
         }
     }
 
@@ -130,12 +138,15 @@ fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
     // Iterate over all wire voxels.
     for (&pos, voxel) in voxel_map.voxel_map.iter() {
         // Only consider wires and skip if already visited.
-        if voxel.voxel_id.0 != 1 || visited.contains(&pos) {
+        if visited.contains(&pos) { continue; }
+    
+        // ► skip anything that is *not* a wire
+        if !matches!(voxel.t, VoxelType::Wire(_)) {
             continue;
         }
 
         // Record the type of wire for this connected component.
-        let wire_type = voxel.voxel_id;
+        let wire_type = voxel.t;
 
         // Found an unvisited wire voxel; perform BFS to collect the entire connected component,
         // but only consider wires of the same type.
@@ -153,7 +164,7 @@ fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
                 }
                 if let Some(neighbor_voxel) = voxel_map.voxel_map.get(&neighbor) {
                     // Only add neighbors that are wires and have the same type.
-                    if neighbor_voxel.voxel_id == wire_type {
+                    if neighbor_voxel.t == wire_type {
                         queue.push_back(neighbor);
                         visited.insert(neighbor);
                     }
@@ -189,14 +200,14 @@ fn simulate_gate(voxel: &Voxel, voxel_map: &VoxelMap) -> Option<bool> {
         .collect();
 
     // Determine the new state based on the voxel's gate type.
-    let new_state = match voxel.voxel_id {
-        (3, 0) => !input_states.get(0).copied().unwrap_or(false), // NOT gate
-        (4, 0) => input_states.get(0).copied().unwrap_or(false),    // BUFFER
-        (5, 0) => input_states.get(0).copied().unwrap_or(false) 
+    let new_state = match voxel.t {
+        VoxelType::Not(NotVariants::NotGate) => !input_states.get(0).copied().unwrap_or(false), // NOT gate
+        VoxelType::Not(NotVariants::BufferGate) => input_states.get(0).copied().unwrap_or(false),    // BUFFER
+        VoxelType::And(AndVariants::AndGate) => input_states.get(0).copied().unwrap_or(false) 
                   && input_states.get(1).copied().unwrap_or(false), // AND gate
-        (6, 0) => !(input_states.get(0).copied().unwrap_or(false) 
+        VoxelType::And(AndVariants::NandGate) => !(input_states.get(0).copied().unwrap_or(false) 
                   && input_states.get(1).copied().unwrap_or(false)),// NAND gate
-        (7, 0) => input_states.get(0).copied().unwrap_or(false)
+        VoxelType::Xor(XorVariants::XorGate) => input_states.get(0).copied().unwrap_or(false)
                   ^ input_states.get(1).copied().unwrap_or(false),  // XOR gate
         _ => return None, // Unsupported voxel type; no simulation performed.
     };
@@ -216,7 +227,9 @@ pub fn voxel_directions(voxel: &Voxel) -> (Vec<IVec3>, IVec3) {
     // Use IVec3::ZERO if available; otherwise, use IVec3::new(0, 0, 0)
     let mut output = IVec3::new(0, 0, 0);
     let position = voxel.position;
-    let is_single_input = voxel.voxel_id == (3, 0) || voxel.voxel_id == (4, 0);
+    let is_single_input = 
+        voxel.t == VoxelType::Not(NotVariants::BufferGate) 
+        || voxel.t == VoxelType::Not(NotVariants::NotGate);
 
     match voxel.direction {
         1 => {

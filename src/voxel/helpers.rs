@@ -39,7 +39,12 @@ pub fn voxel_exists(voxel_map: &VoxelMap, position: IVec3) -> bool {
 
 /// Calculates the rotation factor for a voxel.
 pub fn get_voxel_rotation_factor(voxel: &Voxel) -> f32 {
-    if voxel.voxel_id.0 <= ROTATION_LOCKED_SETS { 0.0 } else { 1.0 }
+    match voxel.t {
+        VoxelType::Structural(_) => 0.0,
+        VoxelType::Wire(_) => 0.0,
+        VoxelType::BundledWire => 0.0,
+        _ => 1.0,
+    }
 }
 
 /// Converts a 3D direction vector into one of four cardinal direction indices (1 through 4).

@@ -1,41 +1,49 @@
 [
-  { "voxel_id": [0, 0], "name": "Brown Brick"},
-  { "voxel_id": [0, 1], "name": "Red Brick"},
-  { "voxel_id": [0, 2], "name": "Sandstone Brick"},
-  { "voxel_id": [0, 3], "name": "Stone Brick"},
-  { "voxel_id": [0, 4], "name": "Red Tile"},
-  { "voxel_id": [0, 5], "name": "Green Tile"},
-  { "voxel_id": [0, 6], "name": "Red Tile"},
-  { "voxel_id": [0, 7], "name": "White Tile"},
+  { "voxel_id": { "Structural": "BrownBrick"      }, "name": "Brown Brick"   },
+  { "voxel_id": { "Structural": "RedBrick"        }, "name": "Red Brick"     },
+  { "voxel_id": { "Structural": "SandstoneBrick"  }, "name": "Sandstone Brick" },
+  { "voxel_id": { "Structural": "StoneBrick"      }, "name": "Stone Brick"   },
+  { "voxel_id": { "Structural": "RedTile"         }, "name": "Red Tile"      },
+  { "voxel_id": { "Structural": "GreenTile"       }, "name": "Green Tile"    },
+  { "voxel_id": { "Structural": "BlueTile"        }, "name": "Blue Tile"     },
+  { "voxel_id": { "Structural": "WhiteTile"       }, "name": "White Tile"    },
+
+  { "voxel_id": "BundledWire", "name": "Bundled Cable" },
   
-    { "voxel_id": [1, 0], "name": "Cable [0]"},
-    { "voxel_id": [1, 1], "name": "Cable [1]"},
-    { "voxel_id": [1, 2], "name": "Cable [2]"},    
-    { "voxel_id": [1, 3], "name": "Cable [3]"},    
-    { "voxel_id": [1, 4], "name": "Cable [4]"},    
-    { "voxel_id": [1, 5], "name": "Cable [5]"},    
-    { "voxel_id": [1, 6], "name": "Cable [6]"},
-    { "voxel_id": [1, 7], "name": "Cable [7]"},
-    { "voxel_id": [1, 8], "name": "Cable [8]"},
-    { "voxel_id": [1, 9], "name": "Cable [9]"},
-    { "voxel_id": [1, 10], "name": "Cable [10]"},
-    { "voxel_id": [1, 11], "name": "Cable [11]"},
-    { "voxel_id": [1, 12], "name": "Cable [12]"},
-    { "voxel_id": [1, 13], "name": "Cable [13]"},
-    { "voxel_id": [1, 14], "name": "Cable [14]"},
-    { "voxel_id": [1, 15], "name": "Cable [15]"},
-    
-    { "voxel_id": [2, 0], "name": "Bundled Cable"},
-    
-    { "voxel_id": [3, 0], "name": "NOT Gate"},
-    
-    { "voxel_id": [4, 0], "name": "Buffer"},
-    
-    { "voxel_id": [5, 0], "name": "AND Gate"},
-    
-    { "voxel_id": [6, 0], "name": "NAND Gate"},
-    
-    { "voxel_id": [7, 0], "name": "XOR Gate"},
-    
-    { "voxel_id": [8, 0], "name": "#WIP#"}
+  { "voxel_id": { "Wire":  0 }, "name": "Cable [0]"  },
+  { "voxel_id": { "Wire":  1 }, "name": "Cable [1]"  },
+  { "voxel_id": { "Wire":  2 }, "name": "Cable [2]"  },
+  { "voxel_id": { "Wire":  3 }, "name": "Cable [3]"  },
+  { "voxel_id": { "Wire":  4 }, "name": "Cable [4]"  },
+  { "voxel_id": { "Wire":  5 }, "name": "Cable [5]"  },
+  { "voxel_id": { "Wire":  6 }, "name": "Cable [6]"  },
+  { "voxel_id": { "Wire":  7 }, "name": "Cable [7]"  },
+  { "voxel_id": { "Wire":  8 }, "name": "Cable [8]"  },
+  { "voxel_id": { "Wire":  9 }, "name": "Cable [9]"  },
+  { "voxel_id": { "Wire": 10 }, "name": "Cable [10]" },
+  { "voxel_id": { "Wire": 11 }, "name": "Cable [11]" },
+  { "voxel_id": { "Wire": 12 }, "name": "Cable [12]" },
+  { "voxel_id": { "Wire": 13 }, "name": "Cable [13]" },
+  { "voxel_id": { "Wire": 14 }, "name": "Cable [14]" },
+  { "voxel_id": { "Wire": 15 }, "name": "Cable [15]" },
+
+  { "voxel_id": { "Not":  "NotGate"   }, "name": "NOT Gate"    },
+  { "voxel_id": { "Not":  "BufferGate"}, "name": "Buffer"      },
+  
+  { "voxel_id": { "And":  "AndGate"   }, "name": "AND Gate"    },
+  { "voxel_id": { "And":  "NandGate"  }, "name": "NAND Gate"   },
+  
+  { "voxel_id": { "Or":  "OrGate"   }, "name": "OR Gate"    },
+  { "voxel_id": { "Or":  "NorGate"  }, "name": "NOR Gate"   },
+  
+  { "voxel_id": { "Xor":  "XorGate"   }, "name": "XOR Gate"    },
+  { "voxel_id": { "Xor":  "XnorGate"   }, "name": "XNOR Gate"    },
+  
+  { "voxel_id": { "Latch":  "DFlipFlop"   }, "name": "D-Flip-Flop"    },
+  { "voxel_id": { "Latch":  "SRLatch"   }, "name": "SR Latch"    },
+  
+  { "voxel_id": { "Component": "Clock" }, "name": "Clock" },
+  { "voxel_id": { "Component": "Switch" }, "name": "Switch" },
+  { "voxel_id": { "Component": "Button" }, "name": "Button" },
+  { "voxel_id": { "Component": "Light" }, "name": "Light" }
 ]
