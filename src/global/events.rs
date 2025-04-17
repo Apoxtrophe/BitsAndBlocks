@@ -145,7 +145,6 @@ pub fn event_handler(
             }
         }
     }
-
     // Handle mouse scroll events for scrolling the hotbar.
     for event in mouse_wheel_reader.read() {
         if event.y > 0.0 {
