@@ -175,12 +175,19 @@ pub fn count_neighbors(voxel: Voxel, voxel_map: &VoxelMap) -> [bool; 6] {
                 
 
                 if is_valid {
-                    let (mut input_side, mut output_side)= voxel_directions(&neighbor_voxel);
-                    println!("output side: {}", output_side);
-                    if input_side.contains(&voxel.position) || output_side == voxel.position || home_id == neighbor_id {
-                        neighbors[i] = true; 
-                    } else {
-                        neighbors[i] = false;
+                    // For connectivity‑agnostic voxels we don’t care about facing.
+                    if matches!(home_id, VoxelType::Wire(_) | VoxelType::BundledWire)
+                        || matches!(neighbor_id, VoxelType::Wire(_) | VoxelType::BundledWire)
+                    {
+                        neighbors[i] = true;
+                        continue;            // Skip expensive directional logic
+                    }
+                
+                    // --- directional blocks below ---
+                    let (inputs, output) = voxel_directions(&neighbor_voxel);
+                
+                    if inputs.contains(&voxel.position) || output == voxel.position {
+                        neighbors[i] = true;
                     }
                 }
             }
