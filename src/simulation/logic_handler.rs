@@ -216,18 +216,16 @@ fn simulate_gate(voxel: &Voxel, voxel_map: &VoxelMap) -> Option<bool> {
         VoxelType::Or(OrVariants::NorGate) => !(input_states.get(0).copied().unwrap_or(false) 
                   || input_states.get(1).copied().unwrap_or(false)), // NOR gate
         VoxelType::Latch(LatchVariants::DFlipFlop) => {
-                let d   = input_states.get(0).copied().unwrap_or(false);
-                let clk = input_states.get(1).copied().unwrap_or(false);
+                    let d   = input_states.get(0).copied().unwrap_or(false);
+                    let clk = input_states.get(1).copied().unwrap_or(false);
         
-                if clk {
-                    // Clock high → capture D
-                    d
-                } else {
-                    // Clock low → hold previous Q
-                    voxel.state
-                }
-            }
-        _ => return None, // Unsupported voxel type; no simulation performed.
+                    if clk {
+                        d        // capture D on rising clock
+                    } else {
+                        voxel.state  // hold previous Q
+                    }
+                },   // <‑‑ comma ends this arm
+                _ => return None, // Unsupported voxel type
     };
 
     // Only return a new state if it differs from the current state.
