@@ -79,10 +79,13 @@ pub fn loading(
         materials,
         game_texture_handles.voxel_textures,
     ));
-
+    
+    // Simulation Resource
+    commands.insert_resource(Scratch::default());
+    
     // === UI Setup ===
     commands.insert_resource(GameUI::MainScreen);
-
+    
     println!("Assets Loaded, Moving to Main Menu");
 
     // Transition to the main menu state.

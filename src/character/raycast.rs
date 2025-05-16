@@ -35,7 +35,7 @@ pub fn raycast_system(
         // 3‑a. Build *potential* placement voxel.
         let sel_voxel = if distance <= MAX_RAY_DIST {
             Some(Voxel {
-                t: player.hotbar[player.hotbar_selector],   // ← enum
+                kind: player.hotbar[player.hotbar_selector],   // ← enum
                 position: adj_pos.as_ivec3(),
                 direction: 0,                                 // set elsewhere
                 state: false,

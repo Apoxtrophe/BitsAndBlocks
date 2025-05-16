@@ -39,7 +39,7 @@ pub fn voxel_exists(voxel_map: &VoxelMap, position: IVec3) -> bool {
 
 /// Calculates the rotation factor for a voxel.
 pub fn get_voxel_rotation_factor(voxel: &Voxel) -> f32 {
-    match voxel.t {
+    match voxel.kind {
         VoxelType::Structural(_) => 0.0,
         VoxelType::Wire(_) => 0.0,
         VoxelType::BundledWire => 0.0,
@@ -49,7 +49,7 @@ pub fn get_voxel_rotation_factor(voxel: &Voxel) -> f32 {
 
 /// Converts a 3D direction vector into one of four cardinal direction indices (1 through 4).
 /// Returns 1 by default if the horizontal component is negligible.
-pub fn cardinalize(dir: Vec3) -> usize {
+pub fn cardinalize(dir: Vec3) -> u8 {
     let horizontal = Vec2::new(dir.x, dir.z);
     
     if horizontal.length_squared() < 1e-6 {
@@ -62,7 +62,7 @@ pub fn cardinalize(dir: Vec3) -> usize {
     
     // Divide the circle into four sectors and round to the nearest sector.
     let sector = (angle / (std::f32::consts::PI / 2.0)).round() as i32 % 4;
-    (sector + 1) as usize
+    (sector + 1) as u8
 }
 
 

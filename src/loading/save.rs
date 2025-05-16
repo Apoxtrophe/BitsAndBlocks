@@ -64,7 +64,7 @@ pub fn load_world(
 
     // Add each voxel from the saved world to the voxel map.
     for voxel in &saved_world.voxels {
-        let voxel_id = voxel.t;
+        let voxel_id = voxel.kind;
         let voxel_asset = voxel_map
             .asset_map
             .get(&voxel_id)
@@ -77,7 +77,7 @@ pub fn load_world(
     for voxel in &saved_world.voxels {
         let mut is_valid = false; 
         
-        match voxel.t {
+        match voxel.kind {
             VoxelType::Wire(_) => {
                 is_valid = true; 
             }

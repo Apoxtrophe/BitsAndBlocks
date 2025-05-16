@@ -58,9 +58,9 @@ pub struct VoxelMap {
 
 #[derive(Component, Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct Voxel {
-    pub t: VoxelType,
+    pub kind: VoxelType,
     pub position: IVec3,
-    pub direction: usize,
+    pub direction: u8,
     pub state: bool,
 }
 

@@ -10,6 +10,13 @@ pub struct SimulationResource {
     pub dirty_voxels: HashSet<IVec3>,
 }
 
+#[derive(Default, Resource)]
+pub struct Scratch {
+    pub queue:    VecDeque<IVec3>,
+    pub visited:  bevy::utils::HashSet<IVec3>,
+    pub outputs:  bevy::utils::HashSet<IVec3>,
+}
+
 
 #[derive(Event, Debug)]
 pub enum LogicEvent {
@@ -39,7 +46,7 @@ pub fn logic_event_handler(
                         // Update only if the state is different.
                         if voxel.state != *new_state {
                             voxel.state = *new_state;
-                            println!("Changed voxel at {:?}: {:?}", position, voxel);
+                            //println!("Changed voxel at {:?}: {:?}", position, voxel);
                             commands.entity(entity).insert(voxel.clone());
                         }
                     }
@@ -79,7 +86,7 @@ pub fn logic_system(
                     // Mark the output voxel as dirty for the next tick.
                     let (_, output) = voxel_directions(voxel);
                     if let Some(output_voxel) = voxel_map.voxel_map.get(&output) {
-                        match output_voxel.t {
+                        match output_voxel.kind {
                             VoxelType::Wire(_) => {
                                 logic_writer.send(LogicEvent::UpdateVoxel {
                                     position: output,
@@ -113,7 +120,7 @@ fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
     // compute its output position and add it to the set.
     let mut active_outputs: HashSet<IVec3> = HashSet::new();
     for (&pos, voxel) in voxel_map.voxel_map.iter() {
-        match voxel.t {
+        match voxel.kind {
             VoxelType::Wire(_) => {continue;}
             _ => {
                 if voxel.state {
@@ -141,12 +148,12 @@ fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
         if visited.contains(&pos) { continue; }
     
         // ► skip anything that is *not* a wire
-        if !matches!(voxel.t, VoxelType::Wire(_)) {
+        if !matches!(voxel.kind, VoxelType::Wire(_)) {
             continue;
         }
 
         // Record the type of wire for this connected component.
-        let wire_type = voxel.t;
+        let wire_type = voxel.kind;
 
         // Found an unvisited wire voxel; perform BFS to collect the entire connected component,
         // but only consider wires of the same type.
@@ -164,7 +171,7 @@ fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
                 }
                 if let Some(neighbor_voxel) = voxel_map.voxel_map.get(&neighbor) {
                     // Only add neighbors that are wires and have the same type.
-                    if neighbor_voxel.t == wire_type {
+                    if neighbor_voxel.kind == wire_type {
                         queue.push_back(neighbor);
                         visited.insert(neighbor);
                     }
@@ -191,52 +198,42 @@ fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
     events
 }
 
-fn simulate_gate(voxel: &Voxel, voxel_map: &VoxelMap) -> Option<bool> {
-    let (inputs, _) = voxel_directions(voxel);
-    // Collect input states, defaulting to false if an input voxel isn't present.
-    let input_states: Vec<bool> = inputs
-        .iter()
-        .map(|input| voxel_map.voxel_map.get(input).map_or(false, |v| v.state))
-        .collect();
+fn simulate_gate(voxel: &Voxel, voxels: &VoxelMap) -> Option<bool> {
+    let (ins, _) = voxel_directions(voxel);
 
-    // Determine the new state based on the voxel's gate type.
-    let new_state = match voxel.t {
-        VoxelType::Not(NotVariants::NotGate) => !input_states.get(0).copied().unwrap_or(false), // NOT gate
-        VoxelType::Not(NotVariants::BufferGate) => input_states.get(0).copied().unwrap_or(false),    // BUFFER
-        VoxelType::And(AndVariants::AndGate) => input_states.get(0).copied().unwrap_or(false) 
-                  && input_states.get(1).copied().unwrap_or(false), // AND gate
-        VoxelType::And(AndVariants::NandGate) => !(input_states.get(0).copied().unwrap_or(false) 
-                  && input_states.get(1).copied().unwrap_or(false)),// NAND gate
-        VoxelType::Xor(XorVariants::XorGate) => input_states.get(0).copied().unwrap_or(false)
-                  ^ input_states.get(1).copied().unwrap_or(false),  // XOR gate
-        VoxelType::Xor(XorVariants::XnorGate) => !(input_states.get(0).copied().unwrap_or(false)
-                  ^ input_states.get(1).copied().unwrap_or(false)), // XNOR gate
-        VoxelType::Or(OrVariants::OrGate) => input_states.get(0).copied().unwrap_or(false) 
-                  || input_states.get(1).copied().unwrap_or(false), // OR gate
-        VoxelType::Or(OrVariants::NorGate) => !(input_states.get(0).copied().unwrap_or(false) 
-                  || input_states.get(1).copied().unwrap_or(false)), // NOR gate
-        VoxelType::Latch(LatchVariants::DFlipFlop) => {
-                    let d   = input_states.get(0).copied().unwrap_or(false);
-                    let clk = input_states.get(1).copied().unwrap_or(false);
-        
-                    if clk {
-                        d        // capture D on rising clock
-                    } else {
-                        voxel.state  // hold previous Q
-                    }
-                },   // <‑‑ comma ends this arm
-                _ => return None, // Unsupported voxel type
+    // tiny stack buffer (max 2 inputs in your design)
+    let mut in_state = [false; 2];
+    for (slot, &p) in ins.iter().take(2).enumerate() {
+        in_state[slot] = voxels.voxel_map.get(&p).map_or(false, |v| v.state);
+    }
+
+    use VoxelType::*;
+    let ns = match voxel.kind {
+        Not(NotVariants::NotGate)     => !in_state[0],
+        Not(NotVariants::BufferGate)  =>  in_state[0],
+        And(AndVariants::AndGate)     =>  in_state[0] &  in_state[1],
+        And(AndVariants::NandGate)    => !(in_state[0] &  in_state[1]),
+        Xor(XorVariants::XorGate)     =>  in_state[0] ^  in_state[1],
+        Xor(XorVariants::XnorGate)    => !(in_state[0] ^  in_state[1]),
+        Or (OrVariants ::OrGate)      =>  in_state[0] |  in_state[1],
+        Or (OrVariants ::NorGate)     => !(in_state[0] |  in_state[1]),
+        Latch(LatchVariants::DFlipFlop)=>{
+            let d   = in_state[0];
+            let clk = in_state[1];
+            if clk { d } else { voxel.state }
+        }
+        _ => return None,
     };
 
-    // Only return a new state if it differs from the current state.
-    if voxel.state != new_state {
-        Some(new_state)
-    } else {
-        None
-    }
+    (ns != voxel.state).then_some(ns)
 }
 
-
+// 6-way neighbourhood reused everywhere.
+const DIRS: [IVec3; 6] = [
+    IVec3::new( 1, 0, 0), IVec3::new(-1, 0, 0),
+    IVec3::new( 0, 1, 0), IVec3::new( 0,-1, 0),
+    IVec3::new( 0, 0, 1), IVec3::new( 0, 0,-1),
+];
 
 pub fn voxel_directions(voxel: &Voxel) -> (Vec<IVec3>, IVec3) {
     let mut inputs = Vec::new();
@@ -244,8 +241,8 @@ pub fn voxel_directions(voxel: &Voxel) -> (Vec<IVec3>, IVec3) {
     let mut output = IVec3::new(0, 0, 0);
     let position = voxel.position;
     let is_single_input = 
-        voxel.t == VoxelType::Not(NotVariants::BufferGate) 
-        || voxel.t == VoxelType::Not(NotVariants::NotGate);
+        voxel.kind == VoxelType::Not(NotVariants::BufferGate) 
+        || voxel.kind == VoxelType::Not(NotVariants::NotGate);
 
     match voxel.direction {
         1 => {

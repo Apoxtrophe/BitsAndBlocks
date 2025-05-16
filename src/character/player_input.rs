@@ -158,7 +158,7 @@ fn handle_block_placement(
             selected_voxel.direction = cardinalize(player.camera_dir);
 
             // Retrieve the voxel asset.
-            let voxel_asset = voxel_assets.asset_map[&selected_voxel.t].clone();
+            let voxel_asset = voxel_assets.asset_map[&selected_voxel.kind].clone();
 
             // Dispatch the block placement event.
             event_writer.send(GameEvent::PlaceBlock {
@@ -217,7 +217,7 @@ fn handle_hotbar_copy(
 ) {
     if mouse_input.just_pressed(MouseButton::Middle) {
         if let Some(hit_voxel) = player.hit_voxel {
-            let kind  = hit_voxel.t;          // enum VoxelType
+            let kind  = hit_voxel.kind;          // enum VoxelType
             let group = kind.group();            // helper → usize (0‑n)
 
             // Clone‑and‑patch the Player resource.

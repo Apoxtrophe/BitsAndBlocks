@@ -72,7 +72,7 @@ pub fn event_handler(
                 let mut voxel_asset_data = voxel_asset.clone();
                 
                 let mut is_valid = false; 
-                match voxel.t {
+                match voxel.kind {
                     VoxelType::Wire(_) => {
                         is_valid = true; 
                     }
@@ -86,14 +86,15 @@ pub fn event_handler(
                     let connections = count_neighbors(*voxel, &voxel_map);
                     let texture_row = voxel_map
                         .asset_map
-                        .get(&voxel.t)
+                        .get(&voxel.kind)
                         .map(|asset| asset.texture_row)
                         .unwrap_or_default();
 
                     voxel_asset_data.mesh_handle =
                         meshes.add(create_cable_mesh(texture_row, connections));
                 }
-                add_voxel(&mut commands, &mut voxel_map, voxel_asset_data, voxel.clone(), &mut materials);
+                let mut new_voxel = voxel.clone();
+                add_voxel(&mut commands, &mut voxel_map, voxel_asset_data, new_voxel, &mut materials);
                 let neighbors = get_neighboring_coords(voxel.position);
                 simulation_resource.dirty_voxels.extend(neighbors.iter().cloned());
             }
@@ -164,7 +165,7 @@ impl fmt::Display for GameEvent {
                 write!(f, "EVENT SKIP")
             }
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
-                write!(f, "EVENT VOXEL PLACE: {:?}  {:?}", voxel.t, voxel.position)
+                write!(f, "EVENT VOXEL PLACE: {:?}  {:?}", voxel.kind, voxel.position)
             }
             GameEvent::RemoveBlock { position } => {
                 write!(f, "EVENT VOXEL REMOVE: {:?}", position)

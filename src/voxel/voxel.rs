@@ -131,8 +131,8 @@ pub fn count_neighbors(voxel: Voxel, voxel_map: &VoxelMap) -> [bool; 6] {
         if voxel_map.entity_map.contains_key(pos) {
 
             if let Some(neighbor_voxel) = voxel_map.voxel_map.get(pos) {
-                let home_id = voxel.t;
-                let neighbor_id = neighbor_voxel.t;
+                let home_id = voxel.kind;
+                let neighbor_id = neighbor_voxel.kind;
 
                 // Valid connection if the types match, or the neighbor's id is greater than 1,
                 // or in the special case where home is type 2 and neighbor is type 1.
@@ -175,19 +175,12 @@ pub fn count_neighbors(voxel: Voxel, voxel_map: &VoxelMap) -> [bool; 6] {
                 
 
                 if is_valid {
-                    // For connectivity‑agnostic voxels we don’t care about facing.
-                    if matches!(home_id, VoxelType::Wire(_) | VoxelType::BundledWire)
-                        || matches!(neighbor_id, VoxelType::Wire(_) | VoxelType::BundledWire)
-                    {
-                        neighbors[i] = true;
-                        continue;            // Skip expensive directional logic
-                    }
-                
-                    // --- directional blocks below ---
-                    let (inputs, output) = voxel_directions(&neighbor_voxel);
-                
-                    if inputs.contains(&voxel.position) || output == voxel.position {
-                        neighbors[i] = true;
+                    let (mut input_side, mut output_side)= voxel_directions(&neighbor_voxel);
+                    println!("output side: {}", output_side);
+                    if input_side.contains(&voxel.position) || output_side == voxel.position || home_id == neighbor_id {
+                        neighbors[i] = true; 
+                    } else {
+                        neighbors[i] = false;
                     }
                 }
             }
@@ -205,7 +198,7 @@ pub fn update_voxel_cable_mesh(
     commands: &mut Commands,
 ) {
     let connections = count_neighbors(*voxel, voxel_map);
-    let texture_row = voxel_map.asset_map[&voxel.t].texture_row;
+    let texture_row = voxel_map.asset_map[&voxel.kind].texture_row;
     let new_mesh_handle = meshes.add(create_cable_mesh(texture_row, connections));
     commands.entity(entity).insert(Mesh3d(new_mesh_handle));
 }
@@ -222,7 +215,7 @@ pub fn update_meshes(
         if let Some(entity) = voxel_map.entity_map.get(pos) {
             if let Ok((entity, voxel)) = query.get_mut(*entity) {
                 // Use the helper function for cable voxel checks.
-                match voxel.t {
+                match voxel.kind {
                     VoxelType::BundledWire => {
                         update_voxel_cable_mesh(entity, voxel, voxel_map, meshes, commands);
                     }
