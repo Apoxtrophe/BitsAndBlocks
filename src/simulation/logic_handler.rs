@@ -200,13 +200,15 @@ pub fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
                     pending
                         .entry(p)
                         .and_modify(|w| {
-                            // might already contain other channel edits
                             if driven_high { w.set(ch) } else { w.clear(ch) }
+                            *w = clamp_state(&voxel_map.voxel_map[&p].kind, *w);
                         })
+                        
+                        // inside or_insert_with
                         .or_insert_with(|| {
                             let mut w = cur_word;
                             if driven_high { w.set(ch) } else { w.clear(ch) }
-                            w
+                            clamp_state(&voxel_map.voxel_map[&p].kind, w)
                         });
                 }
             }
@@ -219,6 +221,8 @@ pub fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
         .map(|(pos, ns)| LogicEvent::UpdateVoxel { position: pos, new_state: ns })
         .collect()
 }
+
+
 
 fn simulate_gate(voxel: &Voxel, voxels: &VoxelMap) -> Option<Bits16> {
     // --- gather the two logical inputs (boolean) ---------------------------
@@ -324,4 +328,17 @@ pub fn voxel_directions(voxel: &Voxel) -> (Vec<IVec3>, IVec3) {
         }
     }
     (inputs, output)
+}
+
+#[inline]
+fn clamp_state(kind: &VoxelType, mut word: Bits16) -> Bits16 {
+    match *kind {
+        VoxelType::Wire(ch) => {
+            let bit = word.get(ch);            // remember the one we want
+            word = Bits16::all_zeros();                  // 0x0000
+            if bit { word.set(ch) }            // put back only that bit
+        }
+        _ => {}                                // bundled / gates unchanged
+    }
+    word
 }
