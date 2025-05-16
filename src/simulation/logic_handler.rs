@@ -112,101 +112,112 @@ pub fn logic_system(
     }
 }
 
-fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
-    let mut events = Vec::new();
-    let mut visited: HashSet<IVec3> = HashSet::new();
+#[inline]
+fn carries(voxel: &Voxel, channel: u8) -> bool {
+    match voxel.kind {
+        VoxelType::Wire(ch)        => ch == channel,
+        VoxelType::BundledWire     => true,
+        _                          => false,
+    }
+}
 
-    // 1) collect every gate-output position → its full Bits16 word
-    let mut active_outputs: HashMap<IVec3, Bits16> = HashMap::new();
-    for (&pos, voxel) in voxel_map.voxel_map.iter() {
-        // skip wires
-        if let VoxelType::Wire(_) = voxel.kind {
-            continue;
+pub fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
+    use std::collections::{HashMap, HashSet, VecDeque};
+
+    // --- 1. gather every *gate* output word ---------------------------------
+    let mut gate_drive: HashMap<IVec3, Bits16> = HashMap::new();
+
+    for (&pos, v) in &voxel_map.voxel_map {
+        if matches!(v.kind, VoxelType::Wire(_) | VoxelType::BundledWire) {
+            continue;                       // skip cables themselves
         }
-        // if any bit is set, propagate the entire word to its output cell
-        if voxel.state.any_set() {
-            let (_, output_pos) = voxel_directions(voxel);
-            active_outputs
-                .entry(output_pos)
-                .and_modify(|word| {
-                    // OR together in case multiple gates drive the same spot
-                    *word = Bits16::new(word.value() | voxel.state.value())
-                })
-                .or_insert(voxel.state);
+        if v.state.any_set() {
+            let (_, out_pos) = voxel_directions(v);
+            gate_drive
+                .entry(out_pos)
+                .and_modify(|w| *w = Bits16::new(w.value() | v.state.value()))
+                .or_insert(v.state);
         }
     }
 
-    // 2) six-way neighbor offsets for flood-fill
-    let directions = [
-        IVec3::new(1, 0, 0),
-        IVec3::new(-1, 0, 0),
-        IVec3::new(0, 1, 0),
-        IVec3::new(0, -1, 0),
-        IVec3::new(0, 0, 1),
-        IVec3::new(0, 0, -1),
+    // --- 2. flood‑fill *per channel* ----------------------------------------
+    let dirs = [
+        IVec3::new( 1, 0, 0), IVec3::new(-1, 0, 0),
+        IVec3::new( 0, 1, 0), IVec3::new( 0,-1, 0),
+        IVec3::new( 0, 0, 1), IVec3::new( 0, 0,-1),
     ];
 
-    // 3) for each unvisited wire-voxel, flood-fill its connected component
-    for (&start_pos, start_voxel) in voxel_map.voxel_map.iter() {
-        if visited.contains(&start_pos) {
-            continue;
-        }
+    // we collect all pending edits first, so a BundledWire can get
+    // several bits flipped in the same tick without races
+    let mut pending: HashMap<IVec3, Bits16> = HashMap::new();
 
-        // only proceed if this is a Wire(channel)
-        let channel = if let VoxelType::Wire(ch) = start_voxel.kind {
-            ch
-        } else {
-            continue;
-        };
+    // channels are 1‑based in your API
+    for ch in 0..16u8 {
+        let mut visited: HashSet<IVec3> = HashSet::new();
 
-        let mut queue = VecDeque::new();
-        let mut component = Vec::new();
-        visited.insert(start_pos);
-        queue.push_back(start_pos);
+        for (&start_pos, start_v) in &voxel_map.voxel_map {
+            if visited.contains(&start_pos) || !carries(start_v, ch) {
+                continue;
+            }
 
-        while let Some(cur) = queue.pop_front() {
-            component.push(cur);
-            for &d in &directions {
-                let nb = cur + d;
-                if visited.contains(&nb) {
-                    continue;
-                }
-                if let Some(nb_voxel) = voxel_map.voxel_map.get(&nb) {
-                    if nb_voxel.kind == VoxelType::Wire(channel) {
-                        visited.insert(nb);
-                        queue.push_back(nb);
+            // ----- breadth‑first search over carriers of *this* channel -----
+            let mut queue     = VecDeque::new();
+            let mut component = Vec::new();
+
+            visited.insert(start_pos);
+            queue.push_back(start_pos);
+
+            while let Some(cur) = queue.pop_front() {
+                component.push(cur);
+
+                for &d in &dirs {
+                    let nb = cur + d;
+                    if visited.contains(&nb) {
+                        continue;
+                    }
+                    if let Some(nb_voxel) = voxel_map.voxel_map.get(&nb) {
+                        if carries(nb_voxel, ch) {
+                            visited.insert(nb);
+                            queue.push_back(nb);
+                        }
                     }
                 }
             }
-        }
 
-        // 4) decide whether *this* channel should be on anywhere in the component
-        let desired_on = component.iter().any(|&p| {
-            active_outputs
-                .get(&p)
-                .map_or(false, |word| word.get(channel))
-        });
+            // ----- does anything in this blob *want* the bit on? ------------
+            let driven_high = component.iter().any(|&p| {
+                gate_drive
+                    .get(&p)
+                    .map_or(false, |w| w.get(ch))
+            });
 
-        // 5) for each wire-voxel in that component, if its bit differs, schedule an update
-        for &p in &component {
-            if let Some(wire_voxel) = voxel_map.voxel_map.get(&p) {
-                let currently_on = wire_voxel.state.get(channel);
-                if currently_on != desired_on {
-                    // build the new 16-bit word: only this channel bit
-                    let mut new_word = Bits16::all_zeros();
-                    if desired_on {
-                        new_word.set(channel);
-                    }
-                    events.push(LogicEvent::UpdateVoxel {
-                        position: p,
-                        new_state: new_word,
-                    });
+            // ----- schedule updates where the bit differs -------------------
+            for &p in &component {
+                let cur_word = voxel_map.voxel_map[&p].state;
+                let bit_is_on = cur_word.get(ch);
+
+                if bit_is_on != driven_high {
+                    pending
+                        .entry(p)
+                        .and_modify(|w| {
+                            // might already contain other channel edits
+                            if driven_high { w.set(ch) } else { w.clear(ch) }
+                        })
+                        .or_insert_with(|| {
+                            let mut w = cur_word;
+                            if driven_high { w.set(ch) } else { w.clear(ch) }
+                            w
+                        });
                 }
             }
         }
     }
 
-    events
+    // --- 3. convert the accumulated edits into LogicEvents ------------------
+    pending
+        .into_iter()
+        .map(|(pos, ns)| LogicEvent::UpdateVoxel { position: pos, new_state: ns })
+        .collect()
 }
 
 fn simulate_gate(voxel: &Voxel, voxels: &VoxelMap) -> Option<Bits16> {
