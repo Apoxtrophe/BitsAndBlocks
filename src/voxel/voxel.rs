@@ -120,74 +120,49 @@ pub fn create_voxel_map(
     voxel_map
 }
 
-/// Checks for neighboring voxels and returns an array of booleans.
-/// Used for cable connections, and ignores some types of voxel such as structural blocks or cables that do not match. 
+#[inline]
+fn cables_compatible(a: &VoxelType, b: &VoxelType) -> bool {
+    use VoxelType::*;
+    match (a, b) {
+        // ─────────────────────────────────────────────────────── wire ↔ wire
+        (Wire(ch1), Wire(ch2))           => ch1 == ch2,     // same channel only
+        // ─────────────────────────────────────────────── wire ↔ bundled‑wire
+        (Wire(_), BundledWire)
+      | (BundledWire, Wire(_))
+      | (BundledWire, BundledWire)       => true,
+        // everything else is “not cable‑cable”
+        _                                 => false,
+    }
+}
+
+/// [+X, −X, +Y, −Y, +Z, −Z]
 pub fn count_neighbors(voxel: Voxel, voxel_map: &VoxelMap) -> [bool; 6] {
     let mut neighbors = [false; 6];
-    let neighbor_positions = get_neighboring_coords(voxel.position);
 
-    for (i, pos) in neighbor_positions.iter().enumerate() {
-        // Only consider positions that are occupied.
-        if voxel_map.entity_map.contains_key(pos) {
+    for (i, pos) in get_neighboring_coords(voxel.position).iter().enumerate() {
+        // Skip empty space
+        let Some(neigh_voxel) = voxel_map.voxel_map.get(pos) else { continue };
 
-            if let Some(neighbor_voxel) = voxel_map.voxel_map.get(pos) {
-                let home_id = voxel.kind;
-                let neighbor_id = neighbor_voxel.kind;
-
-                // Valid connection if the types match, or the neighbor's id is greater than 1,
-                // or in the special case where home is type 2 and neighbor is type 1.
-                
-                let mut is_valid = false; 
-                
-                if home_id == neighbor_id {
-                    is_valid = true;
-                }
-                
-                match home_id {
-                    VoxelType::Wire(x) => {
-                        match neighbor_id {
-                            VoxelType::Structural(x) => {
-                            }
-                            VoxelType::Wire(y) => {
-                            }
-                            VoxelType::BundledWire => {
-                                is_valid = true;
-                            }
-                            _ => {
-                                is_valid = true;
-                            }
-                        }
-                    }
-                    VoxelType::BundledWire => {
-                        match neighbor_id {
-                            VoxelType::Wire(_) => {
-                                is_valid = true;
-                            }
-                            VoxelType::BundledWire => {
-                                is_valid = true;
-                            }
-                            _ => {}
-                        }
-                    }
-                    _ => {}
-                }
-                
-                
-
-                if is_valid {
-                    let (mut input_side, mut output_side)= voxel_directions(&neighbor_voxel);
-                    println!("output side: {}", output_side);
-                    if input_side.contains(&voxel.position) || output_side == voxel.position || home_id == neighbor_id {
-                        neighbors[i] = true; 
-                    } else {
-                        neighbors[i] = false;
-                    }
-                }
+        // ── 1. direct cable‑to‑cable decision ───────────────────────────────
+        if matches!(voxel.kind, VoxelType::Wire(_) | VoxelType::BundledWire)
+        && matches!(neigh_voxel.kind, VoxelType::Wire(_) | VoxelType::BundledWire)
+        {
+            if cables_compatible(&voxel.kind, &neigh_voxel.kind) {
+                neighbors[i] = true;      // compatible channels or bundled
             }
+            continue;                     // **never fall through** for cables
+        }
+
+        // ── 2. Gate ↔ Cable / Gate ↔ Gate  (I/O aware) ─────────────────────
+        let (inputs, output) = voxel_directions(neigh_voxel);
+        if inputs.contains(&voxel.position) || output == voxel.position {
+            neighbors[i] = true;
         }
     }
+
     neighbors
 }
+
 
 /// Updates the cable mesh for a given voxel entity based on its neighbor connections.
 pub fn update_voxel_cable_mesh(
