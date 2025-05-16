@@ -38,7 +38,7 @@ pub fn raycast_system(
                 kind: player.hotbar[player.hotbar_selector],   // ← enum
                 position: adj_pos.as_ivec3(),
                 direction: 0,                                 // set elsewhere
-                state: false,
+                state: Bits16::all_zeros(),
             })
         } else { None };
         

@@ -49,6 +49,49 @@ impl Default for Player {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Bits16(u16);
+
+impl Bits16 {
+    /* ---------- construction ---------- */
+    pub const fn new(value: u16) -> Self { Self(value) }
+    pub const fn all_zeros() -> Self { Self(0) }
+    pub const fn all_ones()  -> Self { Self(0xFFFF) }
+
+    /* ---------- queries ---------- */
+    pub fn get(self, index: u8) -> bool {
+        assert!(index < 16, "bit index out of range 0–15");
+        (self.0 >> index) & 1 == 1
+    }
+
+    /* ---------- mutations ---------- */
+    pub fn set   (&mut self, index: u8) { self.0 |=  1 << index; }
+    pub fn clear (&mut self, index: u8) { self.0 &= !(1 << index); }
+    pub fn toggle(&mut self, index: u8) { self.0 ^=  1 << index; }
+
+    /// Fill every bit with `value` (`true` ⇒ 1, `false` ⇒ 0).
+    pub fn fill(&mut self, value: bool) { self.0 = if value { 0xFFFF } else { 0 }; }
+
+    /* ---------- access to raw value ---------- */
+    pub const fn value(self) -> u16 { self.0 }
+    
+    #[inline(always)]
+    pub const fn any_set(self) -> bool {
+        self.0 != 0
+    }
+
+    /// `true` if **all** bits are clear (== 0).
+    #[inline(always)]
+    pub const fn is_all_zero(self) -> bool {
+        self.0 == 0
+    }
+}
+
+#[inline]
+pub fn bitword(b: bool) -> Bits16 {
+    if b { Bits16::new(0xFFFF) } else { Bits16::all_zeros() }
+}
+
 #[derive(Resource, Clone)]
 pub struct VoxelMap {
     pub entity_map: HashMap<IVec3, Entity>, // Entity ids by location
@@ -61,7 +104,7 @@ pub struct Voxel {
     pub kind: VoxelType,
     pub position: IVec3,
     pub direction: u8,
-    pub state: bool,
+    pub state: Bits16,
 }
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

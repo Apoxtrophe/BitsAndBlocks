@@ -1,6 +1,6 @@
 use std::collections::{HashSet, VecDeque};
 
-use bevy::reflect::{Map, Set};
+use bevy::{reflect::{Map, Set}, utils::HashMap};
 
 use crate::prelude::*; 
 
@@ -23,7 +23,7 @@ pub enum LogicEvent {
     Skip, // Event flag that skips the current iteration of the event handler
     UpdateVoxel {
         position: IVec3,
-        new_state: bool,
+        new_state: Bits16,
     },
 }
 
@@ -116,23 +116,27 @@ fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
     let mut events = Vec::new();
     let mut visited: HashSet<IVec3> = HashSet::new();
 
-    // Build a set of active outputs: for each non-wire voxel (e.g. logic gate) that is on,
-    // compute its output position and add it to the set.
-    let mut active_outputs: HashSet<IVec3> = HashSet::new();
+    // 1) collect every gate-output position → its full Bits16 word
+    let mut active_outputs: HashMap<IVec3, Bits16> = HashMap::new();
     for (&pos, voxel) in voxel_map.voxel_map.iter() {
-        match voxel.kind {
-            VoxelType::Wire(_) => {continue;}
-            _ => {
-                if voxel.state {
-                    // Compute the output position using your helper.
-                    let (_, output) = voxel_directions(voxel);
-                    active_outputs.insert(output);
-                }
-            }
+        // skip wires
+        if let VoxelType::Wire(_) = voxel.kind {
+            continue;
+        }
+        // if any bit is set, propagate the entire word to its output cell
+        if voxel.state.any_set() {
+            let (_, output_pos) = voxel_directions(voxel);
+            active_outputs
+                .entry(output_pos)
+                .and_modify(|word| {
+                    // OR together in case multiple gates drive the same spot
+                    *word = Bits16::new(word.value() | voxel.state.value())
+                })
+                .or_insert(voxel.state);
         }
     }
 
-    // Directions for the 6 adjacent neighbors.
+    // 2) six-way neighbor offsets for flood-fill
     let directions = [
         IVec3::new(1, 0, 0),
         IVec3::new(-1, 0, 0),
@@ -142,98 +146,114 @@ fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
         IVec3::new(0, 0, -1),
     ];
 
-    // Iterate over all wire voxels.
-    for (&pos, voxel) in voxel_map.voxel_map.iter() {
-        // Only consider wires and skip if already visited.
-        if visited.contains(&pos) { continue; }
-    
-        // ► skip anything that is *not* a wire
-        if !matches!(voxel.kind, VoxelType::Wire(_)) {
+    // 3) for each unvisited wire-voxel, flood-fill its connected component
+    for (&start_pos, start_voxel) in voxel_map.voxel_map.iter() {
+        if visited.contains(&start_pos) {
             continue;
         }
 
-        // Record the type of wire for this connected component.
-        let wire_type = voxel.kind;
+        // only proceed if this is a Wire(channel)
+        let channel = if let VoxelType::Wire(ch) = start_voxel.kind {
+            ch
+        } else {
+            continue;
+        };
 
-        // Found an unvisited wire voxel; perform BFS to collect the entire connected component,
-        // but only consider wires of the same type.
-        let mut component = Vec::new();
         let mut queue = VecDeque::new();
-        queue.push_back(pos);
-        visited.insert(pos);
+        let mut component = Vec::new();
+        visited.insert(start_pos);
+        queue.push_back(start_pos);
 
-        while let Some(current) = queue.pop_front() {
-            component.push(current);
-            for &dir in &directions {
-                let neighbor = current + dir;
-                if visited.contains(&neighbor) {
+        while let Some(cur) = queue.pop_front() {
+            component.push(cur);
+            for &d in &directions {
+                let nb = cur + d;
+                if visited.contains(&nb) {
                     continue;
                 }
-                if let Some(neighbor_voxel) = voxel_map.voxel_map.get(&neighbor) {
-                    // Only add neighbors that are wires and have the same type.
-                    if neighbor_voxel.kind == wire_type {
-                        queue.push_back(neighbor);
-                        visited.insert(neighbor);
+                if let Some(nb_voxel) = voxel_map.voxel_map.get(&nb) {
+                    if nb_voxel.kind == VoxelType::Wire(channel) {
+                        visited.insert(nb);
+                        queue.push_back(nb);
                     }
                 }
             }
         }
 
-        // Only activate this component if one of its wires is exactly at an active output.
-        let desired_state = component.iter().any(|&pos| active_outputs.contains(&pos));
+        // 4) decide whether *this* channel should be on anywhere in the component
+        let desired_on = component.iter().any(|&p| {
+            active_outputs
+                .get(&p)
+                .map_or(false, |word| word.get(channel))
+        });
 
-        // For each wire voxel in the component, if its state does not match the desired state,
-        // record an update event.
-        for pos in component {
-            if let Some(voxel) = voxel_map.voxel_map.get(&pos) {
-                if voxel.state != desired_state {
+        // 5) for each wire-voxel in that component, if its bit differs, schedule an update
+        for &p in &component {
+            if let Some(wire_voxel) = voxel_map.voxel_map.get(&p) {
+                let currently_on = wire_voxel.state.get(channel);
+                if currently_on != desired_on {
+                    // build the new 16-bit word: only this channel bit
+                    let mut new_word = Bits16::all_zeros();
+                    if desired_on {
+                        new_word.set(channel);
+                    }
                     events.push(LogicEvent::UpdateVoxel {
-                        position: pos,
-                        new_state: desired_state,
+                        position: p,
+                        new_state: new_word,
                     });
                 }
             }
         }
     }
+
     events
 }
 
-fn simulate_gate(voxel: &Voxel, voxels: &VoxelMap) -> Option<bool> {
+fn simulate_gate(voxel: &Voxel, voxels: &VoxelMap) -> Option<Bits16> {
+    // --- gather the two logical inputs (boolean) ---------------------------
     let (ins, _) = voxel_directions(voxel);
+    let mut in_sig = [false; 2];
 
-    // tiny stack buffer (max 2 inputs in your design)
-    let mut in_state = [false; 2];
-    for (slot, &p) in ins.iter().take(2).enumerate() {
-        in_state[slot] = voxels.voxel_map.get(&p).map_or(false, |v| v.state);
+    for (slot, &pos) in ins.iter().take(2).enumerate() {
+        in_sig[slot] = voxels
+            .voxel_map
+            .get(&pos)
+            .map_or(false, |v| v.state.any_set());
     }
 
     use VoxelType::*;
-    let ns = match voxel.kind {
-        Not(NotVariants::NotGate)     => !in_state[0],
-        Not(NotVariants::BufferGate)  =>  in_state[0],
-        And(AndVariants::AndGate)     =>  in_state[0] &  in_state[1],
-        And(AndVariants::NandGate)    => !(in_state[0] &  in_state[1]),
-        Xor(XorVariants::XorGate)     =>  in_state[0] ^  in_state[1],
-        Xor(XorVariants::XnorGate)    => !(in_state[0] ^  in_state[1]),
-        Or (OrVariants ::OrGate)      =>  in_state[0] |  in_state[1],
-        Or (OrVariants ::NorGate)     => !(in_state[0] |  in_state[1]),
-        Latch(LatchVariants::DFlipFlop)=>{
-            let d   = in_state[0];
-            let clk = in_state[1];
-            if clk { d } else { voxel.state }
+    use AndVariants::*;
+    use OrVariants::*;
+    use XorVariants::*;
+    use NotVariants::*;
+    use LatchVariants::*;
+
+    let out_bool = match voxel.kind {
+        Not(NotGate)            => !in_sig[0],
+        Not(BufferGate)         =>  in_sig[0],
+
+        And(AndGate)            =>  in_sig[0]  &  in_sig[1],
+        And(NandGate)           => !(in_sig[0]  &  in_sig[1]),
+
+        Or(OrGate)              =>  in_sig[0]  |  in_sig[1],
+        Or(NorGate)             => !(in_sig[0]  |  in_sig[1]),
+
+        Xor(XorGate)            =>  in_sig[0]  ^  in_sig[1],
+        Xor(XnorGate)           => !(in_sig[0]  ^  in_sig[1]),
+
+        Latch(DFlipFlop) => {
+            let d   = in_sig[0];
+            let clk = in_sig[1];
+            if clk { d } else { voxel.state.any_set() }
         }
-        _ => return None,
+
+        _ => return None,   // voxels that aren’t logic gates
     };
 
-    (ns != voxel.state).then_some(ns)
-}
+    let new_state = bitword(out_bool);
 
-// 6-way neighbourhood reused everywhere.
-const DIRS: [IVec3; 6] = [
-    IVec3::new( 1, 0, 0), IVec3::new(-1, 0, 0),
-    IVec3::new( 0, 1, 0), IVec3::new( 0,-1, 0),
-    IVec3::new( 0, 0, 1), IVec3::new( 0, 0,-1),
-];
+    (new_state != voxel.state).then_some(new_state)
+}
 
 pub fn voxel_directions(voxel: &Voxel) -> (Vec<IVec3>, IVec3) {
     let mut inputs = Vec::new();
