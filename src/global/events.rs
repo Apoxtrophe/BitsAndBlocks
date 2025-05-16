@@ -58,7 +58,6 @@ pub fn event_handler(
     mut this_ui: ResMut<GameUI>,
     mut game_save: ResMut<SavedWorld>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut simulation_resource: ResMut<SimulationResource>,
 ) {
     // Process game events.
     for event in event_reader.read() {
@@ -93,15 +92,11 @@ pub fn event_handler(
                     voxel_asset_data.mesh_handle =
                         meshes.add(create_cable_mesh(texture_row, connections));
                 }
-                let mut new_voxel = voxel.clone();
+                let new_voxel = voxel.clone();
                 add_voxel(&mut commands, &mut voxel_map, voxel_asset_data, new_voxel, &mut materials);
-                let neighbors = get_neighboring_coords(voxel.position);
-                simulation_resource.dirty_voxels.extend(neighbors.iter().cloned());
             }
             GameEvent::RemoveBlock { position } => {
                 remove_voxel(&mut commands, &mut voxel_map, position.clone());
-                let neighbors = get_neighboring_coords(*position);
-                simulation_resource.dirty_voxels.extend(neighbors.iter().cloned());
             }
             GameEvent::UpdateCursor {
                 mode,

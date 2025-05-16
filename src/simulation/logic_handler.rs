@@ -4,19 +4,40 @@ use bevy::{reflect::{Map, Set}, utils::HashMap};
 
 use crate::prelude::*; 
 
+
+type Channel = u8;
+const CHANNEL_COUNT: usize = 16;
+
+/// Returns `true` when `voxel` is capable of transporting **`channel`**.
+#[inline(always)]
+fn carries(voxel: &Voxel, channel: Channel) -> bool {
+    match voxel.kind {
+        VoxelType::Wire(ch)    => ch == channel,
+        VoxelType::BundledWire => true,
+        _                      => false,
+    }
+}
+
+/// Ensures `word` only stores information that *`kind`* is allowed to keep.
+///
+/// * A *bundled* wire (or any gate) can keep the full 16‑bit word unchanged.
+/// * A single‑channel `Wire(n)` must clamp the word to **exactly** the state
+///   of bit‑`n` and clear everything else.
+#[inline]
+fn clamp_state(kind: &VoxelType, mut word: Bits16) -> Bits16 {
+    if let VoxelType::Wire(ch) = *kind {
+        let keep = word.get(ch);
+        word = Bits16::all_zeros();
+        if keep { word.set(ch); }
+    }
+    word
+}
+
+
 #[derive(Resource)]
-pub struct SimulationResource {
-    pub tick_timer: Timer,
-    pub dirty_voxels: HashSet<IVec3>,
+pub struct SimulationTimer {
+    pub tick: Timer,
 }
-
-#[derive(Default, Resource)]
-pub struct Scratch {
-    pub queue:    VecDeque<IVec3>,
-    pub visited:  bevy::utils::HashSet<IVec3>,
-    pub outputs:  bevy::utils::HashSet<IVec3>,
-}
-
 
 #[derive(Event, Debug)]
 pub enum LogicEvent {
@@ -56,70 +77,47 @@ pub fn logic_event_handler(
     }
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// 2.  Logic‑system without any dirty‑tracking
+// ────────────────────────────────────────────────────────────────────────────
 pub fn logic_system(
     time: Res<Time>,
-    mut simulation_resource: ResMut<SimulationResource>,
+    mut sim_timer: ResMut<SimulationTimer>,
     voxel_map: ResMut<VoxelMap>,
     mut logic_writer: EventWriter<LogicEvent>,
 ) {
-    simulation_resource.tick_timer.tick(time.delta());
+    // advance the clock
+    sim_timer.tick.tick(time.delta());
+    if !sim_timer.tick.finished() { return; }
 
-    if simulation_resource.tick_timer.finished() {
-        // On the first tick or if no voxels are marked dirty, mark all voxels as dirty.
-        if simulation_resource.dirty_voxels.is_empty() {
-            simulation_resource
-                .dirty_voxels
-                .extend(voxel_map.voxel_map.keys().cloned());
-        }
+    // ── A. Re‑simulate *every* gate ─────────────────────────────────────────
+    for (&pos, voxel) in voxel_map.voxel_map.iter() {
+        if let Some(new_state) = simulate_gate(voxel, &voxel_map) {
+            logic_writer.send(LogicEvent::UpdateVoxel {
+                position: pos,
+                new_state,
+            });
 
-        let mut next_dirty = HashSet::new();
-
-        // Process only voxels marked as dirty.
-        for pos in &simulation_resource.dirty_voxels {
-            if let Some(voxel) = voxel_map.voxel_map.get(pos) {
-                if let Some(new_state) = simulate_gate(voxel, &voxel_map) {
-                    // Update the gate voxel.
+            // if the gate drives a plain wire, update that wire immediately
+            let (_, output) = voxel_directions(voxel);
+            if let Some(out_voxel) = voxel_map.voxel_map.get(&output) {
+                if matches!(out_voxel.kind, VoxelType::Wire(_)) {
                     logic_writer.send(LogicEvent::UpdateVoxel {
-                        position: *pos,
+                        position: output,
                         new_state,
                     });
-                    // Mark the output voxel as dirty for the next tick.
-                    let (_, output) = voxel_directions(voxel);
-                    if let Some(output_voxel) = voxel_map.voxel_map.get(&output) {
-                        match output_voxel.kind {
-                            VoxelType::Wire(_) => {
-                                logic_writer.send(LogicEvent::UpdateVoxel {
-                                    position: output,
-                                    new_state,
-                                });
-                            }
-                            _ => {}
-                        }
-                    }
-                    next_dirty.insert(output);
                 }
             }
         }
+    }
 
-        // Get the propagation events for wires (turning them on or off as needed)
-        let wire_events = propagate_wires(&voxel_map);
-        for event in wire_events {
-            logic_writer.send(event);
-        }
-
-        // Prepare the dirty set for the next simulation tick.
-        simulation_resource.dirty_voxels = next_dirty;
+    // ── B. Re‑propagate *all* wires ─────────────────────────────────────────
+    for event in propagate_wires(&voxel_map) {
+        logic_writer.send(event);
     }
 }
 
-#[inline]
-fn carries(voxel: &Voxel, channel: u8) -> bool {
-    match voxel.kind {
-        VoxelType::Wire(ch)        => ch == channel,
-        VoxelType::BundledWire     => true,
-        _                          => false,
-    }
-}
+
 
 pub fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
     use std::collections::{HashMap, HashSet, VecDeque};
@@ -271,74 +269,33 @@ fn simulate_gate(voxel: &Voxel, voxels: &VoxelMap) -> Option<Bits16> {
 }
 
 pub fn voxel_directions(voxel: &Voxel) -> (Vec<IVec3>, IVec3) {
-    let mut inputs = Vec::new();
-    // Use IVec3::ZERO if available; otherwise, use IVec3::new(0, 0, 0)
-    let mut output = IVec3::new(0, 0, 0);
-    let position = voxel.position;
-    let is_single_input = 
-        voxel.kind == VoxelType::Not(NotVariants::BufferGate) 
-        || voxel.kind == VoxelType::Not(NotVariants::NotGate);
+    let pos     = voxel.position;
+    let forward = match voxel.direction {
+        1 => IVec3::Z,      // output +Z
+        2 => IVec3::X,      // output +X
+        3 => -IVec3::Z,     // output –Z
+        4 => -IVec3::X,     // output –X
+        d => {
+            eprintln!("Invalid direction {}", d);
+            IVec3::ZERO
+        }
+    };
 
-    match voxel.direction {
-        1 => {
-            if is_single_input {
-                // For not gates, the input is on the front and output on the back.
-                inputs.push(position + IVec3::new(0, 0, -1));
-                output = position + IVec3::new(0, 0, 1);
-            } else {
-                // For standard gates, the inputs are on the left and right.
-                inputs.push(position + IVec3::new(1, 0, 0));
-                inputs.push(position + IVec3::new(-1, 0, 0));
-                output = position + IVec3::new(0, 0, 1);
-            }
-        }
-        2 => {
-            if is_single_input {
-                inputs.push(position + IVec3::new(-1, 0, 0));
-                output = position + IVec3::new(1, 0, 0);
-            } else {
-                inputs.push(position + IVec3::new(0, 0, -1));
-                inputs.push(position + IVec3::new(0, 0, 1));
-                output = position + IVec3::new(1, 0, 0);
-            }
-        }
-        3 => {
-            if is_single_input {
-                inputs.push(position + IVec3::new(0, 0, 1));
-                output = position + IVec3::new(0, 0, -1);
-            } else {
-                inputs.push(position + IVec3::new(-1, 0, 0));
-                inputs.push(position + IVec3::new(1, 0, 0));
-                output = position + IVec3::new(0, 0, -1);
-            }
-        }
-        4 => {
-            if is_single_input {
-                inputs.push(position + IVec3::new(1, 0, 0));
-                output = position + IVec3::new(-1, 0, 0);
-            } else {
-                inputs.push(position + IVec3::new(0, 0, 1));
-                inputs.push(position + IVec3::new(0, 0, -1));
-                output = position + IVec3::new(-1, 0, 0);
-            }
-        }
-        _ => {
-            // Consider using a Result or Option type here to propagate errors
-            println!("!!!! Invalid direction");
-        }
-    }
+    // side axis is the axis perpendicular to `forward` in the XZ-plane
+    let side = IVec3::new(forward.z.abs(), 0, forward.x.abs());
+
+    let is_not_gate = matches!(
+        voxel.kind,
+        VoxelType::Not(NotVariants::BufferGate) | VoxelType::Not(NotVariants::NotGate)
+    );
+
+    let inputs = if is_not_gate {
+        vec![pos - forward]       // single input “behind” the gate
+    } else {
+        vec![pos + side, pos - side]  // two inputs from either side
+    };
+
+    let output = pos + forward;  // always “in front” of the gate
+
     (inputs, output)
-}
-
-#[inline]
-fn clamp_state(kind: &VoxelType, mut word: Bits16) -> Bits16 {
-    match *kind {
-        VoxelType::Wire(ch) => {
-            let bit = word.get(ch);            // remember the one we want
-            word = Bits16::all_zeros();                  // 0x0000
-            if bit { word.set(ch) }            // put back only that bit
-        }
-        _ => {}                                // bundled / gates unchanged
-    }
-    word
 }

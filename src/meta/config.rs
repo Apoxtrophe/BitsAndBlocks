@@ -41,7 +41,7 @@ pub const RESPAWN_THERESHOLD: f32 = -10.0;
 
 // Saving / Loading
 pub const TEMP_SAVE_PATH: &str = "assets/saves/temp_save.json";
-pub const AUTOSAVE_TIME: Duration = Duration::from_secs(60);
+pub const AUTOSAVE_TIME: Duration = Duration::from_secs(10);
 pub const SAVE_SLOTS: usize = 4;
 
 // AUDIO
@@ -54,4 +54,4 @@ pub const MAX_AUDIO_VOLUME: f32 = 1.0;
 pub const UI_VOLUME: f64 = 0.5; 
 
 // SIMULATION
-pub const TICK_RATE: u64 = 20;
+pub const TICK_RATE: u64 = 200;

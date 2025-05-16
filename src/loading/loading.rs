@@ -16,9 +16,8 @@ pub fn loading(
     mut controller_query: Query<&mut FpsController>,
 ) {
     // === Simulation Configuration ===
-    let simulation_resouce = SimulationResource {
-        tick_timer: Timer::new(Duration::from_millis(TICK_RATE), TimerMode::Repeating),
-        dirty_voxels: HashSet::new(),
+    let simulation_resouce = SimulationTimer {
+        tick: Timer::new(Duration::from_millis(TICK_RATE), TimerMode::Repeating),
     };
     commands.insert_resource(simulation_resouce);
     
@@ -79,9 +78,6 @@ pub fn loading(
         materials,
         game_texture_handles.voxel_textures,
     ));
-    
-    // Simulation Resource
-    commands.insert_resource(Scratch::default());
     
     // === UI Setup ===
     commands.insert_resource(GameUI::MainScreen);
