@@ -47,6 +47,7 @@ pub fn player_input_system(
     mut remove_timer: Local<Timer>,
     time: Res<Time>,
     mut audio_writer: EventWriter<AudioEvent>,
+    mut logic_event_writer: EventWriter<LogicEvent>,
 ) {
     // Only allow block interactions when in Default UI mode.
     if *current_ui == GameUI::Default {
@@ -71,6 +72,11 @@ pub fn player_input_system(
             &mouse_input,
             &player,
             &mut event_writer,
+        );
+        handle_block_interaction(
+            &keyboard_input, 
+            &player,
+            &mut logic_event_writer,
         );
     }
 
@@ -229,6 +235,51 @@ fn handle_hotbar_copy(
                 event_writer.send(GameEvent::ModifyPlayer {
                     player_modified: new_player,
                 });
+            }
+        }
+    }
+}
+
+fn handle_block_interaction(
+    keyboard_input: &Res<ButtonInput<KeyCode>>,
+    player: &Res<Player>,
+    logic_event: &mut EventWriter<LogicEvent>,
+) {
+    if let Some(voxel) = player.hit_voxel {
+        if keyboard_input.just_pressed(KeyCode::KeyR) {
+            if voxel.kind == VoxelType::Component(ComponentVariants::Switch) {
+                let state = voxel.state;
+                let position = voxel.position;
+                
+                let is_all_zero = state.is_all_zero();
+                
+                let mut new_state = Bits16::all_zeros();
+                
+                if is_all_zero {
+                    new_state = Bits16::all_ones();
+                }
+                
+                logic_event.send(LogicEvent::UpdateVoxel { position: position, new_state: new_state });
+                println!("Switch Pressed");
+            }
+            
+            if voxel.kind == VoxelType::Component(ComponentVariants::Button) {
+                let position = voxel.position;
+                
+                let mut new_state = Bits16::all_ones();
+                
+                logic_event.send(LogicEvent::UpdateVoxel { position: position, new_state: new_state });
+                println!("Button Pressed");
+            }
+        }
+        if keyboard_input.just_released(KeyCode::KeyR) {
+            if voxel.kind == VoxelType::Component(ComponentVariants::Button) {
+                let position = voxel.position;
+                
+                let mut new_state = Bits16::all_zeros();
+                
+                logic_event.send(LogicEvent::UpdateVoxel { position: position, new_state: new_state });
+                println!("Button Pressed");
             }
         }
     }
