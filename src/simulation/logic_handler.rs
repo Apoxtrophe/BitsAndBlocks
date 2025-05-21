@@ -4,13 +4,9 @@ use bevy::{reflect::{Map, Set}, utils::HashMap};
 
 use crate::prelude::*; 
 
-
-type Channel = u8;
-const CHANNEL_COUNT: usize = 16;
-
 /// Returns `true` when `voxel` is capable of transporting **`channel`**.
 #[inline(always)]
-fn carries(voxel: &Voxel, channel: Channel) -> bool {
+fn carries(voxel: &Voxel, channel: u8) -> bool {
     match voxel.kind {
         VoxelType::Wire(ch)    => ch == channel,
         VoxelType::BundledWire => true,
