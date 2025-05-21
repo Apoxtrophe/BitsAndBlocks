@@ -285,13 +285,18 @@ pub fn voxel_directions(voxel: &Voxel) -> (Vec<IVec3>, IVec3) {
         VoxelType::Not(NotVariants::BufferGate) | VoxelType::Not(NotVariants::NotGate)
     );
 
-    let inputs = if is_not_gate {
+    let mut inputs = if is_not_gate {
         vec![pos - forward]       // single input “behind” the gate
     } else {
         vec![pos + side, pos - side]  // two inputs from either side
     };
 
-    let output = pos + forward;  // always “in front” of the gate
+    let mut output = pos + forward;  // always “in front” of the gate
 
+    if matches!(voxel.kind, VoxelType::Structural(_)) {
+        inputs.clear();
+        output = IVec3::ZERO;
+    }
+    
     (inputs, output)
 }
