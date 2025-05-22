@@ -62,7 +62,7 @@ pub fn menu_button_system(
                 }
                 MenuAction::BackToGame => {
                     event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Default });
-                    event_writer.send(GameEvent::UpdateCursor {
+                    event_writer.send(GameEvent::UpdateCursorMode {
                         mode: CursorGrabMode::Locked,
                         show_cursor: false,
                         enable_input: true,

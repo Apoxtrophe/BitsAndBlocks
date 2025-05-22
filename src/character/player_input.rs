@@ -97,14 +97,14 @@ fn process_ui_input(
     if keyboard_input.just_pressed(KeyCode::Escape) {
         // Toggle Exit Menu.
         if *current_ui != GameUI::ExitMenu {
-            event_writer.send(GameEvent::UpdateCursor {
+            event_writer.send(GameEvent::UpdateCursorMode {
                 mode: CursorGrabMode::None,
                 show_cursor: true,
                 enable_input: false,
             });
             event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::ExitMenu });
         } else {
-            event_writer.send(GameEvent::UpdateCursor {
+            event_writer.send(GameEvent::UpdateCursorMode {
                 mode: CursorGrabMode::Locked,
                 show_cursor: false,
                 enable_input: true,
@@ -115,7 +115,7 @@ fn process_ui_input(
         // Open Inventory if not in the Exit Menu.
         if *current_ui != GameUI::ExitMenu {
             event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Inventory });
-            event_writer.send(GameEvent::UpdateCursor {
+            event_writer.send(GameEvent::UpdateCursorMode {
                 mode: CursorGrabMode::Locked,
                 show_cursor: true,
                 enable_input: false,
@@ -125,7 +125,7 @@ fn process_ui_input(
         // Close Inventory.
         if *current_ui != GameUI::ExitMenu {
             event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Default });
-            event_writer.send(GameEvent::UpdateCursor {
+            event_writer.send(GameEvent::UpdateCursorMode {
                 mode: CursorGrabMode::Locked,
                 show_cursor: false,
                 enable_input: true,

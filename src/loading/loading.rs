@@ -55,7 +55,7 @@ pub fn loading(
     // === Texture Loading ===
     let game_texture_handles = GameTextures {
         ground_texture: asset_server.load(WORLD_TEXTURE_PATH),
-        cursor_texture: asset_server.load(CURSOR_TEXTURE_PATH),
+        cursor_atlas: asset_server.load(CURSOR_TEXTURE_PATH),
         voxel_textures: asset_server.load(VOXEL_TEXTURE_PATH),
         home_screen_texture: asset_server.load("textures/homescreen.png"),
         menu_button_texture: asset_server.load("textures/buttons.png"),

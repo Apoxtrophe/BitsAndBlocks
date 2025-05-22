@@ -17,7 +17,7 @@ pub enum GameEvent {
     UpdateMesh {
         updates: [IVec3; 6],
     },
-    UpdateCursor {
+    UpdateCursorMode {
         mode: CursorGrabMode,
         show_cursor: bool,
         enable_input: bool,
@@ -98,7 +98,7 @@ pub fn event_handler(
             GameEvent::RemoveBlock { position } => {
                 remove_voxel(&mut commands, &mut voxel_map, position.clone());
             }
-            GameEvent::UpdateCursor {
+            GameEvent::UpdateCursorMode {
                 mode,
                 show_cursor,
                 enable_input,
@@ -168,7 +168,7 @@ impl fmt::Display for GameEvent {
             GameEvent::UpdateMesh { updates } => {
                 write!(f, "EVENT MESH UPDATE: {:?}", updates)
             }
-            GameEvent::UpdateCursor { mode, show_cursor, enable_input } => {
+            GameEvent::UpdateCursorMode { mode, show_cursor, enable_input } => {
                 write!(f, "EVENT CURSOR: {:?}, show_cursor: {}, enable_input: {}", mode, show_cursor, enable_input)
             }
             GameEvent::SaveWorld { world } => {

@@ -110,6 +110,7 @@ fn main() {
                 update_hotbar,
                 update_inventory_ui,
                 update_identifier,
+                update_cursor,
                 
                 // Simulation 
                 logic_event_handler,

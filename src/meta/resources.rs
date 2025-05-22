@@ -356,7 +356,7 @@ pub struct SavedWorld {
 #[derive(Resource, Clone)]
 pub struct GameTextures {
     pub ground_texture: Handle<Image>,
-    pub cursor_texture: Handle<Image>,
+    pub cursor_atlas: Handle<Image>,
     pub voxel_textures: Handle<Image>,
     pub home_screen_texture: Handle<Image>,
     pub menu_button_texture: Handle<Image>,

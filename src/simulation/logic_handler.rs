@@ -251,8 +251,8 @@ fn simulate_gate(voxel: &Voxel, voxels: &VoxelMap) -> Option<Bits16> {
         Xor(XnorGate)           => !(in_sig[0]  ^  in_sig[1]),
 
         Latch(DFlipFlop) => {
-            let d   = in_sig[0];
-            let clk = in_sig[1];
+            let d   = in_sig[1];
+            let clk = in_sig[0];
             if clk { d } else { voxel.state.any_set() }
         }
         

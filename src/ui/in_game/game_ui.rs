@@ -21,9 +21,11 @@ pub fn setup_ui(
     let button_texture = image_handles.menu_button_texture.clone();
     let button_atlas = TextureAtlasLayout::from_grid(UVec2::new(144, 32), 1, 16, None, None);
     let button_atlas_handle = texture_atlases.add(button_atlas);
-
-    // Cursor texture handle
-    let cursor_texture_handle = image_handles.cursor_texture.clone();
+    
+    // Cursor texture atlas
+    let cursor_texture = image_handles.cursor_atlas.clone();
+    let cursor_atlas = TextureAtlasLayout::from_grid(UVec2 { x: 16, y: 16 }, 2, 1, None, None);
+    let cursor_atlas_handle = texture_atlases.add(cursor_atlas);
 
     // === Create Main UI Node ===
     let main_node = commands
@@ -43,7 +45,7 @@ pub fn setup_ui(
 
     // === Spawn and Attach Child UI Components ===
     let children = vec![
-        spawn_cursor_node(&mut commands, cursor_texture_handle),
+        spawn_cursor_node(&mut commands,cursor_texture.clone(), cursor_atlas_handle),
         spawn_exit_menu(&mut commands, button_texture.clone(), button_atlas_handle.clone()),
         spawn_hotbar(&mut commands, &voxel_texture_handle, &voxel_atlas_handle),
         spawn_inventory(&mut commands, &voxel_texture_handle, &voxel_atlas_handle),
