@@ -48,7 +48,6 @@ pub enum MenuAction {
     MainMenu, 
     SaveAndQuit,
     InventorySlot(usize),
-    Placeholder,
 }
 
 // Marking Component for every UI window

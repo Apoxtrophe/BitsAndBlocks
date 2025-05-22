@@ -76,9 +76,6 @@ pub fn menu_button_system(
                     event_writer.send(GameEvent::SaveWorld { world: game_save.clone() });
                     exit.send(AppExit::Success);
                 }
-                MenuAction::Placeholder => {
-                    // Placeholder for future actions.
-                }
                 MenuAction::InventorySlot(slot_id) => {
                     let selector = player.hotbar_selector;
 

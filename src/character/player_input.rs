@@ -246,7 +246,7 @@ fn handle_block_interaction(
     logic_event: &mut EventWriter<LogicEvent>,
 ) {
     if let Some(voxel) = player.hit_voxel {
-        if keyboard_input.just_pressed(KeyCode::KeyR) {
+        if keyboard_input.just_pressed(KeyCode::KeyE) {
             if voxel.kind == VoxelType::Component(ComponentVariants::Switch) {
                 let state = voxel.state;
                 let position = voxel.position;
@@ -272,7 +272,7 @@ fn handle_block_interaction(
                 println!("Button Pressed");
             }
         }
-        if keyboard_input.just_released(KeyCode::KeyR) {
+        if keyboard_input.just_released(KeyCode::KeyE) {
             if voxel.kind == VoxelType::Component(ComponentVariants::Button) {
                 let position = voxel.position;
                 

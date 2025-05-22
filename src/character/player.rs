@@ -39,7 +39,7 @@ pub fn setup_player(mut commands: Commands) {
             Transform::from_translation(SPAWN_POINT),
             LogicalPlayer,
             FpsControllerInput {
-                pitch: -TAU / 12.0,
+                pitch: -0. / 12.0,
                 yaw: TAU * 5.0 / 8.0,
                 ..default()
             },
@@ -47,8 +47,11 @@ pub fn setup_player(mut commands: Commands) {
                 height: PLAYER_HEIGHT,
                 upright_height: PLAYER_HEIGHT,
                 crouch_height: PLAYER_CROUCHED_HEIGHT,
-
                 air_acceleration: 80.0,
+                
+                key_up: KeyCode::Space,
+                key_down: KeyCode::ShiftLeft,
+                key_sprint: KeyCode::AltLeft,
                 ..default()
             },
         ))

@@ -248,7 +248,6 @@ fn match_button_ident_atlas_index(identity: MenuAction) -> usize {
         MenuAction::BackToGame => atlas_index = 8,
         MenuAction::MainMenu => atlas_index = 9,
         MenuAction::SaveAndQuit => atlas_index = 10,
-        MenuAction::Placeholder => atlas_index = 11,
         _ => {
             println!("Error: Unhandled Button Identity")
         }

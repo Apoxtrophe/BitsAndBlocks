@@ -14,7 +14,6 @@ pub fn spawn_exit_menu(
         MenuAction::BackToGame, 
         MenuAction::MainMenu, 
         MenuAction::SaveAndQuit,
-        MenuAction::Placeholder,
     ].to_vec();
     
     for i in 0..button_options.len() {

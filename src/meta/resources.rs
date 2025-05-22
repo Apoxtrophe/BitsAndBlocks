@@ -20,6 +20,7 @@ pub struct Player {
 
 impl Default for Player {
     fn default() -> Self {
+        
         use VoxelType::*;
 
         let mut initial_bar_ids: Vec<(usize, usize)> = Vec::new();
