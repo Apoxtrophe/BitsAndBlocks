@@ -10,10 +10,10 @@ pub fn update_emissive (
             if let Some(material) = materials.get_mut(material_handle) {
                 match voxel.kind {
                 VoxelType::Component(ComponentVariants::Light) => {
-                      material.emissive = LinearRgba::new(0.0, 0.8, 0.0, 0.8);
+                      material.emissive = LinearRgba::new(0.4, 0.8, 0.4, 0.8);
                   }
                   _ => {
-                      material.emissive = LinearRgba::new(0.0, 0.2, 0.0, 0.2);  
+                      material.emissive = LinearRgba::new(0.0, 0.1, 0.0, 0.2);  
                   }
                 }
                 

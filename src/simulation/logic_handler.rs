@@ -255,7 +255,9 @@ fn simulate_gate(voxel: &Voxel, voxels: &VoxelMap) -> Option<Bits16> {
             let clk = in_sig[1];
             if clk { d } else { voxel.state.any_set() }
         }
-
+        
+        Component(ComponentVariants::Light) => in_sig[0],
+        
         _ => return None,   // voxels that aren’t logic gates
     };
 
