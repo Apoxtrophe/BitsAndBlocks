@@ -269,7 +269,6 @@ fn handle_block_interaction(
                 let mut new_state = Bits16::all_ones();
                 
                 logic_event.send(LogicEvent::UpdateVoxel { position: position, new_state: new_state });
-                println!("Button Pressed");
             }
         }
         if keyboard_input.just_released(KeyCode::KeyE) {
@@ -279,7 +278,6 @@ fn handle_block_interaction(
                 let mut new_state = Bits16::all_zeros();
                 
                 logic_event.send(LogicEvent::UpdateVoxel { position: position, new_state: new_state });
-                println!("Button Pressed");
             }
         }
     }

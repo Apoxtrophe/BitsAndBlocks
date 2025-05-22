@@ -164,6 +164,37 @@ pub enum ComponentVariants{
     Clock, 
 }
 
+#[derive(Copy, Clone)]
+pub struct IoPattern {
+    pub inputs : &'static [IVec3],
+    pub output : Option<IVec3>,
+}
+
+const SIDE_2_IN_FRONT_OUT : IoPattern = IoPattern {
+    inputs : &[IVec3::NEG_X, IVec3::X],      // left & right
+    output : Some(IVec3::Z),                 // out the front
+};
+
+const BACK_1_IN_FRONT_OUT : IoPattern = IoPattern {
+    inputs : &[IVec3::NEG_Z],                // single back input
+    output : Some(IVec3::Z),
+};
+
+const FRONT_OUT : IoPattern = IoPattern {
+    inputs : &[],                // single back input
+    output : Some(IVec3::Z),
+};
+
+const BACK_1_IN : IoPattern = IoPattern {
+    inputs : &[IVec3::NEG_Z],                // single back input
+    output : Some(IVec3::ZERO),
+};
+
+const NO_IO               : IoPattern = IoPattern {
+    inputs : &[],
+    output : None,
+};
+
 impl VoxelType {
     pub fn group(self) -> usize {
         match self {
@@ -220,6 +251,33 @@ impl VoxelType {
     pub fn as_pair(self) -> (usize, usize) {
         (self.group(), self.sub_group())
     }
+    
+    pub const fn io_pattern(&self) -> IoPattern {
+            use VoxelType::*;
+    
+            match self {
+                // passive blocks --------------------------------------------------
+                Structural(_)                         => NO_IO,
+    
+                // single‑ended gates ---------------------------------------------
+                Not(NotVariants::NotGate)
+                | Not(NotVariants::BufferGate)        => BACK_1_IN_FRONT_OUT,
+    
+                // two‑input gates -------------------------------------------------
+                And(_) 
+                | Or(_) 
+                | Xor(_) 
+                | Latch(_)    => SIDE_2_IN_FRONT_OUT,
+                
+                Component(ComponentVariants::Clock) 
+                | Component(ComponentVariants::Switch)
+                | Component(ComponentVariants::Button) => FRONT_OUT,
+                
+                Component(ComponentVariants::Light) => BACK_1_IN,
+                // wires are handled elsewhere ------------------------------------
+                BundledWire | Wire(_)                 => NO_IO,
+            }
+        }
 }
 
 /// Optional: seamless conversion in both directions

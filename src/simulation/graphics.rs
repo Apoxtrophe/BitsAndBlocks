@@ -8,7 +8,16 @@ pub fn update_emissive (
 
         if Bits16::any_set(voxel.state){
             if let Some(material) = materials.get_mut(material_handle) {
-                material.emissive = LinearRgba::new(0.0, 0.2, 0.0, 0.2);
+                match voxel.kind {
+                VoxelType::Component(ComponentVariants::Light) => {
+                      material.emissive = LinearRgba::new(0.0, 0.8, 0.0, 0.8);
+                  }
+                  _ => {
+                      material.emissive = LinearRgba::new(0.0, 0.2, 0.0, 0.2);  
+                  }
+                }
+                
+
             }
         } else {
             if let Some(material) = materials.get_mut(material_handle) {

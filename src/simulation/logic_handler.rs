@@ -265,38 +265,20 @@ fn simulate_gate(voxel: &Voxel, voxels: &VoxelMap) -> Option<Bits16> {
 }
 
 pub fn voxel_directions(voxel: &Voxel) -> (Vec<IVec3>, IVec3) {
-    let pos     = voxel.position;
-    let forward = match voxel.direction {
-        1 => IVec3::Z,      // output +Z
-        2 => IVec3::X,      // output +X
-        3 => -IVec3::Z,     // output –Z
-        4 => -IVec3::X,     // output –X
-        d => {
-            eprintln!("Invalid direction {}", d);
-            IVec3::ZERO
-        }
+    // local → world rotation (XZ only)
+    let rot = |v: IVec3| match voxel.direction {
+        1 => v,                         // +Z forward
+        2 => IVec3::new( v.z, 0, -v.x), // +X forward:  (x,z) ↦ ( z,-x)
+        3 => IVec3::new(-v.x, 0, -v.z), // –Z forward
+        4 => IVec3::new(-v.z, 0,  v.x), // –X forward
+        d => { eprintln!("bad dir {d}"); v }
     };
 
-    // side axis is the axis perpendicular to `forward` in the XZ-plane
-    let side = IVec3::new(forward.z.abs(), 0, forward.x.abs());
+    let IoPattern { inputs, output } = voxel.kind.io_pattern();
 
-    let is_not_gate = matches!(
-        voxel.kind,
-        VoxelType::Not(NotVariants::BufferGate) | VoxelType::Not(NotVariants::NotGate)
-    );
-
-    let mut inputs = if is_not_gate {
-        vec![pos - forward]       // single input “behind” the gate
-    } else {
-        vec![pos + side, pos - side]  // two inputs from either side
-    };
-
-    let mut output = pos + forward;  // always “in front” of the gate
-
-    if matches!(voxel.kind, VoxelType::Structural(_)) {
-        inputs.clear();
-        output = IVec3::ZERO;
-    }
+    // rotate + translate
+    let world_inputs : Vec<IVec3> = inputs.iter().map(|&v| voxel.position + rot(v)).collect();
+    let world_output              = output.map_or(IVec3::ZERO, |v| voxel.position + rot(v));
     
-    (inputs, output)
+    (world_inputs, world_output)
 }
