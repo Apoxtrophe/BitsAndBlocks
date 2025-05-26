@@ -24,9 +24,12 @@ pub fn raycast_system(
         let tri_avg    = (hit.triangle.unwrap()[0] + hit.triangle.unwrap()[1] + hit.triangle.unwrap()[2]) / 3.0;
         let sel_pos    = (tri_avg - normal * 0.5).round();
         let mut adj_pos= sel_pos + normal;
-        let hit_voxel  = voxel_map.voxel_map.get(&sel_pos.as_ivec3());
+        let mut hit_voxel  = None;
         let distance   = hit.distance;
-
+        
+        if distance <= MAX_RAY_DIST {
+            hit_voxel  = voxel_map.voxel_map.get(&sel_pos.as_ivec3());
+        }
         // ground tweak
         if hit.point.y < 0.51 {
             adj_pos = (hit.point + Vec3::Y * 0.5).round();
