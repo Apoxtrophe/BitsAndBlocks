@@ -45,7 +45,7 @@ pub fn setup_ui(
 
     // === Spawn and Attach Child UI Components ===
     let children = vec![
-        spawn_cursor_node(&mut commands,cursor_texture.clone(), cursor_atlas_handle),
+        spawn_cursor_node(&mut commands),
         spawn_exit_menu(&mut commands, button_texture.clone(), button_atlas_handle.clone()),
         spawn_hotbar(&mut commands, &voxel_texture_handle, &voxel_atlas_handle),
         spawn_inventory(&mut commands, &voxel_texture_handle, &voxel_atlas_handle),
