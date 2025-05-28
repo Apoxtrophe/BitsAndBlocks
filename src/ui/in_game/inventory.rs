@@ -72,7 +72,7 @@ pub fn spawn_inventory(
 
 /// Refreshes every inventory‑slot icon so it shows the sprite that corresponds
 /// to the (group, sub‑index) pair under the new `VoxelType` enum scheme.
-pub fn update_inventory_ui(
+pub fn update_inventory(
     mut image_query: Query<(&MenuAction, &mut ImageNode)>,
     player:       Res<Player>,
     voxel_map:    Res<VoxelMap>,

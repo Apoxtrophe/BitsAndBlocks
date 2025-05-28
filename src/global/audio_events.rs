@@ -2,41 +2,40 @@ use bevy::prelude::*;
 use crate::prelude::*;
 
 
-#[derive(Event, Debug)]
+#[derive(Event, Debug, Clone, Copy)]
 pub enum AudioEvent {
-    Place {},
-    Destroy {}, 
-    UIHover {}, 
-    UIClick {},
+    Ui(HudSfx),
+    World(WorldSfx, IVec3 /* source pos */),
 }
 
-fn calculate_world_volume (player: &Res<Player>) -> f32 {
-    let distance = player.distance;
-    let volume = 1.0 / (distance + 1.0);
-    volume
-}
+#[derive(Debug, Clone, Copy)]
+pub enum HudSfx { Hover, Click }
+#[derive(Debug, Clone, Copy)]
+pub enum WorldSfx { Place, Destroy }
 
 pub fn audio_event_handler (
     audio: Res<Audio>,
-    audio_handles: Res<AudioHandles>,
+    handles: Res<AudioHandles>,
     mut event_reader: EventReader<AudioEvent>,
     player: Res<Player>,
 ) {
     for event in event_reader.read() {
         match event {
-            AudioEvent::Place {} => {
-                let volume = calculate_world_volume(&player);
-                audio.play(audio_handles.place.clone()).with_volume(Volume::Amplitude(volume as f64));
+            AudioEvent::Ui(kind) => {
+                let (h, v) = match kind {
+                    HudSfx::Hover  => (handles.ui_hover.clone(), 0.35),
+                    HudSfx::Click  => (handles.ui_click.clone(), 0.45),
+                };
+                audio.play(h).with_volume(Volume::Amplitude(v));
             }
-            AudioEvent::Destroy {} => {
-                let volume = calculate_world_volume(&player);
-                audio.play(audio_handles.destroy.clone()).with_volume(Volume::Amplitude(volume as f64));
-            }
-            AudioEvent::UIHover {} => {
-                audio.play(audio_handles.ui_hover.clone()).with_volume(UI_VOLUME);
-            }
-            AudioEvent::UIClick {} => {
-                audio.play(audio_handles.ui_click.clone()).with_volume(UI_VOLUME);
+            AudioEvent::World(kind, src) => {
+                let dist   = player.camera_pos.distance(src.as_vec3());
+                let volume = (1.0 / (dist + 1.0)).clamp(0.05, 1.0);
+                let handle = match kind {
+                    WorldSfx::Place   => handles.place.clone(),
+                    WorldSfx::Destroy => handles.destroy.clone(),
+                };
+                audio.play(handle).with_volume(Volume::Amplitude(volume as f64));
             }
         }
     }

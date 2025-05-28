@@ -4,4 +4,48 @@ Update Always
     Menu Button System
         Handles Button interaction for all states. Sends event to GameEvent to be handled
     Event Handler
+        Handles all GameEvent, generally all which only occur sparsely ie placing / removing voxels, saving / loading a world.
     Audio Event Handler
+        Handles AudioEvent, which handles all sound events sent by other systems. 
+
+Loading Systems
+    Loading
+        Loads essential resources, sets the window, cursor settings, loads saved games, loads textures. 
+
+Main Menu Systems
+    Setup Main Menu
+        Spawn the Main-Menu UI elements, interaction is handled in the global button system above. 
+    Update Scroll Position
+        Handles the scrollable list in the Load-Game menu currently, but can handle interaction with any scrollable list.
+
+In-Game Systems
+    Autosave System
+        Handles the autosave implementation based on the Autosave timer
+    Player Input System
+        Handles player input and sends events to their respective event handlers. 
+    Respawn System
+        Handles player respawn should they exit the playable space vertically. 
+    Raycast System
+        Handles camera position, and performs a racast from the camera, propagating the Player resource with the data it gathers (what voxel is hit, distance, direction etc).
+    Update Debug Text
+        Updates the information held within the Debug screen (F3). Needs works, doesn't always need to run. 
+    Update Hotbar
+        Updates the hotbar with the currently selected voxel. 
+    Update Inventory
+        Updates the inventory screen based on the hotbar slot selected. Shows variants of the selected hotbar slot in an inventory screen above. 
+    Update Identifier
+        Updates the voxel identifier text that lies above the hotbar, handles it's fade according to a local timer. 
+    Update Cursor 
+        Handles the appearance of the cursor, which should appear as a "+" usually, but may appear as an "E" to indicate interactivity with a voxel. Also handles the pulsing color of the "E" when looking over an interactible voxel. Additionally handles the simulation speed indicator ui, changing its appearance. 
+    Logic Event Handler 
+        Handles the LogicEvent, updating the state of voxels according to the simulation. 
+    Logic System
+        Calculates the changes in logical voxels and handles the propagation of state through wires. 
+    Update Emmissive
+        Handles the change of a voxels emmissiveness due their state. 
+    
+    
+TODO
+    Add sounds
+        changing hotbar slot 
+        walking

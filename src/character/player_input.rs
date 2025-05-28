@@ -165,7 +165,7 @@ fn handle_block_placement(
     if trigger {
         if let Some(mut selected_voxel) = player.selected_voxel {
             // Play placement sound.
-            audio_writer.send(AudioEvent::Place {});
+            audio_writer.send(AudioEvent::World(WorldSfx::Place, selected_voxel.position));
 
             // Update voxel direction based on the camera.
             selected_voxel.direction = cardinalize(player.camera_dir);
@@ -205,7 +205,7 @@ fn handle_block_removal(
     if trigger {
         if let Some(hit_voxel) = player.hit_voxel {
             // Play removal sound.
-            audio_writer.send(AudioEvent::Destroy {});
+            audio_writer.send(AudioEvent::World(WorldSfx::Destroy, hit_voxel.position));
 
             // Dispatch the block removal event.
             event_writer.send(GameEvent::RemoveBlock {
