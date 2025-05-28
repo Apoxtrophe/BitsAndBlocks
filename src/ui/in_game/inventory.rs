@@ -20,7 +20,7 @@ pub fn spawn_inventory(
                 ..Default::default()
             },
             Visibility::Hidden,
-            GameUI::Inventory,
+            GameUI::Inventory(0),
         ))
         .id();
 
@@ -60,10 +60,12 @@ pub fn spawn_inventory(
             inventory_parent
                 .spawn((Button, button_bundle.clone()))
                 .insert(MenuAction::InventorySlot(i))
+                .insert(GameUI::Inventory(i))
                 .with_children(|child| {
                     child
                         .spawn(image_bundle.clone())
-                        .insert(MenuAction::InventorySlot(i));
+                        .insert(MenuAction::InventorySlot(i))
+                        .insert(GameUI::Inventory(i));
                 });
         }
     });

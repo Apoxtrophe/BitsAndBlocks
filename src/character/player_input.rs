@@ -82,7 +82,7 @@ pub fn player_input_system(
 
     // Process UI input only if there is a valid window.
     if window_query.get_single_mut().is_ok() {
-        process_ui_input(&keyboard_input, current_ui, &mut event_writer);
+        process_ui_input(&keyboard_input, current_ui, &mut event_writer, player);
     } else if keyboard_input.pressed(KeyCode::Tab) || *current_ui == GameUI::ExitMenu {
         return;
     }
@@ -93,6 +93,7 @@ fn process_ui_input(
     keyboard_input: &Res<ButtonInput<KeyCode>>,
     current_ui: Res<GameUI>,
     event_writer: &mut EventWriter<GameEvent>,
+    player: Res<Player>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
         // Toggle Exit Menu.
@@ -113,8 +114,11 @@ fn process_ui_input(
         }
     } else if keyboard_input.just_pressed(KeyCode::Tab) {
         // Open Inventory if not in the Exit Menu.
+        let selector = player.hotbar_selector;
+        let size = SUBSET_SIZES[selector];
+        
         if *current_ui != GameUI::ExitMenu {
-            event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Inventory });
+            event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Inventory(size) });
             event_writer.send(GameEvent::UpdateCursorMode {
                 mode: CursorGrabMode::Locked,
                 show_cursor: true,
@@ -149,13 +153,6 @@ fn process_ui_input(
     }
 }
 
-fn set_cursor(event_tx: &mut EventWriter<GameEvent>,
-              mode: CursorGrabMode, show: bool, enable: bool)
-{
-    event_tx.send(GameEvent::UpdateCursorMode {
-        mode, show_cursor: show, enable_input: enable
-    });
-}
 
 /// Handles block placement using left mouse input and a timer.
 fn handle_block_placement(

@@ -2,7 +2,7 @@ use std::{fmt, time::Duration};
 use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
 
-use crate::prelude::*;
+use crate::{prelude::*, ui::in_game::game_ui};
 
 #[derive(Event, Debug)]
 pub enum GameEvent {
@@ -58,7 +58,7 @@ pub fn event_handler(
     mut voxel_query: Query<(Entity, &Voxel)>,
     save_query: Query<(Entity, &Voxel)>,
     mut app_state: ResMut<NextState<GameState>>,
-    mut this_ui: ResMut<GameUI>,
+    mut game_ui: ResMut<GameUI>,
     mut game_save: ResMut<SavedWorld>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut simulation_time: ResMut<SimulationTimer>,
@@ -126,7 +126,7 @@ pub fn event_handler(
                 app_state.set(*new_state);
             }
             GameEvent::ToggleUI { new_ui } => {
-                *this_ui = *new_ui;
+                *game_ui = *new_ui;
             }
             GameEvent::ModifyPlayer { player_modified: modified } => {
                 *player = modified.clone();
@@ -148,6 +148,12 @@ pub fn event_handler(
         let step = event.y.signum() as isize;
         player.hotbar_selector = ((player.hotbar_selector as isize) - step)
             .rem_euclid(HOTBAR_SIZE as isize) as usize;
+        // Allow changing of hotbar while inventory is in use. 
+        if matches!(*game_ui, GameUI::Inventory(_)) {
+            let subset_size = SUBSET_SIZES[player.hotbar_selector];
+            *game_ui = GameUI::Inventory(subset_size);
+        }
+
     }
 }
 

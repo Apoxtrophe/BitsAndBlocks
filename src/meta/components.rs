@@ -59,7 +59,7 @@ pub enum GameUI {
     Options,
     // Game UI,
     Default,
-    Inventory,
+    Inventory(usize),
     Hidden, 
     ExitMenu,
     Debug, 
