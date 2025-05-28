@@ -145,13 +145,9 @@ pub fn event_handler(
     }
     // Handle mouse scroll events for scrolling the hotbar.
     for event in mouse_wheel_reader.read() {
-        if event.y > 0.0 {
-            // Decrement hotbar selector with wrap-around.
-            player.hotbar_selector = (player.hotbar_selector + (HOTBAR_SIZE - 1)) % HOTBAR_SIZE;
-        } else if event.y < 0.0 {
-            // Increment hotbar selector with wrap-around.
-            player.hotbar_selector = (player.hotbar_selector + 1) % HOTBAR_SIZE;
-        }
+        let step = event.y.signum() as isize;
+        player.hotbar_selector = ((player.hotbar_selector as isize) - step)
+            .rem_euclid(HOTBAR_SIZE as isize) as usize;
     }
 }
 
