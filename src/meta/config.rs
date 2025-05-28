@@ -24,6 +24,7 @@ pub const FADE_TIME: f32 = 1.0; // Fade time of Voxel Identifier text
 pub const CURSOR_TEXTURE_PATH: &str = "textures/cursor7.png";
 pub const HOTBAR_SIZE: usize = 9; // Changing this will probably break shit
 pub const INVENTORY_SIZE: usize = 16; // 
+pub const SPEED_INDICATOR_PATH: &str = "textures/speed_indicator.png";
 
 pub const PRESSED_COLOR: Color = Color::srgb(0.15, 0.90, 0.15);
 pub const HOVER_COLOR: Color = Color::srgb(0.5, 0.60, 0.5);
@@ -55,3 +56,4 @@ pub const UI_VOLUME: f64 = 0.5;
 
 // SIMULATION
 pub const TICK_RATE: u64 = 200;
+pub const SPEED_SETTINGS: [u64; 5] = [0, 2, 16, 64, 256]; 

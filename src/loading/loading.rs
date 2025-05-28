@@ -16,8 +16,10 @@ pub fn loading(
     mut controller_query: Query<&mut FpsController>,
 ) {
     // === Simulation Configuration ===
+    let duration = 1.0 / (SPEED_SETTINGS[1]) as f32;
     let simulation_resouce = SimulationTimer {
-        tick: Timer::new(Duration::from_millis(TICK_RATE), TimerMode::Repeating),
+        tick: Timer::new(Duration::from_secs_f32(duration), TimerMode::Repeating),
+        rate: 1,
     };
     commands.insert_resource(simulation_resouce);
     
@@ -55,13 +57,13 @@ pub fn loading(
     // === Texture Loading ===
     let game_texture_handles = GameTextures {
         ground_texture: asset_server.load(WORLD_TEXTURE_PATH),
-        cursor_atlas: asset_server.load(CURSOR_TEXTURE_PATH),
         voxel_textures: asset_server.load(VOXEL_TEXTURE_PATH),
         home_screen_texture: asset_server.load("textures/homescreen.png"),
         menu_button_texture: asset_server.load("textures/buttons.png"),
         new_game_screen_texture: asset_server.load("textures/new_game.png"),
         load_game_screen_texture: asset_server.load("textures/load_game.png"),
         options_screen_texture: asset_server.load("textures/options_screen.png"),
+        speed_indicator_atlas: asset_server.load(SPEED_INDICATOR_PATH),
     };
     commands.insert_resource(game_texture_handles.clone());
 

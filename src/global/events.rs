@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, time::Duration};
 use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
 
@@ -39,6 +39,9 @@ pub enum GameEvent {
     },
     ModifyPlayer {
         player_modified: Player,
+    },
+    SpeedChange {
+      change: i32,   
     }
 }
 
@@ -58,6 +61,7 @@ pub fn event_handler(
     mut this_ui: ResMut<GameUI>,
     mut game_save: ResMut<SavedWorld>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut simulation_time: ResMut<SimulationTimer>,
 ) {
     // Process game events.
     for event in event_reader.read() {
@@ -136,6 +140,19 @@ pub fn event_handler(
             GameEvent::ModifyPlayer { player_modified: modified } => {
                 *player = modified.clone();
             }
+            GameEvent::SpeedChange { change } => {
+                let current = simulation_time.rate;
+                let new_rate = (current as i32 + change).clamp(0, 4);
+                simulation_time.rate = new_rate as u64; 
+                
+                let mut simulation_rate = 1.0 / (SPEED_SETTINGS[new_rate as usize]) as f32;
+                if new_rate == 0 {
+                    simulation_rate = 10000.0;
+                }
+                
+                simulation_time.tick.set_duration(Duration::from_secs_f32(simulation_rate));
+                println!("Rate: {} ---> {}", new_rate, simulation_rate);
+            }
             _ => {
                 println!("!!!UN-HANDLED EVENT");
             }
@@ -188,6 +205,9 @@ impl fmt::Display for GameEvent {
             }
             GameEvent::ModifyPlayer { player_modified } => {
                 write!(f, "EVENT MODIFY PLAYER")
+            }
+            GameEvent::SpeedChange { change } => {
+                write!(f, "EVENT SPEED CHANGE: {:?}", change)
             }
         }
     }

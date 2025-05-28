@@ -37,6 +37,8 @@ pub fn spawn_cursor_node(
 
 pub fn update_cursor(
     mut cursor_query: Query<(&mut Text, &mut TextColor, &Cursor),>,
+    mut speed_indicator_query: Query<(&mut ImageNode, &SpeedIndicator)>,
+    simulation_timer: Res<SimulationTimer>,
     player: Res<Player>,
     time: Res<Time>,
 ) {
@@ -64,4 +66,36 @@ pub fn update_cursor(
             text.1.0 = Color::BLACK;
         }
     }
+    
+    for mut image in &mut speed_indicator_query {
+        if let Some(atlas) = &mut image.0.texture_atlas {
+            atlas.index = simulation_timer.rate as usize;
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct SpeedIndicator; 
+
+pub fn spawn_speed_indicator(
+    commands: &mut Commands,
+    speed_indicator_texture: Handle<Image>,
+    speed_indicator_atlas: Handle<TextureAtlasLayout>,
+) -> Entity {
+    
+    let root_node = commands.spawn((Node {
+        width: Val::VMin(20.0),
+        height: Val::VMin(10.0),
+        top: Val::Percent(20.0),
+        left: Val::Percent(40.0),
+        align_self: AlignSelf::Center,
+        ..Default::default()
+    },
+    ImageNode::from_atlas_image(
+        speed_indicator_texture,
+        TextureAtlas::from(speed_indicator_atlas.clone()),
+    ),
+    SpeedIndicator
+    )).id();
+    root_node
 }

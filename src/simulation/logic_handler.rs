@@ -1,4 +1,4 @@
-use std::collections::{HashSet, VecDeque};
+use std::{collections::{HashSet, VecDeque}, time::Duration};
 
 use bevy::{reflect::{Map, Set}, utils::HashMap};
 
@@ -33,6 +33,7 @@ fn clamp_state(kind: &VoxelType, mut word: Bits16) -> Bits16 {
 #[derive(Resource)]
 pub struct SimulationTimer {
     pub tick: Timer,
+    pub rate: u64, 
 }
 
 #[derive(Event, Debug)]
@@ -49,6 +50,7 @@ pub fn logic_event_handler(
     mut voxel_map: ResMut<VoxelMap>,
     mut commands: Commands,
 ) {
+    
     for event in logic_events.read() {
         match event {
             LogicEvent::Skip => {
@@ -81,7 +83,7 @@ pub fn logic_system(
     mut sim_timer: ResMut<SimulationTimer>,
     voxel_map: ResMut<VoxelMap>,
     mut logic_writer: EventWriter<LogicEvent>,
-) {
+) { 
     // advance the clock
     sim_timer.tick.tick(time.delta());
     if !sim_timer.tick.finished() { return; }

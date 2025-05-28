@@ -140,6 +140,13 @@ fn process_ui_input(
         };
         event_writer.send(GameEvent::ToggleUI { new_ui });
     }
+    
+    if keyboard_input.just_pressed(KeyCode::Comma) {
+        println!("Made it here");
+        event_writer.send(GameEvent::SpeedChange { change: -1 });
+    } else if keyboard_input.just_pressed(KeyCode::Period) {
+        event_writer.send(GameEvent::SpeedChange { change: 1 });
+    }
 }
 
 /// Handles block placement using left mouse input and a timer.

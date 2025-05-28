@@ -22,10 +22,10 @@ pub fn setup_ui(
     let button_atlas = TextureAtlasLayout::from_grid(UVec2::new(144, 32), 1, 16, None, None);
     let button_atlas_handle = texture_atlases.add(button_atlas);
     
-    // Cursor texture atlas
-    let cursor_texture = image_handles.cursor_atlas.clone();
-    let cursor_atlas = TextureAtlasLayout::from_grid(UVec2 { x: 16, y: 16 }, 2, 1, None, None);
-    let cursor_atlas_handle = texture_atlases.add(cursor_atlas);
+    // Speed indicator atlas
+    let speed_indicator_texture = image_handles.speed_indicator_atlas.clone();
+    let speed_indicator_atlas = TextureAtlasLayout::from_grid(UVec2::new(32, 16), 5, 1, None, None);
+    let speed_indicator_atlas_handle = texture_atlases.add(speed_indicator_atlas);
 
     // === Create Main UI Node ===
     let main_node = commands
@@ -51,6 +51,7 @@ pub fn setup_ui(
         spawn_inventory(&mut commands, &voxel_texture_handle, &voxel_atlas_handle),
         spawn_identifier(&mut commands),
         spawn_debug_text(&mut commands),
+        spawn_speed_indicator(&mut commands, speed_indicator_texture, speed_indicator_atlas_handle),
     ];
 
     for child in children {

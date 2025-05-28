@@ -1,0 +1,7 @@
+Update Always
+    UI Visibility
+        Handles the GameUI component that marks which windows need to be visible
+    Menu Button System
+        Handles Button interaction for all states. Sends event to GameEvent to be handled
+    Event Handler
+    Audio Event Handler
