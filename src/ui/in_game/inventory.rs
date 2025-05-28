@@ -10,8 +10,8 @@ pub fn spawn_inventory(
     let inventory_node = commands
         .spawn((
             Node {
-                width: Val::Px(400.0),
-                height: Val::Px(400.0),
+                width: Val::VMin(50.0),
+                height: Val::VMin(50.0),
                 margin: UiRect::all(Val::Auto),
                 flex_wrap: FlexWrap::Wrap,
                 justify_content: JustifyContent::Center,
@@ -19,6 +19,7 @@ pub fn spawn_inventory(
                 position_type: PositionType::Absolute,
                 ..Default::default()
             },
+            BackgroundColor(Color::linear_rgba(0.1, 0.1, 0.1, 0.9)),
             Visibility::Hidden,
             GameUI::Inventory(0),
         ))
@@ -27,8 +28,8 @@ pub fn spawn_inventory(
     // Define a reusable button bundle for inventory slots.
     let button_bundle = (
         Node {
-            width: Val::Percent(25.0),
-            height: Val::Percent(25.0),
+            width: Val::Percent(23.),
+            height: Val::Percent(23.),
             margin: UiRect::all(Val::Auto),
             ..Default::default()
         },

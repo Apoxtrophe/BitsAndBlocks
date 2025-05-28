@@ -54,4 +54,6 @@ TODO
     UI Transparency
         Voxel identifier is present on exit menu (it should not be). 
         Simulation Speed widget is present on exit menu(it should not be.) 
+    WAILA
+        UI element on the top of the screen that shows information about the voxel that is looked at, type, data contained etc. 
         
