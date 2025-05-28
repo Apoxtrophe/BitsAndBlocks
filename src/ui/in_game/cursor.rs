@@ -95,7 +95,8 @@ pub fn spawn_speed_indicator(
         speed_indicator_texture,
         TextureAtlas::from(speed_indicator_atlas.clone()),
     ),
-    SpeedIndicator
+    SpeedIndicator,
+    GameUI::Default,
     )).id();
     root_node
 }

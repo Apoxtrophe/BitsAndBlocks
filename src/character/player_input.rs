@@ -149,6 +149,14 @@ fn process_ui_input(
     }
 }
 
+fn set_cursor(event_tx: &mut EventWriter<GameEvent>,
+              mode: CursorGrabMode, show: bool, enable: bool)
+{
+    event_tx.send(GameEvent::UpdateCursorMode {
+        mode, show_cursor: show, enable_input: enable
+    });
+}
+
 /// Handles block placement using left mouse input and a timer.
 fn handle_block_placement(
     mouse_input: &Res<ButtonInput<MouseButton>>,
@@ -218,7 +226,7 @@ fn handle_block_removal(
 
             // Reset the removal timer.
             remove_timer.reset();
-            remove_timer.set_duration(PLAYER_BREAK_DELAY);
+            remove_timer.set_duration(PLAYER_REMOVE_DELAY);
         }
     }
 }
@@ -248,44 +256,36 @@ fn handle_hotbar_copy(
 }
 
 fn handle_block_interaction(
-    keyboard_input: &Res<ButtonInput<KeyCode>>,
-    player: &Res<Player>,
-    logic_event: &mut EventWriter<LogicEvent>,
+    keyboard: &Res<ButtonInput<KeyCode>>,
+    player  : &Player,
+    logic_tx: &mut EventWriter<LogicEvent>,
 ) {
-    if let Some(voxel) = player.hit_voxel {
-        if keyboard_input.just_pressed(KeyCode::KeyE) {
-            if voxel.kind == VoxelType::Component(ComponentVariants::Switch) {
-                let state = voxel.state;
-                let position = voxel.position;
-                
-                let is_all_zero = state.is_all_zero();
-                
-                let mut new_state = Bits16::all_zeros();
-                
-                if is_all_zero {
-                    new_state = Bits16::all_ones();
-                }
-                
-                logic_event.send(LogicEvent::UpdateVoxel { position: position, new_state: new_state });
-                println!("Switch Pressed");
-            }
-            
-            if voxel.kind == VoxelType::Component(ComponentVariants::Button) {
-                let position = voxel.position;
-                
-                let mut new_state = Bits16::all_ones();
-                
-                logic_event.send(LogicEvent::UpdateVoxel { position: position, new_state: new_state });
-            }
+    if !keyboard.just_pressed(KeyCode::KeyE) && !keyboard.just_released(KeyCode::KeyE) {
+        return;
+    }
+
+    let Some(voxel) = player.hit_voxel else { return; };
+
+    match (voxel.kind, keyboard.just_pressed(KeyCode::KeyE)) {
+        (VoxelType::Component(ComponentVariants::Switch), true) => {
+            let new_state = if voxel.state.is_all_zero() {
+                Bits16::all_ones()
+            } else {
+                Bits16::all_zeros()
+            };
+            logic_tx.send(LogicEvent::UpdateVoxel { position: voxel.position, new_state });
         }
-        if keyboard_input.just_released(KeyCode::KeyE) {
-            if voxel.kind == VoxelType::Component(ComponentVariants::Button) {
-                let position = voxel.position;
-                
-                let mut new_state = Bits16::all_zeros();
-                
-                logic_event.send(LogicEvent::UpdateVoxel { position: position, new_state: new_state });
-            }
+
+        (VoxelType::Component(ComponentVariants::Button), true) => {
+            logic_tx.send(LogicEvent::UpdateVoxel { position: voxel.position,
+                                                    new_state: Bits16::all_ones() });
         }
+
+        (VoxelType::Component(ComponentVariants::Button), false) => { // key released
+            logic_tx.send(LogicEvent::UpdateVoxel { position: voxel.position,
+                                                    new_state: Bits16::all_zeros() });
+        }
+
+        _ => {}
     }
 }

@@ -36,7 +36,7 @@ pub const BORDER_UNSELECTED: Color = Color::BLACK;
 pub const PLAYER_HEIGHT: f32 = 1.9;
 pub const PLAYER_CROUCHED_HEIGHT: f32 = 1.5;
 pub const PLAYER_PLACE_DELAY: Duration = Duration::from_millis(150);
-pub const PLAYER_BREAK_DELAY: Duration = Duration::from_millis(150);
+pub const PLAYER_REMOVE_DELAY: Duration = Duration::from_millis(150);
 pub const SPAWN_POINT: Vec3 = Vec3::new(0.0, 5.625, 0.0);
 pub const RESPAWN_THERESHOLD: f32 = -10.0;
 

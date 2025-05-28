@@ -28,6 +28,7 @@ pub fn spawn_identifier(commands: &mut Commands) -> Entity {
             TextColor(Color::BLACK),
             TextLayout::new_with_justify(JustifyText::Center),
         ))
+        .insert(GameUI::Default)
         .insert(VoxelIdentifierText)
         .id()
 }

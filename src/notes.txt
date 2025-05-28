@@ -51,3 +51,7 @@ TODO
         walking
     Inventory
         Make it display only implemented voxels 
+    UI Transparency
+        Voxel identifier is present on exit menu (it should not be). 
+        Simulation Speed widget is present on exit menu(it should not be.) 
+        

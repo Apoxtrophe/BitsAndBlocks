@@ -134,7 +134,7 @@ pub fn event_handler(
             GameEvent::SpeedChange { change } => {
                 let current = simulation_time.rate;
                 let new_rate = (current as i32 + change).clamp(0, SPEED_SETTINGS.len() as i32 - 1) as usize;
-                let sim_rate  = if new_rate == 0 { f32::INFINITY } else { 1.0 / SPEED_SETTINGS[new_rate] as f32};
+                let sim_rate  = if new_rate == 0 { 100000.0 } else { 1.0 / SPEED_SETTINGS[new_rate] as f32};
                 simulation_time.rate = new_rate as u64;
                 simulation_time.tick.set_duration(Duration::from_secs_f32(sim_rate));
             }
