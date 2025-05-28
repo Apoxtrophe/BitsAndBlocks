@@ -74,16 +74,7 @@ pub fn event_handler(
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
                 let mut voxel_asset_data = voxel_asset.clone();
                 
-                let mut is_valid = false; 
-                match voxel.kind {
-                    VoxelType::Wire(_) => {
-                        is_valid = true; 
-                    }
-                    VoxelType::BundledWire => {
-                        is_valid = true;
-                    }
-                    _ => {}
-                }
+                let is_valid = matches!(voxel.kind, VoxelType::Wire(_) | VoxelType::BundledWire);
                 if is_valid {
                     // Determine cable connections from neighboring voxels.
                     let connections = count_neighbors(*voxel, &voxel_map);
@@ -142,16 +133,10 @@ pub fn event_handler(
             }
             GameEvent::SpeedChange { change } => {
                 let current = simulation_time.rate;
-                let new_rate = (current as i32 + change).clamp(0, 4);
-                simulation_time.rate = new_rate as u64; 
-                
-                let mut simulation_rate = 1.0 / (SPEED_SETTINGS[new_rate as usize]) as f32;
-                if new_rate == 0 {
-                    simulation_rate = 10000.0;
-                }
-                
-                simulation_time.tick.set_duration(Duration::from_secs_f32(simulation_rate));
-                println!("Rate: {} ---> {}", new_rate, simulation_rate);
+                let new_rate = (current as i32 + change).clamp(0, SPEED_SETTINGS.len() as i32 - 1) as usize;
+                let sim_rate  = if new_rate == 0 { f32::INFINITY } else { 1.0 / SPEED_SETTINGS[new_rate] as f32};
+                simulation_time.rate = new_rate as u64;
+                simulation_time.tick.set_duration(Duration::from_secs_f32(sim_rate));
             }
             _ => {
                 println!("!!!UN-HANDLED EVENT");
