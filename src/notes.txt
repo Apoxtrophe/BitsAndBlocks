@@ -49,3 +49,5 @@ TODO
     Add sounds
         changing hotbar slot 
         walking
+    Inventory
+        Make it display only implemented voxels 

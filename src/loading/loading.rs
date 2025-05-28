@@ -1,13 +1,13 @@
 use std::{collections::HashSet, fs, time::Duration};
 
-use bevy::{prelude::*, window::CursorGrabMode};
+use bevy::{prelude::*, window::{CursorGrabMode, PrimaryWindow}};
 use bevy_fps_controller::controller::FpsController;
 
 use crate::{prelude::*, GameState};
 
 /// Handles Asset and Resource Loading before entering the main menu / game.
 pub fn loading(
-    mut window_query: Query<&mut Window>,
+    mut window_q      : Query<&mut Window, With<PrimaryWindow>>,
     mut app_state: ResMut<NextState<GameState>>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -15,23 +15,18 @@ pub fn loading(
     materials: ResMut<Assets<StandardMaterial>>,
     mut controller_query: Query<&mut FpsController>,
 ) {
-    // === Simulation Configuration ===
-    let duration = 1.0 / (SPEED_SETTINGS[1]) as f32;
-    let simulation_resouce = SimulationTimer {
-        tick: Timer::new(Duration::from_secs_f32(duration), TimerMode::Repeating),
-        rate: 1,
-    };
-    commands.insert_resource(simulation_resouce);
+    // --- window + cursor ----------------------------------------------------
+    if let Ok(mut win) = window_q.get_single_mut() {
+        win.title = "Bits & Blocks".into();
+        win.cursor_options.visible = true;
+        win.cursor_options.grab_mode = CursorGrabMode::None;
+    }
     
-    
-    // === Window Configuration ===
-    let mut window = window_query.single_mut();
-    window.title = "Bits And Blocks".to_string();
-    window.cursor_options = bevy::window::CursorOptions {
-        visible: true,
-        grab_mode: CursorGrabMode::None,
-        ..Default::default()
-    };
+    // --- schedule simulation timer resource --------------------------------
+    commands.insert_resource(SimulationTimer {
+        tick : Timer::from_seconds(1.0 / SPEED_SETTINGS[1] as f32, TimerMode::Repeating),
+        rate : 1,
+    });
 
     // === Saved Games Resource ===
     let saved_games = load_saved_names();
@@ -42,16 +37,12 @@ pub fn loading(
         controller.enable_input = false;
     }
 
-    // === Audio Loading ===
-    let place_audio = asset_server.load(AUDIO_PLACE);
-    let destroy_audio = asset_server.load(AUDIO_DESTROY);
-    let ui_hover_audio = asset_server.load(AUDIO_UI_HOVER);
-    let ui_click_audio = asset_server.load(AUDIO_UI_CLICK);
+    // === Audio Loading ==
     commands.insert_resource(AudioHandles {
-        place: place_audio,
-        destroy: destroy_audio,
-        ui_hover: ui_hover_audio,
-        ui_click: ui_click_audio,
+        place: asset_server.load(AUDIO_PLACE),
+        destroy: asset_server.load(AUDIO_DESTROY),
+        ui_hover: asset_server.load(AUDIO_UI_HOVER),
+        ui_click: asset_server.load(AUDIO_UI_CLICK),
     });
 
     // === Texture Loading ===
