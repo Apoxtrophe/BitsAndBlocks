@@ -23,18 +23,9 @@ impl Default for Player {
         
         use VoxelType::*;
 
-        let mut initial_bar_ids: Vec<(usize, usize)> = Vec::new();
-        for i in 0..9 {
-            initial_bar_ids.push((i, 0));
-        }
-        
-        let mut initial_bar: Vec<VoxelType> = Vec::new();
-        for i in 0..9 {
-            println!("{:?}", initial_bar_ids[i]);
-            let voxel_type = VoxelType::try_from(initial_bar_ids[i]).unwrap();
-
-            initial_bar.push(voxel_type);
-        }
+        let initial_bar: Vec<VoxelType> =
+            (0..9).map(|i| VoxelType::try_from((i, 0)).expect("invalid voxel id"))
+                .collect();
         
         Self {
             camera_pos: Vec3::ZERO,

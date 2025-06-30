@@ -21,7 +21,9 @@ pub fn raycast_system(
     // 3. Cast & process first hit.
     if let Some((_, hit)) = raycast.cast_ray(ray, &RayCastSettings::default()).first() {
         let normal     = hit.normal.round();
-        let tri_avg    = (hit.triangle.unwrap()[0] + hit.triangle.unwrap()[1] + hit.triangle.unwrap()[2]) / 3.0;
+        let tri_avg    = hit.triangle
+            .map(|tri| (tri[0] + tri[1] + tri[2]) / 3.0)
+            .unwrap_or(hit.point);
         let sel_pos    = (tri_avg - normal * 0.5).round();
         let mut adj_pos= sel_pos + normal;
         let mut hit_voxel  = None;
