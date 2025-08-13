@@ -2,7 +2,7 @@ use std::{fmt, time::Duration};
 use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsController;
 
-use crate::{prelude::*, ui::in_game::game_ui};
+use crate::prelude::*;
 
 #[derive(Event, Debug)]
 pub enum GameEvent {

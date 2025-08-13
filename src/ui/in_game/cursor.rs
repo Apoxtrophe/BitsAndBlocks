@@ -8,17 +8,17 @@ pub fn spawn_cursor_node(
     commands: &mut Commands,
 ) -> Entity {
     
-    let text_node =((Text::new("+"),
+    let text_node =(Text::new("+"),
         TextFont {
             font_size: 48.0, 
             ..Default::default()
         },
         TextColor::BLACK,
         TextLayout::new_with_justify(JustifyText::Center),
-    ));
+    );
     
     
-    let mut mouse_cursor = commands.spawn((
+    let mouse_cursor = commands.spawn((
         Node {
             justify_content: JustifyContent::Center,
             position_type: PositionType::Absolute,

@@ -1,7 +1,3 @@
-use std::{collections::{HashSet, VecDeque}, time::Duration};
-
-use bevy::{reflect::{Map, Set}, utils::HashMap};
-
 use crate::prelude::*; 
 
 /// Returns `true` when `voxel` is capable of transporting **`channel`**.
@@ -123,7 +119,7 @@ pub fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
     // --- 1. gather every *gate* output word ---------------------------------
     let mut gate_drive: HashMap<IVec3, Bits16> = HashMap::new();
 
-    for (&pos, v) in &voxel_map.voxel_map {
+    for (_, v) in &voxel_map.voxel_map {
         if matches!(v.kind, VoxelType::Wire(_) | VoxelType::BundledWire) {
             continue;                       // skip cables themselves
         }

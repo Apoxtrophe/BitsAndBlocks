@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::prelude::*;
 use bevy_kira_audio::AudioSource;
 
 #[derive(Resource, Debug, Clone)]
@@ -20,8 +19,6 @@ pub struct Player {
 
 impl Default for Player {
     fn default() -> Self {
-        
-        use VoxelType::*;
 
         let initial_bar: Vec<VoxelType> =
             (0..9).map(|i| VoxelType::try_from((i, 0)).expect("invalid voxel id"))
@@ -234,7 +231,6 @@ impl VoxelType {
             VoxelType::Component(ComponentVariants::Switch) => 1,
             VoxelType::Component(ComponentVariants::Button) => 2,
             VoxelType::Component(ComponentVariants::Light) => 3,
-            _ => 0, 
             
         }
     }

@@ -17,7 +17,6 @@ pub use crate::ui::in_game::cursor::*;
 pub use crate::ui::in_game::identifier::*;
 pub use crate::ui::in_game::debug::*;
 pub use crate::ui::in_game::exit_menu::*;
-pub use crate::ui::in_game::speed_indicator::*;
 
 pub use crate::ui::main_menu::main_menu_ui::*;
 pub use crate::ui::main_menu::new_game::*;

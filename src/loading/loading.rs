@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fs, time::Duration};
+use std::fs;
 
 use bevy::{prelude::*, window::{CursorGrabMode, PrimaryWindow}};
 use bevy_fps_controller::controller::FpsController;

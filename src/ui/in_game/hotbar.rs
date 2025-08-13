@@ -1,7 +1,5 @@
 use crate::prelude::*;
 
-use super::speed_indicator;
-
 /// Defines the style for hotbar slots.
 pub struct HotbarSlotStyle {
     pub vmin_size: f32,
