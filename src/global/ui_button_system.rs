@@ -115,7 +115,6 @@ pub fn menu_button_system(
     // Handle escape key in the main menu to return to the main screen.
     if keyboard_input.just_pressed(KeyCode::Escape)
         && *ui != GameUI::Default
-        && matches!(*ui, GameUI::Inventory(_))
         && *ui != GameUI::ExitMenu
     {
         event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::MainScreen });

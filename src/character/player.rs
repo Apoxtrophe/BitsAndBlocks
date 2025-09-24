@@ -61,6 +61,11 @@ pub fn setup_player(mut commands: Commands) {
 
     let mut player_camera = commands.spawn((
         Camera3d::default(),
+        Camera {
+            hdr: true,
+            ..default()
+        },
+        
         Projection::Perspective(PerspectiveProjection {
             fov: TAU / 5.0,
             ..default()

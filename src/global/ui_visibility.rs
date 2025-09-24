@@ -27,3 +27,9 @@ pub fn update_ui_visibility(
         };
     }
 }
+
+pub fn ui_input (
+    
+) {
+    
+}

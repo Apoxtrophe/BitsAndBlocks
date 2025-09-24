@@ -18,22 +18,6 @@ pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
     }
 }
 
-/// Update the window's cursor options and the FPS controller's input state.
-pub fn update_cursor_and_input(
-    window: &mut Window,
-    controller_query: &mut Query<&mut FpsController>,
-    grab_mode: CursorGrabMode,
-    cursor_visible: bool,
-    input_enabled: bool,
-) {
-    window.cursor_options.grab_mode = grab_mode;
-    window.cursor_options.visible = cursor_visible;
-    for mut controller in controller_query.iter_mut() {
-        controller.enable_input = input_enabled;
-    }
-}
-
-
 /// Main player input system.
 pub fn player_input_system(
     mouse_input: Res<ButtonInput<MouseButton>>,
