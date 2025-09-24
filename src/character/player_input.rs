@@ -1,15 +1,261 @@
-
-use std::ops::Deref;
+use std::time::Duration;
 
 use bevy::{prelude::*, window::CursorGrabMode};
-use bevy_fps_controller::controller::FpsController;
 use bevy_rapier3d::prelude::Velocity;
+
 use crate::prelude::*;
+
+struct PlayerInputContext<'w, 's> {
+    mouse: &'w ButtonInput<MouseButton>,
+    keyboard: &'w ButtonInput<KeyCode>,
+    player: &'w Player,
+    voxel_assets: &'w VoxelMap,
+    current_ui: &'w GameUI,
+    time: &'w Time,
+    has_window: bool,
+    place_timer: &'w mut Timer,
+    remove_timer: &'w mut Timer,
+    event_writer: EventWriter<'w, 's, GameEvent>,
+    audio_writer: EventWriter<'w, 's, AudioEvent>,
+    logic_writer: EventWriter<'w, 's, LogicEvent>,
+}
+
+impl<'w, 's> PlayerInputContext<'w, 's> {
+    fn new(
+        mouse: &'w ButtonInput<MouseButton>,
+        keyboard: &'w ButtonInput<KeyCode>,
+        player: &'w Player,
+        voxel_assets: &'w VoxelMap,
+        current_ui: &'w GameUI,
+        time: &'w Time,
+        has_window: bool,
+        place_timer: &'w mut Timer,
+        remove_timer: &'w mut Timer,
+        event_writer: EventWriter<'w, 's, GameEvent>,
+        audio_writer: EventWriter<'w, 's, AudioEvent>,
+        logic_writer: EventWriter<'w, 's, LogicEvent>,
+    ) -> Self {
+        Self {
+            mouse,
+            keyboard,
+            player,
+            voxel_assets,
+            current_ui,
+            time,
+            has_window,
+            place_timer,
+            remove_timer,
+            event_writer,
+            audio_writer,
+            logic_writer,
+        }
+    }
+
+    fn process(&mut self) {
+        self.handle_world_interactions();
+
+        if !self.has_window {
+            // Mirror the previous behaviour by skipping UI shortcuts when the window is absent.
+            return;
+        }
+
+        self.handle_ui_shortcuts();
+    }
+
+    fn handle_world_interactions(&mut self) {
+        if *self.current_ui != GameUI::Default {
+            return;
+        }
+
+        self.handle_block_placement();
+        self.handle_block_removal();
+        self.handle_hotbar_copy();
+        self.handle_block_interaction();
+    }
+
+    fn handle_block_placement(&mut self) {
+        if !mouse_triggered(
+            self.place_timer,
+            MouseButton::Left,
+            self.mouse,
+            self.time,
+            PLAYER_PLACE_DELAY,
+        ) {
+            return;
+        }
+
+        if let Some(mut selected_voxel) = self.player.selected_voxel {
+            self.audio_writer
+                .send(AudioEvent::World(WorldSfx::Place, selected_voxel.position));
+
+            selected_voxel.direction = cardinalize(self.player.camera_dir);
+
+            let voxel_asset = self.voxel_assets.asset_map[&selected_voxel.kind].clone();
+
+            self.event_writer.send(GameEvent::PlaceBlock {
+                voxel: selected_voxel,
+                voxel_asset,
+            });
+
+            let mesh_updates = get_neighboring_coords(selected_voxel.position);
+            self.event_writer.send(GameEvent::UpdateMesh {
+                updates: mesh_updates,
+            });
+        }
+    }
+
+    fn handle_block_removal(&mut self) {
+        if !mouse_triggered(
+            self.remove_timer,
+            MouseButton::Right,
+            self.mouse,
+            self.time,
+            PLAYER_REMOVE_DELAY,
+        ) {
+            return;
+        }
+
+        if let Some(hit_voxel) = self.player.hit_voxel {
+            self.audio_writer
+                .send(AudioEvent::World(WorldSfx::Destroy, hit_voxel.position));
+
+            self.event_writer.send(GameEvent::RemoveBlock {
+                position: hit_voxel.position,
+            });
+
+            let mesh_updates = get_neighboring_coords(hit_voxel.position);
+            self.event_writer.send(GameEvent::UpdateMesh {
+                updates: mesh_updates,
+            });
+        }
+    }
+
+    fn handle_hotbar_copy(&mut self) {
+        if !self.mouse.just_pressed(MouseButton::Middle) {
+            return;
+        }
+
+        if let Some(hit_voxel) = self.player.hit_voxel {
+            let kind = hit_voxel.kind;
+            let group = kind.group();
+
+            let mut new_player = Player::clone(self.player);
+            if group < new_player.hotbar.len() {
+                new_player.hotbar_selector = group;
+                new_player.hotbar[group] = kind;
+
+                self.event_writer.send(GameEvent::ModifyPlayer {
+                    player_modified: new_player,
+                });
+            }
+        }
+    }
+
+    fn handle_block_interaction(&mut self) {
+        let pressed = self.keyboard.just_pressed(KeyCode::KeyE);
+        let released = self.keyboard.just_released(KeyCode::KeyE);
+
+        if !pressed && !released {
+            return;
+        }
+
+        let Some(voxel) = self.player.hit_voxel else {
+            return;
+        };
+
+        match (voxel.kind, pressed) {
+            (VoxelType::Component(ComponentVariants::Switch), true) => {
+                let new_state = if voxel.state.is_all_zero() {
+                    Bits16::all_ones()
+                } else {
+                    Bits16::all_zeros()
+                };
+                self.logic_writer.send(LogicEvent::UpdateVoxel {
+                    position: voxel.position,
+                    new_state,
+                });
+            }
+            (VoxelType::Component(ComponentVariants::Button), true) => {
+                self.logic_writer.send(LogicEvent::UpdateVoxel {
+                    position: voxel.position,
+                    new_state: Bits16::all_ones(),
+                });
+            }
+            (VoxelType::Component(ComponentVariants::Button), false) => {
+                self.logic_writer.send(LogicEvent::UpdateVoxel {
+                    position: voxel.position,
+                    new_state: Bits16::all_zeros(),
+                });
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_ui_shortcuts(&mut self) {
+        if self.keyboard.just_pressed(KeyCode::Escape) {
+            if *self.current_ui != GameUI::ExitMenu {
+                self.set_ui(GameUI::ExitMenu, CursorGrabMode::None, true, false);
+            } else {
+                self.set_ui(GameUI::Default, CursorGrabMode::Locked, false, true);
+            }
+            return;
+        }
+
+        if self.keyboard.just_pressed(KeyCode::Tab) {
+            if *self.current_ui != GameUI::ExitMenu {
+                let selector = self.player.hotbar_selector;
+                let size = SUBSET_SIZES[selector];
+                self.set_ui(GameUI::Inventory(size), CursorGrabMode::Locked, true, false);
+            }
+            return;
+        }
+
+        if self.keyboard.just_released(KeyCode::Tab) {
+            if *self.current_ui != GameUI::ExitMenu {
+                self.set_ui(GameUI::Default, CursorGrabMode::Locked, false, true);
+            }
+        }
+
+        if self.keyboard.just_pressed(KeyCode::F3) {
+            let new_ui = if *self.current_ui == GameUI::Debug {
+                GameUI::Default
+            } else {
+                GameUI::Debug
+            };
+            self.switch_ui(new_ui);
+        }
+
+        if self.keyboard.just_pressed(KeyCode::Comma) {
+            self.event_writer
+                .send(GameEvent::SpeedChange { change: -1 });
+        } else if self.keyboard.just_pressed(KeyCode::Period) {
+            self.event_writer.send(GameEvent::SpeedChange { change: 1 });
+        }
+    }
+
+    fn switch_ui(&mut self, new_ui: GameUI) {
+        self.event_writer.send(GameEvent::ToggleUI { new_ui });
+    }
+
+    fn set_ui(
+        &mut self,
+        new_ui: GameUI,
+        mode: CursorGrabMode,
+        show_cursor: bool,
+        enable_input: bool,
+    ) {
+        self.event_writer.send(GameEvent::UpdateCursorMode {
+            mode,
+            show_cursor,
+            enable_input,
+        });
+        self.event_writer.send(GameEvent::ToggleUI { new_ui });
+    }
+}
 
 /// Respawn entities whose vertical position falls below the threshold.
 pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
     for (mut transform, mut velocity) in query.iter_mut() {
-        // Only respawn if the entity is below RESPAWN_THERESHOLD
         if transform.translation.y > RESPAWN_THERESHOLD {
             continue;
         }
@@ -25,248 +271,53 @@ pub fn player_input_system(
     player: Res<Player>,
     voxel_assets: Res<VoxelMap>,
     mut window_query: Query<&mut Window>,
-    mut event_writer: EventWriter<GameEvent>,
+    event_writer: EventWriter<GameEvent>,
     current_ui: Res<GameUI>,
     mut place_timer: Local<Timer>,
     mut remove_timer: Local<Timer>,
     time: Res<Time>,
-    mut audio_writer: EventWriter<AudioEvent>,
-    mut logic_event_writer: EventWriter<LogicEvent>,
+    audio_writer: EventWriter<AudioEvent>,
+    logic_event_writer: EventWriter<LogicEvent>,
 ) {
-    // Only allow block interactions when in Default UI mode.
-    if *current_ui == GameUI::Default {
-        handle_block_placement(
-            &mouse_input,
-            &player,
-            &voxel_assets,
-            &mut event_writer,
-            &mut place_timer,
-            &time,
-            &mut audio_writer,
-        );
-        handle_block_removal(
-            &mouse_input,
-            &player,
-            &mut event_writer,
-            &mut remove_timer,
-            &time,
-            &mut audio_writer,
-        );
-        handle_hotbar_copy(
-            &mouse_input,
-            &player,
-            &mut event_writer,
-        );
-        handle_block_interaction(
-            &keyboard_input, 
-            &player,
-            &mut logic_event_writer,
-        );
-    }
+    let has_window = window_query.get_single_mut().is_ok();
 
-    // Process UI input only if there is a valid window.
-    if window_query.get_single_mut().is_ok() {
-        process_ui_input(&keyboard_input, current_ui, &mut event_writer, player);
-    } else if keyboard_input.pressed(KeyCode::Tab) || *current_ui == GameUI::ExitMenu {
-        return;
-    }
+    let mut context = PlayerInputContext::new(
+        mouse_input.as_ref(),
+        keyboard_input.as_ref(),
+        player.as_ref(),
+        voxel_assets.as_ref(),
+        current_ui.as_ref(),
+        time.as_ref(),
+        has_window,
+        &mut place_timer,
+        &mut remove_timer,
+        event_writer,
+        audio_writer,
+        logic_event_writer,
+    );
+
+    context.process();
 }
 
-/// Handles key events for toggling UI modes.
-fn process_ui_input(
-    keyboard_input: &Res<ButtonInput<KeyCode>>,
-    current_ui: Res<GameUI>,
-    event_writer: &mut EventWriter<GameEvent>,
-    player: Res<Player>,
-) {
-    if keyboard_input.just_pressed(KeyCode::Escape) {
-        // Toggle Exit Menu.
-        if *current_ui != GameUI::ExitMenu {
-            event_writer.send(GameEvent::UpdateCursorMode {
-                mode: CursorGrabMode::None,
-                show_cursor: true,
-                enable_input: false,
-            });
-            event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::ExitMenu });
-        } else {
-            event_writer.send(GameEvent::UpdateCursorMode {
-                mode: CursorGrabMode::Locked,
-                show_cursor: false,
-                enable_input: true,
-            });
-            event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Default });
-        }
-    } else if keyboard_input.just_pressed(KeyCode::Tab) {
-        // Open Inventory if not in the Exit Menu.
-        let selector = player.hotbar_selector;
-        let size = SUBSET_SIZES[selector];
-        
-        if *current_ui != GameUI::ExitMenu {
-            event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Inventory(size) });
-            event_writer.send(GameEvent::UpdateCursorMode {
-                mode: CursorGrabMode::Locked,
-                show_cursor: true,
-                enable_input: false,
-            });
-        }
-    } else if keyboard_input.just_released(KeyCode::Tab) {
-        // Close Inventory.
-        if *current_ui != GameUI::ExitMenu {
-            event_writer.send(GameEvent::ToggleUI { new_ui: GameUI::Default });
-            event_writer.send(GameEvent::UpdateCursorMode {
-                mode: CursorGrabMode::Locked,
-                show_cursor: false,
-                enable_input: true,
-            });
-        }
-    } else if keyboard_input.just_pressed(KeyCode::F3) {
-        // Toggle Debug mode.
-        let new_ui = if *current_ui == GameUI::Debug {
-            GameUI::Default
-        } else {
-            GameUI::Debug
-        };
-        event_writer.send(GameEvent::ToggleUI { new_ui });
-    }
-    
-    if keyboard_input.just_pressed(KeyCode::Comma) {
-        println!("Made it here");
-        event_writer.send(GameEvent::SpeedChange { change: -1 });
-    } else if keyboard_input.just_pressed(KeyCode::Period) {
-        event_writer.send(GameEvent::SpeedChange { change: 1 });
-    }
-}
-
-
-/// Handles block placement using left mouse input and a timer.
-fn handle_block_placement(
-    mouse_input: &Res<ButtonInput<MouseButton>>,
-    player: &Res<Player>,
-    voxel_assets: &Res<VoxelMap>,
-    event_writer: &mut EventWriter<GameEvent>,
-    place_timer: &mut Timer,
-    time: &Res<Time>,
-    audio_writer: &mut EventWriter<AudioEvent>,
-) {
-    // Check if the left mouse button was just pressed or held long enough.
-    let trigger = mouse_input.just_pressed(MouseButton::Left)
-        || (mouse_input.pressed(MouseButton::Left) && place_timer.tick(time.delta()).finished());
-    if trigger {
-        if let Some(mut selected_voxel) = player.selected_voxel {
-            // Play placement sound.
-            audio_writer.send(AudioEvent::World(WorldSfx::Place, selected_voxel.position));
-
-            // Update voxel direction based on the camera.
-            selected_voxel.direction = cardinalize(player.camera_dir);
-
-            // Retrieve the voxel asset.
-            let voxel_asset = voxel_assets.asset_map[&selected_voxel.kind].clone();
-
-            // Dispatch the block placement event.
-            event_writer.send(GameEvent::PlaceBlock {
-                voxel: selected_voxel,
-                voxel_asset,
-            });
-
-            // Update neighboring meshes.
-            let mesh_updates = get_neighboring_coords(selected_voxel.position);
-            event_writer.send(GameEvent::UpdateMesh { updates: mesh_updates });
-
-            // Reset the placement timer.
-            place_timer.reset();
-            place_timer.set_duration(PLAYER_PLACE_DELAY);
-        }
-    }
-}
-
-/// Handles block removal using right mouse input and a timer.
-fn handle_block_removal(
-    mouse_input: &Res<ButtonInput<MouseButton>>,
-    player: &Res<Player>,
-    event_writer: &mut EventWriter<GameEvent>,
-    remove_timer: &mut Timer,
-    time: &Res<Time>,
-    audio_writer: &mut EventWriter<AudioEvent>,
-) {
-    // Check if the right mouse button was just pressed or held long enough.
-    let trigger = mouse_input.just_pressed(MouseButton::Right)
-        || (mouse_input.pressed(MouseButton::Right) && remove_timer.tick(time.delta()).finished());
-    if trigger {
-        if let Some(hit_voxel) = player.hit_voxel {
-            // Play removal sound.
-            audio_writer.send(AudioEvent::World(WorldSfx::Destroy, hit_voxel.position));
-
-            // Dispatch the block removal event.
-            event_writer.send(GameEvent::RemoveBlock {
-                position: hit_voxel.position,
-            });
-
-            // Update neighboring meshes.
-            let mesh_updates = get_neighboring_coords(hit_voxel.position);
-            event_writer.send(GameEvent::UpdateMesh { updates: mesh_updates });
-
-            // Reset the removal timer.
-            remove_timer.reset();
-            remove_timer.set_duration(PLAYER_REMOVE_DELAY);
-        }
-    }
-}
-
-fn handle_hotbar_copy(
-    mouse_input:   &Res<ButtonInput<MouseButton>>,
-    player:        &Res<Player>,
-    event_writer:  &mut EventWriter<GameEvent>,
-) {
-    if mouse_input.just_pressed(MouseButton::Middle) {
-        if let Some(hit_voxel) = player.hit_voxel {
-            let kind  = hit_voxel.kind;          // enum VoxelType
-            let group = kind.group();            // helper → usize (0‑n)
-
-            // Clone‑and‑patch the Player resource.
-            let mut new_player = player.deref().clone();
-            if group < new_player.hotbar.len() {
-                new_player.hotbar_selector = group;
-                new_player.hotbar[group]   = kind;
-
-                event_writer.send(GameEvent::ModifyPlayer {
-                    player_modified: new_player,
-                });
-            }
-        }
-    }
-}
-
-fn handle_block_interaction(
-    keyboard: &Res<ButtonInput<KeyCode>>,
-    player  : &Player,
-    logic_tx: &mut EventWriter<LogicEvent>,
-) {
-    if !keyboard.just_pressed(KeyCode::KeyE) && !keyboard.just_released(KeyCode::KeyE) {
-        return;
+/// Returns `true` when the provided timer should fire for the given mouse button.
+fn mouse_triggered(
+    timer: &mut Timer,
+    button: MouseButton,
+    input: &ButtonInput<MouseButton>,
+    time: &Time,
+    delay: Duration,
+) -> bool {
+    if input.just_pressed(button) {
+        timer.reset();
+        timer.set_duration(delay);
+        return true;
     }
 
-    let Some(voxel) = player.hit_voxel else { return; };
-
-    match (voxel.kind, keyboard.just_pressed(KeyCode::KeyE)) {
-        (VoxelType::Component(ComponentVariants::Switch), true) => {
-            let new_state = if voxel.state.is_all_zero() {
-                Bits16::all_ones()
-            } else {
-                Bits16::all_zeros()
-            };
-            logic_tx.send(LogicEvent::UpdateVoxel { position: voxel.position, new_state });
-        }
-
-        (VoxelType::Component(ComponentVariants::Button), true) => {
-            logic_tx.send(LogicEvent::UpdateVoxel { position: voxel.position,
-                                                    new_state: Bits16::all_ones() });
-        }
-
-        (VoxelType::Component(ComponentVariants::Button), false) => { // key released
-            logic_tx.send(LogicEvent::UpdateVoxel { position: voxel.position,
-                                                    new_state: Bits16::all_zeros() });
-        }
-
-        _ => {}
+    if input.pressed(button) && timer.tick(time.delta()).finished() {
+        timer.reset();
+        timer.set_duration(delay);
+        return true;
     }
+
+    false
 }
