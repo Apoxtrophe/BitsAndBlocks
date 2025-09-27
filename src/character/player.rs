@@ -81,3 +81,14 @@ pub fn setup_player(mut commands: Commands) {
     player_camera.insert(AtmosphereCamera::default());
     player_camera.insert(GameEntity);
 }
+
+/// Respawn entities whose vertical position falls below the threshold.
+pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
+    for (mut transform, mut velocity) in query.iter_mut() {
+        if transform.translation.y > RESPAWN_THERESHOLD {
+            continue;
+        }
+        velocity.linvel = Vec3::ZERO;
+        transform.translation = SPAWN_POINT;
+    }
+}

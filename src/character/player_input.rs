@@ -1,11 +1,10 @@
 use std::time::Duration;
 
 use bevy::{prelude::*, window::CursorGrabMode};
-use bevy_rapier3d::prelude::Velocity;
 
 use crate::prelude::*;
 
-struct PlayerInputContext<'w, 's> {
+struct PlayerInputContext<'w> {
     mouse: &'w ButtonInput<MouseButton>,
     keyboard: &'w ButtonInput<KeyCode>,
     player: &'w Player,
@@ -15,12 +14,12 @@ struct PlayerInputContext<'w, 's> {
     has_window: bool,
     place_timer: &'w mut Timer,
     remove_timer: &'w mut Timer,
-    event_writer: EventWriter<'w, 's, GameEvent>,
-    audio_writer: EventWriter<'w, 's, AudioEvent>,
-    logic_writer: EventWriter<'w, 's, LogicEvent>,
+    event_writer: EventWriter<'w, GameEvent>,
+    audio_writer: EventWriter<'w, AudioEvent>,
+    logic_writer: EventWriter<'w, LogicEvent>,
 }
 
-impl<'w, 's> PlayerInputContext<'w, 's> {
+impl<'w, 's> PlayerInputContext<'w> {
     fn new(
         mouse: &'w ButtonInput<MouseButton>,
         keyboard: &'w ButtonInput<KeyCode>,
@@ -31,9 +30,9 @@ impl<'w, 's> PlayerInputContext<'w, 's> {
         has_window: bool,
         place_timer: &'w mut Timer,
         remove_timer: &'w mut Timer,
-        event_writer: EventWriter<'w, 's, GameEvent>,
-        audio_writer: EventWriter<'w, 's, AudioEvent>,
-        logic_writer: EventWriter<'w, 's, LogicEvent>,
+        event_writer: EventWriter<'w, GameEvent>,
+        audio_writer: EventWriter<'w, AudioEvent>,
+        logic_writer: EventWriter<'w, LogicEvent>,
     ) -> Self {
         Self {
             mouse,
@@ -50,7 +49,6 @@ impl<'w, 's> PlayerInputContext<'w, 's> {
             logic_writer,
         }
     }
-
     fn process(&mut self) {
         self.handle_world_interactions();
 
@@ -60,6 +58,48 @@ impl<'w, 's> PlayerInputContext<'w, 's> {
         }
 
         self.handle_ui_shortcuts();
+    }
+    
+    fn handle_ui_shortcuts(&mut self) {
+        if self.keyboard.just_pressed(KeyCode::Escape) {
+            if *self.current_ui != GameUI::ExitMenu {
+                self.set_ui(GameUI::ExitMenu, CursorGrabMode::None, true, false);
+            } else {
+                self.set_ui(GameUI::Default, CursorGrabMode::Locked, false, true);
+            }
+            return;
+        }
+
+        if self.keyboard.just_pressed(KeyCode::Tab) {
+            if *self.current_ui != GameUI::ExitMenu {
+                let selector = self.player.hotbar_selector;
+                let size = SUBSET_SIZES[selector];
+                self.set_ui(GameUI::Inventory(size), CursorGrabMode::Locked, true, false);
+            }
+            return;
+        }
+
+        if self.keyboard.just_released(KeyCode::Tab) {
+            if *self.current_ui != GameUI::ExitMenu {
+                self.set_ui(GameUI::Default, CursorGrabMode::Locked, false, true);
+            }
+        }
+
+        if self.keyboard.just_pressed(KeyCode::F3) {
+            let new_ui = if *self.current_ui == GameUI::Debug {
+                GameUI::Default
+            } else {
+                GameUI::Debug
+            };
+            self.switch_ui(new_ui);
+        }
+
+        if self.keyboard.just_pressed(KeyCode::Comma) {
+            self.event_writer
+                .send(GameEvent::SpeedChange { change: -1 });
+        } else if self.keyboard.just_pressed(KeyCode::Period) {
+            self.event_writer.send(GameEvent::SpeedChange { change: 1 });
+        }
     }
 
     fn handle_world_interactions(&mut self) {
@@ -191,48 +231,6 @@ impl<'w, 's> PlayerInputContext<'w, 's> {
         }
     }
 
-    fn handle_ui_shortcuts(&mut self) {
-        if self.keyboard.just_pressed(KeyCode::Escape) {
-            if *self.current_ui != GameUI::ExitMenu {
-                self.set_ui(GameUI::ExitMenu, CursorGrabMode::None, true, false);
-            } else {
-                self.set_ui(GameUI::Default, CursorGrabMode::Locked, false, true);
-            }
-            return;
-        }
-
-        if self.keyboard.just_pressed(KeyCode::Tab) {
-            if *self.current_ui != GameUI::ExitMenu {
-                let selector = self.player.hotbar_selector;
-                let size = SUBSET_SIZES[selector];
-                self.set_ui(GameUI::Inventory(size), CursorGrabMode::Locked, true, false);
-            }
-            return;
-        }
-
-        if self.keyboard.just_released(KeyCode::Tab) {
-            if *self.current_ui != GameUI::ExitMenu {
-                self.set_ui(GameUI::Default, CursorGrabMode::Locked, false, true);
-            }
-        }
-
-        if self.keyboard.just_pressed(KeyCode::F3) {
-            let new_ui = if *self.current_ui == GameUI::Debug {
-                GameUI::Default
-            } else {
-                GameUI::Debug
-            };
-            self.switch_ui(new_ui);
-        }
-
-        if self.keyboard.just_pressed(KeyCode::Comma) {
-            self.event_writer
-                .send(GameEvent::SpeedChange { change: -1 });
-        } else if self.keyboard.just_pressed(KeyCode::Period) {
-            self.event_writer.send(GameEvent::SpeedChange { change: 1 });
-        }
-    }
-
     fn switch_ui(&mut self, new_ui: GameUI) {
         self.event_writer.send(GameEvent::ToggleUI { new_ui });
     }
@@ -250,17 +248,6 @@ impl<'w, 's> PlayerInputContext<'w, 's> {
             enable_input,
         });
         self.event_writer.send(GameEvent::ToggleUI { new_ui });
-    }
-}
-
-/// Respawn entities whose vertical position falls below the threshold.
-pub fn respawn_system(mut query: Query<(&mut Transform, &mut Velocity)>) {
-    for (mut transform, mut velocity) in query.iter_mut() {
-        if transform.translation.y > RESPAWN_THERESHOLD {
-            continue;
-        }
-        velocity.linvel = Vec3::ZERO;
-        transform.translation = SPAWN_POINT;
     }
 }
 

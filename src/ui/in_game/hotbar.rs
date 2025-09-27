@@ -1,6 +1,14 @@
 use crate::prelude::*;
 
+const HOTBAR_HEIGHT_PERCENT: f32 = 10.0;
+const HOTBAR_TOP_PERCENT: f32 = 90.0;
+const HOTBAR_GAP_PX: f32 = 10.0;
+const HOTBAR_SLOT_SIZE: f32 = 10.0;
+const HOTBAR_SLOT_SPREAD: f32 = 4.0;
+const HOTBAR_SLOT_BLUR: f32 = 20.0;
+
 /// Defines the style for hotbar slots.
+#[derive(Clone)]
 pub struct HotbarSlotStyle {
     pub vmin_size: f32,
     pub offset: Vec2,
@@ -9,46 +17,52 @@ pub struct HotbarSlotStyle {
     pub border_radius: BorderRadius,
 }
 
+impl Default for HotbarSlotStyle {
+    fn default() -> Self {
+        Self {
+            vmin_size: HOTBAR_SLOT_SIZE,
+            offset: Vec2::ZERO,
+            spread: HOTBAR_SLOT_SPREAD,
+            blur: HOTBAR_SLOT_BLUR,
+            border_radius: BorderRadius::all(Val::Percent(0.1)),
+        }
+    }
+}
+
 /// Spawns the hotbar UI container and its slots.
 pub fn spawn_hotbar(
-    commands: &mut Commands, 
+    commands: &mut Commands,
     texture_handle: &Handle<Image>,
     texture_atlas_handle: &Handle<TextureAtlasLayout>,
 ) -> Entity {
-    // Create the hotbar container node.
-    let hotbar_node = commands.spawn((
-        Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(10.0),
-            top: Val::Percent(90.0),
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            column_gap: Val::Px(10.0),
-            ..default()
-        },
-    )).id();
-
-    // Define a common style for hotbar slots.
-    let hotbar_style = HotbarSlotStyle {
-        vmin_size: 10.0,
-        offset: Vec2::ZERO,
-        spread: 4.0,
-        blur: 20.0,
-        border_radius: BorderRadius::all(Val::Percent(0.1)),
-    };
-
-    // Spawn and attach each hotbar slot.
-    for i in 0..HOTBAR_SIZE {
+    let hotbar_node = spawn_hotbar_container(commands);
+    let style = HotbarSlotStyle::default();
+    
+    (0..HOTBAR_SIZE).for_each(|index| {
         let slot = spawn_hotbar_slot(
             commands,
-            i,
-            &hotbar_style,
+            index,
+            &style,
             texture_handle,
             texture_atlas_handle,
         );
         commands.entity(slot).set_parent(hotbar_node);
-    }
+    });
     hotbar_node
+}
+
+fn spawn_hotbar_container(commands: &mut Commands) -> Entity {
+    commands
+        .spawn((Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(HOTBAR_HEIGHT_PERCENT),
+            top: Val::Percent(HOTBAR_TOP_PERCENT),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            column_gap: Val::Px(HOTBAR_GAP_PX),
+            ..default()
+        },))
+        .id()
 }
 
 /// Spawns an individual hotbar slot with its container and image node.
@@ -61,7 +75,7 @@ pub fn spawn_hotbar_slot(
 ) -> Entity {
     // Create the slot container with shadow and border.
     let slot_entity = commands
-        .spawn(hotslot_bundle(
+        .spawn(hotbar_slot_bundle(
             style.vmin_size, 
             style.offset, 
             style.spread, 
@@ -89,7 +103,8 @@ pub fn spawn_hotbar_slot(
         .id();
 
     // Attach components to the slot container.
-    commands.entity(slot_entity)
+    commands
+        .entity(slot_entity)
         .insert(HotbarSlot { index })
         .insert(Visibility::Visible)
         .insert(GameUI::Default);
@@ -101,7 +116,7 @@ pub fn spawn_hotbar_slot(
 }
 
 /// Creates the bundle for a hotbar slot with its shadow and border.
-pub fn hotslot_bundle(
+pub fn hotbar_slot_bundle(
     vmin_size: f32,
     offset: Vec2,
     spread: f32,
@@ -132,10 +147,10 @@ pub fn hotslot_bundle(
 ///   • the selected slot is outlined, and  
 ///   • each slot shows the sprite that corresponds to its `VoxelType`.
 pub fn update_hotbar(
-    player:       Res<Player>,
-    mut img_q:    Query<(&HotbarSlot, &mut ImageNode)>,
+    player: Res<Player>,
+    mut img_q: Query<(&HotbarSlot, &mut ImageNode)>,
     mut border_q: Query<(&HotbarSlot, &mut BorderColor)>,
-    voxel_map:    Res<VoxelMap>,
+    voxel_map: Res<VoxelMap>,
 ) {
     /* ── 1.  highlight current slot ───────────────────────────────────────── */
     for (slot, mut border) in border_q.iter_mut() {

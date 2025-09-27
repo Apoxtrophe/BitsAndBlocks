@@ -18,7 +18,7 @@ pub fn update_ui_visibility(
             _ => false,
         };
         
-        println!("GameUI: {:?}", current_screen);
+        //println!("GameUI: {:?}", current_screen);
 
         *visibility = if should_be_visible {
             Visibility::Visible
@@ -26,10 +26,4 @@ pub fn update_ui_visibility(
             Visibility::Hidden
         };
     }
-}
-
-pub fn ui_input (
-    
-) {
-    
 }

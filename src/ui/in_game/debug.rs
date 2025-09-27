@@ -1,32 +1,32 @@
 use crate::prelude::*;
 
+const DEBUG_TOP_PERCENT: f32 = 10.0;
+const DEBUG_LEFT_PERCENT: f32 = 5.0;
+const DEBUG_FONT_SIZE: f32 = 18.0;
+
+
 /// Spawns the debug text node.
 pub fn spawn_debug_text(commands: &mut Commands) -> Entity {
-    let text_node = (
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Percent(10.0),
-            left: Val::Percent(5.0),
-            ..default()
-        },
-        DebugText,
-        GameEntity,
-    );
-    
-    let text_settings = TextFont {
-        font_size: 18.0,
-        ..default()
-    };
-    
-    let debug_text = commands.spawn((
-        Text::new("Initializing debug info..."),
-        text_settings,
-        TextColor(Color::BLACK),
-        TextLayout::new_with_justify(JustifyText::Left),
-        text_node,
-    )).insert(GameUI::Debug).id();
-    
-    debug_text
+    commands
+            .spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: Val::Percent(DEBUG_TOP_PERCENT),
+                    left: Val::Percent(DEBUG_LEFT_PERCENT),
+                    ..default()
+                },
+                Text::new("Initializing debug info..."),
+                TextFont {
+                    font_size: DEBUG_FONT_SIZE,
+                    ..default()
+                },
+                TextColor(Color::BLACK),
+                TextLayout::new_with_justify(JustifyText::Left),
+                DebugText,
+                GameEntity,
+                GameUI::Debug,
+            ))
+            .id()
 }
 
 /// Updates the debug text with runtime info.
@@ -36,49 +36,56 @@ pub fn update_debug_text(
     player: Res<Player>,
     time: Res<Time>,
 ) {
-    // Count entities for debugging purposes.
-    let entity_count = entity_query.iter().count();
+    let info = DebugInfo::gather(&player, &time, entity_query.iter().count());
     
-    // Compute FPS while avoiding division by zero.
-    let delta = time.delta_secs().max(0.0001);
-    let fps = (1.0 / delta).round();
-    
-    let debug_text = format!(
-        "\
-FPS: {:.1}
-Delta Time: {:.3}s
-Elapsed Time: {:.1}s
-
-Camera Pos: {:.1}
-Camera Direction: {:.1}
-
-Ray Hit Pos: {:.1}
-Hit Voxel: {:?}
-Ray Distance: {:.1}
-
-Selected Voxel: {:?}
-Selected Definition: {:?}
-Voxel ID: {:?}
-
-Hotbar: {:?}
-Entity Count: {}",
-        fps,
-        delta,
-        time.elapsed_secs().round(),
-        player.camera_pos,
-        player.camera_dir,
-        player.ray_hit_pos,
-        player.hit_voxel,
-        player.distance,
-        player.selected_voxel,
-        player.selected_descriptor,
-        player.hotbar_selector,
-        player.hotbar,
-        entity_count,
-    );
-    
-    // Update all debug text entities.
     for mut text in text_query.iter_mut() {
-        text.0 = debug_text.clone();
+        text.0 = info.to_string();
+    }
+}
+
+#[derive(Debug)]
+struct DebugInfo<'a> {
+    time: &'a Time,
+    player: &'a Player,
+    entities: usize,
+}
+
+impl<'a> DebugInfo<'a> {
+    fn gather(player: &'a Player, time: &'a Time, entities: usize) -> Self {
+        Self {
+            time,
+            player,
+            entities,
+        }
+    }
+}
+
+impl std::fmt::Display for DebugInfo<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let delta = self.time.delta_secs().max(0.0001);
+        let fps = (1.0 / delta).round();
+        let elapsed = self.time.elapsed_secs().round();
+
+        writeln!(f, "FPS: {fps:.1}")?;
+        writeln!(f, "Delta Time: {delta:.3}s")?;
+        writeln!(f, "Elapsed Time: {elapsed:.1}s")?;
+        writeln!(f)?;
+        writeln!(f, "Camera Pos: {:.1}", self.player.camera_pos)?;
+        writeln!(f, "Camera Direction: {:.1}", self.player.camera_dir)?;
+        writeln!(f)?;
+        writeln!(f, "Ray Hit Pos: {:.1}", self.player.ray_hit_pos)?;
+        writeln!(f, "Hit Voxel: {:?}", self.player.hit_voxel)?;
+        writeln!(f, "Ray Distance: {:.1}", self.player.distance)?;
+        writeln!(f)?;
+        writeln!(f, "Selected Voxel: {:?}", self.player.selected_voxel)?;
+        writeln!(
+            f,
+            "Selected Definition: {:?}",
+            self.player.selected_descriptor
+        )?;
+        writeln!(f, "Voxel ID: {:?}", self.player.hotbar_selector)?;
+        writeln!(f)?;
+        writeln!(f, "Hotbar: {:?}", self.player.hotbar)?;
+        write!(f, "Entity Count: {}", self.entities)
     }
 }
