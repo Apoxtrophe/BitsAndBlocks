@@ -6,3 +6,4 @@ pub mod identifier;
 pub mod debug;
 pub mod exit_menu;
 pub mod speed_indicator;
+pub mod clock_widget;

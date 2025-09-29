@@ -6,7 +6,6 @@ use crate::prelude::*;
 
 #[derive(Event, Debug)]
 pub enum GameEvent {
-    Skip{}, // Event flag that skips the current iteration of the event handler
     PlaceBlock {
         voxel: Voxel,
         voxel_asset: VoxelAsset,
@@ -42,6 +41,9 @@ pub enum GameEvent {
     },
     SpeedChange {
       change: i32,   
+    },
+    ModifyClock {
+        position: IVec3,
     }
 }
 
@@ -68,9 +70,7 @@ pub fn event_handler(
         let event_time = time.elapsed_secs();
         println!("{:.4}         {:?}", event_time, event);
         match event {
-            GameEvent::Skip { .. } => {
-                return;
-            }
+
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
                 let mut voxel_asset_data = voxel_asset.clone();
                 
@@ -138,6 +138,9 @@ pub fn event_handler(
                 simulation_time.rate = new_rate as u64;
                 simulation_time.tick.set_duration(Duration::from_secs_f32(sim_rate));
             }
+            GameEvent::ModifyClock { position } => {
+                
+            }
             _ => {
                 println!("!!!UN-HANDLED EVENT");
             }
@@ -163,9 +166,6 @@ pub fn event_handler(
 impl fmt::Display for GameEvent { 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            GameEvent::Skip {  } => {
-                write!(f, "EVENT SKIP")
-            }
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
                 write!(f, "EVENT VOXEL PLACE: {:?}  {:?}", voxel.kind, voxel.position)
             }
@@ -198,6 +198,9 @@ impl fmt::Display for GameEvent {
             }
             GameEvent::SpeedChange { change } => {
                 write!(f, "EVENT SPEED CHANGE: {:?}", change)
+            }
+            GameEvent::ModifyClock { position } => {
+                write!(f, "EVENT MODIFY CLOCK")
             }
         }
     }

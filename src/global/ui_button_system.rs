@@ -51,7 +51,6 @@ pub fn menu_button_system(
                     event_writer.send_batch([
                         GameEvent::DeleteWorld { world_name: name.clone() },
                         GameEvent::StateChange { new_state: GameState::Loading },
-                        GameEvent::Skip {},
                         GameEvent::ToggleUI { new_ui: GameUI::LoadGame },
                     ]);
                 }

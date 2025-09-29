@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{any::Any, time::Duration};
 
 use bevy::{prelude::*, window::CursorGrabMode};
 
@@ -103,7 +103,7 @@ impl<'w, 's> PlayerInputContext<'w> {
     }
 
     fn handle_world_interactions(&mut self) {
-        if *self.current_ui != GameUI::Default {
+        if *self.current_ui != GameUI::Default && *self.current_ui != GameUI::ClockWidget {
             return;
         }
 
@@ -228,6 +228,16 @@ impl<'w, 's> PlayerInputContext<'w> {
                 });
             }
             _ => {}
+        }
+        println!("{}", pressed);
+        if voxel.kind == VoxelType::Component(ComponentVariants::Clock) {
+            if pressed == true {
+                self.set_ui(GameUI::ClockWidget, CursorGrabMode::Locked, true, false);
+            } else { 
+                self.set_ui(GameUI::Default, CursorGrabMode::Locked, false, true);
+            }
+        } else {
+            return; 
         }
     }
 

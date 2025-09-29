@@ -52,6 +52,7 @@ pub fn setup_ui(
         spawn_identifier(&mut commands),
         spawn_debug_text(&mut commands),
         spawn_speed_indicator(&mut commands, speed_indicator_texture, speed_indicator_atlas_handle),
+        spawn_clock_widget(&mut commands),
     ];
 
     for child in children {

@@ -63,4 +63,5 @@ pub enum GameUI {
     Hidden, 
     ExitMenu,
     Debug, 
+    ClockWidget, 
 }

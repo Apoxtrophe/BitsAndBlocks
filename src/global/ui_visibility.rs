@@ -14,7 +14,7 @@ pub fn update_ui_visibility(
             (a, b) if a == b => true,
             
             (GameUI::Inventory(_), GameUI::Default) => true,
-            
+            (GameUI::ClockWidget, GameUI::Default) => true,
             _ => false,
         };
         
