@@ -15,24 +15,23 @@ pub fn spawn_clock_widget(commands: &mut Commands) -> Entity {
                 position_type: PositionType::Absolute,
                 ..default()
             },
-            BackgroundColor(Color::WHITE),
+            BackgroundColor(Color::linear_rgba(0.1, 0.1, 0.1, 0.9)),
             GameUI::ClockWidget,
         ))
         .id();
     
-    /*
     // Spawn your button
     let button = spawn_text_button(
         commands,
-        10.0,
-        10.0,
+        20.0,
+        20.0,
         "test".to_string(),
         MenuAction::ClockSetting(10),
     );
 
     // Add it as a child afterwards using `commands.entity`
     commands.entity(root).add_child(button);
-     */
+     
 
 
     root

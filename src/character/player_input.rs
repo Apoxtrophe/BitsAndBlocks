@@ -106,10 +106,12 @@ impl<'w, 's> PlayerInputContext<'w> {
         if *self.current_ui != GameUI::Default && *self.current_ui != GameUI::ClockWidget {
             return;
         }
+        if *self.current_ui == GameUI::Default { // Stops certain interactions while not in the default UI state
+            self.handle_block_placement();
+            self.handle_block_removal();
+            self.handle_hotbar_copy();
 
-        self.handle_block_placement();
-        self.handle_block_removal();
-        self.handle_hotbar_copy();
+        }
         self.handle_block_interaction();
     }
 
