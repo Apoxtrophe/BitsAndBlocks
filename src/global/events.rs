@@ -1,6 +1,6 @@
 use std::{fmt, time::Duration};
 use bevy::{input::mouse::MouseWheel, prelude::*, window::CursorGrabMode};
-use bevy_fps_controller::controller::FpsController;
+use bevy_fps_controller::controller::{FpsController, FpsControllerInput};
 
 use crate::prelude::*;
 
@@ -54,7 +54,7 @@ pub fn event_handler(
     mut commands: Commands,
     mut voxel_map: ResMut<VoxelMap>,
     mut player: ResMut<Player>,
-    mut controller_query: Query<&mut FpsController>,
+    mut controller_query: Query<(&mut FpsController, &mut FpsControllerInput)>,
     mut window_query: Query<&mut Window>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut voxel_query: Query<(Entity, &Voxel)>,
@@ -209,15 +209,21 @@ impl fmt::Display for GameEvent {
 /// Update the window's cursor options and the FPS controller's input state.
 pub fn update_cursor_and_input(
     window: &mut Window,
-    controller_query: &mut Query<&mut FpsController>,
+    controller_query: &mut Query<(&mut FpsController, &mut FpsControllerInput)>,
     grab_mode: CursorGrabMode,
     cursor_visible: bool,
     input_enabled: bool,
 ) {
     window.cursor_options.grab_mode = grab_mode;
     window.cursor_options.visible = cursor_visible;
-    for mut controller in controller_query.iter_mut() {
+    for (mut controller, mut input) in controller_query.iter_mut() {
         controller.enable_input = input_enabled;
+        if !input_enabled {
+            input.movement = Vec3::ZERO;
+            input.sprint = false;
+            input.jump = false;
+            input.crouch = false;
+        }
     }
 }
 
