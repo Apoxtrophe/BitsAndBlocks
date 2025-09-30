@@ -167,7 +167,7 @@ impl fmt::Display for GameEvent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
-                write!(f, "EVENT VOXEL PLACE: {:?}  {:?}", voxel.kind, voxel.position)
+                write!(f, "EVENT VOXEL PLACE: {:?}", voxel.kind)
             }
             GameEvent::RemoveBlock { position } => {
                 write!(f, "EVENT VOXEL REMOVE: {:?}", position)

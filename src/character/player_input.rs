@@ -197,11 +197,26 @@ impl<'w, 's> PlayerInputContext<'w> {
         let pressed = self.keyboard.just_pressed(KeyCode::KeyE);
         let released = self.keyboard.just_released(KeyCode::KeyE);
         
-        if released == true { // Fixes a bug where it is difficult to get out of certain UI states
+        if *self.current_ui == GameUI::ClockWidget {
+            let is_looking_at_clock = self
+                .player
+                .hit_voxel
+                .is_some_and(|voxel| voxel.kind == VoxelType::Component(ComponentVariants::Clock));
+
+            if !is_looking_at_clock {
+                self.set_ui(GameUI::Default, CursorGrabMode::Locked, false, true);
+                return;
+            }
+        }
+        
+        if released == true {
+            // Fixes a bug where it is difficult to get out of certain UI states
             self.set_ui(GameUI::Default, CursorGrabMode::Locked, false, true);
             println!("Button released");
         }
         
+        
+
         if !pressed && !released {
             return;
         }
@@ -247,11 +262,8 @@ impl<'w, 's> PlayerInputContext<'w> {
                 self.set_ui(GameUI::Default, CursorGrabMode::Locked, false, true);
             }
         } else {
-            println!("Here!");
             return; 
-
         }
-
     }
 
     fn switch_ui(&mut self, new_ui: GameUI) {
