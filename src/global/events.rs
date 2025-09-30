@@ -68,7 +68,18 @@ pub fn event_handler(
     // Process game events.
     for event in event_reader.read() {
         let event_time = time.elapsed_secs();
-        println!("{:.4}         {:?}", event_time, event);
+        match event {
+            GameEvent::PlaceBlock { voxel, .. } => {
+                println!(
+                    "{event_time:.4}         Placed voxel {:?} at {:?}",
+                    voxel.kind,
+                    voxel.position
+                );
+            }
+            _ => {
+                println!("{event_time:.4}         {:?}", event);
+            }
+        }
         match event {
 
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
@@ -167,7 +178,7 @@ impl fmt::Display for GameEvent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
-                write!(f, "EVENT VOXEL PLACE: {:?}", voxel.kind)
+                write!(f, "EVENT VOXEL PLACE: {:?}  {:?}", voxel.kind, voxel.position)
             }
             GameEvent::RemoveBlock { position } => {
                 write!(f, "EVENT VOXEL REMOVE: {:?}", position)
