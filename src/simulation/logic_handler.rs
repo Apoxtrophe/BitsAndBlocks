@@ -92,8 +92,6 @@ pub fn logic_system(
     sim_timer.tick.tick(time.delta());
     if !sim_timer.tick.finished() { return; }
     sim_timer.tick_counter += 1;
-
-    println!("{}", sim_timer.tick_counter as u32 + 1 );
     
     // ── A. Re‑simulate *every* gate ─────────────────────────────────────────
     for (&pos, voxel) in voxel_map.voxel_map.iter() {

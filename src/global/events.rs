@@ -6,6 +6,9 @@ use crate::prelude::*;
 
 #[derive(Event, Debug)]
 pub enum GameEvent {
+    Skip {
+
+    },
     PlaceBlock {
         voxel: Voxel,
         voxel_asset: VoxelAsset,
@@ -78,7 +81,9 @@ pub fn event_handler(
             }
         }
         match event {
-
+            GameEvent::Skip { } => {
+                return; 
+            }
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
                 let mut voxel_asset_data = voxel_asset.clone();
 
@@ -166,6 +171,9 @@ pub fn event_handler(
 impl fmt::Display for GameEvent { 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            GameEvent::Skip { } => {
+                write!(f, "EVENT SKIP")
+            }
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
                 write!(f, "EVENT VOXEL PLACE: {:?}  {:?}", voxel.kind, voxel.position)
             }

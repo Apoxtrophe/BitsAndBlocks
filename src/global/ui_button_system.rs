@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use bevy::{prelude::*, window::CursorGrabMode};
+use bevy::{ecs::event, prelude::*, window::CursorGrabMode};
 use bevy_simple_text_input::TextInputSubmitEvent;
 
 fn update_color_audio(
@@ -32,6 +32,7 @@ pub fn menu_button_system(
     mut event_writer: EventWriter<GameEvent>,
     mut audio_writer: EventWriter<AudioEvent>,
     mut logic_event_writer: EventWriter<LogicEvent>,
+    voxel_map: Res<VoxelMap>,
 ) {
     for (interaction, mut bg_color, menu_action) in query.iter_mut() {
         // Update button color and play sound based on interaction.
@@ -111,6 +112,7 @@ pub fn menu_button_system(
                         return;
                     };
                     let position = hit_voxel.position;
+                    
                     logic_event_writer.send(LogicEvent::UpdateClockVoxel { position: position, new_speed: *speed });
                 }
                 _ => {}

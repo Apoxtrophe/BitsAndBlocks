@@ -14,7 +14,7 @@ pub const MAX_RAY_DIST: f32 = 10.0;
 // TEXTURES
 pub const VOXEL_DEFINITITION_PATH: &str = "assets/voxels/voxel_definitions.json";
 pub const VOXEL_TEXTURE_PATH: &str = "textures/texturesMay5.png";
-pub const NUM_VOXELS: usize = 39;
+pub const NUM_VOXELS: usize = 43;
 pub const ROTATION_LOCKED_SETS: usize = 2;
 pub const SUBSET_SIZES: [usize; 9] = [8, 1, 16, 2, 2, 2, 2, 2, 4];
 
