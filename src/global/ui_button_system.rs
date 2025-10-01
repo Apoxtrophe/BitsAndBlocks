@@ -31,7 +31,7 @@ pub fn menu_button_system(
     events: EventReader<TextInputSubmitEvent>, // Consider moving text input handling to its own system.
     mut event_writer: EventWriter<GameEvent>,
     mut audio_writer: EventWriter<AudioEvent>,
-
+    mut logic_event_writer: EventWriter<LogicEvent>,
 ) {
     for (interaction, mut bg_color, menu_action) in query.iter_mut() {
         // Update button color and play sound based on interaction.
@@ -105,6 +105,13 @@ pub fn menu_button_system(
                             player_modified: updated_player,
                         });
                     } 
+                }
+                MenuAction::ClockSetting(speed) => {
+                    let Some(hit_voxel) = player.hit_voxel else { 
+                        return;
+                    };
+                    let position = hit_voxel.position;
+                    logic_event_writer.send(LogicEvent::UpdateClockVoxel { position: position, new_speed: *speed });
                 }
                 _ => {}
             }

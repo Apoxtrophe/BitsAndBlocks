@@ -26,6 +26,7 @@ pub fn loading(
     commands.insert_resource(SimulationTimer {
         tick : Timer::from_seconds(1.0 / SPEED_SETTINGS[1] as f32, TimerMode::Repeating),
         rate : 1,
+        tick_counter: 0,
     });
 
     // === Saved Games Resource ===

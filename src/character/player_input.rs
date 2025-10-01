@@ -201,8 +201,10 @@ impl<'w, 's> PlayerInputContext<'w> {
             let is_looking_at_clock = self
                 .player
                 .hit_voxel
-                .is_some_and(|voxel| voxel.kind == VoxelType::Component(ComponentVariants::Clock));
-
+                .is_some_and(|voxel| {
+                    matches!(voxel.kind, VoxelType::Component(ComponentVariants::Clock(_)))
+                });
+        
             if !is_looking_at_clock {
                 self.set_ui(GameUI::Default, CursorGrabMode::Locked, false, true);
                 return;
@@ -212,7 +214,6 @@ impl<'w, 's> PlayerInputContext<'w> {
         if released == true {
             // Fixes a bug where it is difficult to get out of certain UI states
             self.set_ui(GameUI::Default, CursorGrabMode::Locked, false, true);
-            println!("Button released");
         }
         
         
@@ -252,9 +253,7 @@ impl<'w, 's> PlayerInputContext<'w> {
             _ => {}
         }
 
-        
-        println!("{}", pressed);
-        if voxel.kind == VoxelType::Component(ComponentVariants::Clock) {
+        if matches!(voxel.kind, VoxelType::Component(ComponentVariants::Clock(_))) {
             if pressed == true {
                 self.set_ui(GameUI::ClockWidget, CursorGrabMode::Locked, true, false);
             } else { 

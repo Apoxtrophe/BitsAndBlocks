@@ -149,7 +149,7 @@ pub enum ComponentVariants{
     Light,
     Switch,
     Button, 
-    Clock, 
+    Clock(usize), 
 }
 
 #[derive(Copy, Clone)]
@@ -227,7 +227,7 @@ impl VoxelType {
             VoxelType::Latch(LatchVariants::DFlipFlop) => 0,
             VoxelType::Latch(LatchVariants::SRLatch) => 1,
             
-            VoxelType::Component(ComponentVariants::Clock) => 0,
+            VoxelType::Component(ComponentVariants::Clock(_)) => 0,
             VoxelType::Component(ComponentVariants::Switch) => 1,
             VoxelType::Component(ComponentVariants::Button) => 2,
             VoxelType::Component(ComponentVariants::Light) => 3,
@@ -256,7 +256,7 @@ impl VoxelType {
                 | Xor(_) 
                 | Latch(_)    => SIDE_2_IN_FRONT_OUT,
                 
-                Component(ComponentVariants::Clock) 
+                Component(ComponentVariants::Clock(_)) 
                 | Component(ComponentVariants::Switch)
                 | Component(ComponentVariants::Button) => FRONT_OUT,
                 
@@ -304,7 +304,7 @@ impl TryFrom<(usize, usize)> for VoxelType {
             (7,0) => VoxelType::Latch(LatchVariants::DFlipFlop),
             (7,1) => VoxelType::Latch(LatchVariants::SRLatch),
             
-            (8,0) => VoxelType::Component(ComponentVariants::Clock),
+            (8,0) => VoxelType::Component(ComponentVariants::Clock(0)),
             (8,1) => VoxelType::Component(ComponentVariants::Switch),
             (8,2) => VoxelType::Component(ComponentVariants::Button),
             (8,3) => VoxelType::Component(ComponentVariants::Light),

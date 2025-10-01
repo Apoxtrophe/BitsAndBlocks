@@ -30,6 +30,7 @@ fn clamp_state(kind: &VoxelType, mut word: Bits16) -> Bits16 {
 pub struct SimulationTimer {
     pub tick: Timer,
     pub rate: u64, 
+    pub tick_counter: u8,
 }
 
 #[derive(Event, Debug)]
@@ -39,6 +40,10 @@ pub enum LogicEvent {
         position: IVec3,
         new_state: Bits16,
     },
+    UpdateClockVoxel {
+        position: IVec3,
+        new_speed: usize,
+    }
 }
 
 pub fn logic_event_handler(
@@ -53,20 +58,23 @@ pub fn logic_event_handler(
                 // No-op for skip events.
             }
             LogicEvent::UpdateVoxel { position, new_state } => {
-                // First, immutably borrow the entity from the entity_map.
-                // This borrow is dropped after this block.
                 if let Some(entity) = voxel_map.entity_map.get(&position).cloned() {
-                    // Now borrow the voxel map mutably.
                     if let Some(voxel) = voxel_map.voxel_map.get_mut(&position) {
-                        // Update only if the state is different.
                         if voxel.state != *new_state {
                             voxel.state = *new_state;
-                            //println!("Changed voxel at {:?}: {:?}", position, voxel);
                             commands.entity(entity).insert(voxel.clone());
                         }
                     }
                 }
             }
+            LogicEvent::UpdateClockVoxel { position, new_speed } => {
+                if let Some(entity) = voxel_map.entity_map.get(&position).cloned() {
+                    if let Some(voxel) = voxel_map.voxel_map.get_mut(&position) {
+                        voxel.kind = VoxelType::Component(ComponentVariants::Clock(*new_speed));
+                        commands.entity(entity).insert(voxel.clone());
+                    }
+                }
+            } 
         }
     }
 }
@@ -83,10 +91,13 @@ pub fn logic_system(
     // advance the clock
     sim_timer.tick.tick(time.delta());
     if !sim_timer.tick.finished() { return; }
+    sim_timer.tick_counter += 1;
 
+    println!("{}", sim_timer.tick_counter as u32 + 1 );
+    
     // ── A. Re‑simulate *every* gate ─────────────────────────────────────────
     for (&pos, voxel) in voxel_map.voxel_map.iter() {
-        if let Some(new_state) = simulate_gate(voxel, &voxel_map) {
+        if let Some(new_state) = simulate_gate(voxel, &voxel_map, &mut sim_timer) {
             logic_writer.send(LogicEvent::UpdateVoxel {
                 position: pos,
                 new_state,
@@ -216,7 +227,7 @@ pub fn propagate_wires(voxel_map: &VoxelMap) -> Vec<LogicEvent> {
 
 
 
-fn simulate_gate(voxel: &Voxel, voxels: &VoxelMap) -> Option<Bits16> {
+fn simulate_gate(voxel: &Voxel, voxels: &VoxelMap, sim_timer: &mut SimulationTimer) -> Option<Bits16> {
     // --- gather the two logical inputs (boolean) ---------------------------
     let (ins, _) = voxel_directions(voxel);
     let mut in_sig = [false; 2];
@@ -255,6 +266,16 @@ fn simulate_gate(voxel: &Voxel, voxels: &VoxelMap) -> Option<Bits16> {
         }
         
         Component(ComponentVariants::Light) => in_sig[0],
+        
+        Component(ComponentVariants::Clock(speed)) => {
+            let speed = speed as usize;
+            if speed == 0 {
+                false
+            } else {
+                let t = sim_timer.tick_counter as usize + 1; // if you wanted 1-based ticks
+                (t % speed) == 0
+            }
+        }
         
         _ => return None,   // voxels that aren’t logic gates
     };

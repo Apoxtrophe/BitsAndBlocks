@@ -42,7 +42,12 @@
   { "voxel_id": { "Latch":  "DFlipFlop"   }, "name": "D-Flip-Flop"    },
   { "voxel_id": { "Latch":  "SRLatch"   }, "name": "SR Latch"    },
   
-  { "voxel_id": { "Component": "Clock" }, "name": "Clock" },
+  { "voxel_id": { "Component": { "Clock": 0   } }, "name": "Clock 0" },
+  { "voxel_id": { "Component": { "Clock": 4   } }, "name": "Clock 4" },
+  { "voxel_id": { "Component": { "Clock": 16  } }, "name": "Clock 16" },
+  { "voxel_id": { "Component": { "Clock": 64  } }, "name": "Clock 64" },
+  { "voxel_id": { "Component": { "Clock": 256 } }, "name": "Clock 256" },
+  
   { "voxel_id": { "Component": "Switch" }, "name": "Switch" },
   { "voxel_id": { "Component": "Button" }, "name": "Button" },
   { "voxel_id": { "Component": "Light" }, "name": "Light" }

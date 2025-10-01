@@ -50,7 +50,7 @@ pub fn update_cursor(
         if let Some(voxel) = player.hit_voxel {
             match voxel.kind {
                 
-                VoxelType::Component(ComponentVariants::Clock) => {
+                VoxelType::Component(ComponentVariants::Clock(_)) => {
                     text.0.0 = "E".to_string();
                     text.1.0 = Color::LinearRgba(color_alpha);
                 }

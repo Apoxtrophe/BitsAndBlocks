@@ -18,7 +18,7 @@ const PAUSE_BUTTON_HEIGHT_PERCENT: f32 = 18.0;
 const SPEED_BUTTON_WIDTH_PERCENT: f32 = 100.0;
 const SPEED_BUTTON_HEIGHT_PERCENT: f32 = 14.0;
 
-const SPEED_SETTINGS: [usize; 4] = [2, 16, 64, 256];
+const SPEED_SETTINGS: [usize; 4] = [4, 16, 64, 256];
 
 pub fn spawn_clock_widget(commands: &mut Commands) -> Entity {
     let root = spawn_ui_node(
@@ -60,7 +60,7 @@ pub fn spawn_clock_widget(commands: &mut Commands) -> Entity {
                 justify_content: JustifyContent::Center,
                 ..default()
             },
-            Text::new("Clock Settings"),
+            Text::new("Clock Speed"),
             TextFont {
                 font_size: 30.0,
                 ..default()

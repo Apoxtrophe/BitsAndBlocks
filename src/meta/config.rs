@@ -56,4 +56,4 @@ pub const UI_VOLUME: f64 = 0.5;
 
 // SIMULATION
 pub const TICK_RATE: u64 = 200;
-pub const SPEED_SETTINGS: [u64; 5] = [0, 2, 16, 64, 256]; 
+pub const SPEED_SETTINGS: [u64; 5] = [0, 4, 16, 64, 256]; 

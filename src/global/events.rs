@@ -42,9 +42,6 @@ pub enum GameEvent {
     SpeedChange {
       change: i32,   
     },
-    ModifyClock {
-        position: IVec3,
-    }
 }
 
 pub fn event_handler(
@@ -84,7 +81,7 @@ pub fn event_handler(
 
             GameEvent::PlaceBlock { voxel, voxel_asset } => {
                 let mut voxel_asset_data = voxel_asset.clone();
-                
+
                 let is_valid = matches!(voxel.kind, VoxelType::Wire(_) | VoxelType::BundledWire);
                 if is_valid {
                     // Determine cable connections from neighboring voxels.
@@ -149,17 +146,9 @@ pub fn event_handler(
                 simulation_time.rate = new_rate as u64;
                 simulation_time.tick.set_duration(Duration::from_secs_f32(sim_rate));
             }
-            GameEvent::ModifyClock { position } => {
-                
-            }
-            _ => {
-                println!("!!!UN-HANDLED EVENT");
-            }
         }
     }
-    
-    
-    
+
     // Handle mouse scroll events for scrolling the hotbar.
     for event in mouse_wheel_reader.read() {
         let step = event.y.signum() as isize;
@@ -209,9 +198,6 @@ impl fmt::Display for GameEvent {
             }
             GameEvent::SpeedChange { change } => {
                 write!(f, "EVENT SPEED CHANGE: {:?}", change)
-            }
-            GameEvent::ModifyClock { position } => {
-                write!(f, "EVENT MODIFY CLOCK")
             }
         }
     }
