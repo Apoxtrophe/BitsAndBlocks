@@ -13,7 +13,22 @@ pub fn spawn_main_ui(
     commands.entity(main_ui).set_parent(root_ui);
 
     // Create a sub-node for the main menu buttons.
-    let main_menu_sub = spawn_sub_node(commands, 40.0, 60.0, 10.0);
+    let main_menu_sub = spawn_ui_node(
+            commands,
+            Node {
+                width: Val::Percent(40.0),
+                height: Val::Percent(60.0),
+                bottom: Val::Percent(20.0),
+                right: Val::Percent(6.0),
+                row_gap: Val::Px(8.0),
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::FlexEnd,
+                position_type: PositionType::Absolute,
+                justify_content: JustifyContent::FlexStart,
+                ..default()
+            },
+            (),
+        );
     commands.entity(main_menu_sub).set_parent(main_ui);
 
     // Define the button actions for the main menu.
